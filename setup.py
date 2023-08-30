@@ -15,16 +15,16 @@ __author__ = 'LiaoPan'
 
 from setuptools import setup, find_packages
 
-VERSION = '0.1.2'
-DISTNAME = "PyDemoTest"
-DESCRIPTION = "TestDemo-Python project for uploading to pypi."
+VERSION = '0.0.1'
+DISTNAME = "opmqc"
+DESCRIPTION = "OPMQC is a fully automated quality control tool for OPM-MEG."
 MAINTAINER = "reallo"
 MAINTAINER_EMAIL = "liaopan_2015@163.com"
-URL = "https://github.com/liaopan/"
+URL = "https://github.com/liaopan/opmqc"
 LICENSE = "MIT-License"
-DOWNLOAD_URL = "http://github.com/liaopan/**project"
+DOWNLOAD_URL = "http://github.com/liaopan/opmqc"
 
-with open("README.rst", "r") as fid:
+with open("README.md", "r") as fid:
     long_description = fid.read()
 
 setup(
