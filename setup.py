@@ -63,7 +63,7 @@ setup(
     # },
     entry_points={
         "console_scripts": [
-            "print_test = PyDemoTest:test_console_script",
+            "cmd_console = opmqc:some_function_console",
         ]
     },
     # 表明当前模块依赖哪些包，若环境中没有，则会从pypi中自动下载安装！！！
