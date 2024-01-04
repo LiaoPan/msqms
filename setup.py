@@ -12,7 +12,7 @@
 -------------------------------------------------
 """
 __author__ = 'LiaoPan'
-
+import os
 from setuptools import setup, find_packages
 
 VERSION = '0.0.1'
@@ -23,12 +23,41 @@ MAINTAINER_EMAIL = "liaopan_2015@163.com"
 URL = "https://github.com/liaopan/opmqc"
 LICENSE = "MIT-License"
 DOWNLOAD_URL = "http://github.com/liaopan/opmqc"
+REQUIREMENTS_PATH = "requirements.txt"
+TEST_REQUIREMENTS_PATH = "requirements_testing_tools.txt"
+
+def parse_requirements_file(fname: str) -> list:
+    """
+    Parameters
+    ----------
+    fname:str
+        the path of requirements.txt
+
+    Returns
+    -------
+    requirements: list
+        list of requirements.
+    """
+    requirements = []
+    if not os.path.exists(fname):
+        return requirements
+
+    with open(fname, "r") as fileid:
+        for line in fileid:
+            package_name = line.strip()
+            if not package_name.startswith('#'):
+                requirements.append(package_name)
+    return requirements
+
+
+install_requires = parse_requirements_file(REQUIREMENTS_PATH)
+tests_requires = parse_requirements_file(REQUIREMENTS_PATH) + parse_requirements_file(TEST_REQUIREMENTS_PATH)
 
 with open("README.md", "r") as fid:
     long_description = fid.read()
 
 setup(
-   name=DISTNAME,
+    name=DISTNAME,
     maintainer=MAINTAINER,
     maintainer_email=MAINTAINER_EMAIL,
     description=DESCRIPTION,
@@ -53,7 +82,7 @@ setup(
         "Programming Language :: Python :: 3",
     ],
     version=VERSION,
-    keywords="Neuroscience neuroimaging MEG brain.",
+    keywords="Neuroscience neuroimaging OPM-MEG brain.",
     # project_urls={
     #     "Homepage": "",
     #     "Download": "",
@@ -63,11 +92,11 @@ setup(
     # },
     entry_points={
         "console_scripts": [
-            "cmd_console = opmqc:some_function_console",
+            "cmd = opmqc:test_console_script",
         ]
     },
     # 表明当前模块依赖哪些包，若环境中没有，则会从pypi中自动下载安装！！！
-    # install_requires=['docutils>=0.3'],
+    install_requires=install_requires,
     # 仅在测试时需要使用的依赖，在正常发布的代码中是没有用的。
     # 在执行python setup.py test时，可以自动安装这三个库，确保测试的正常运行。
     # tests_require=[
@@ -82,4 +111,3 @@ setup(
     #     'reST': ["docutils>=0.3"],
     # }
 )
-

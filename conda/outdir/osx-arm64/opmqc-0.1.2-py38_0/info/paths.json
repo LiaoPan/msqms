@@ -1,0 +1,85 @@
+{
+  "paths": [
+    {
+      "_path": "bin/print_test",
+      "file_mode": "text",
+      "path_type": "hardlink",
+      "prefix_placeholder": "/Users/reallo/opt/miniconda3/conda-bld/opmqc_1694055945087/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold",
+      "sha256": "598b5ff6174e02e39b07a878c16b89b9ecf68f2206ab97adfd5d873f2da55446",
+      "size_in_bytes": 493
+    },
+    {
+      "_path": "lib/python3.8/site-packages/PyDemoTest/__init__.py",
+      "path_type": "hardlink",
+      "sha256": "8a74acbfed713373c981be4b2f86e3a6b0147c28134bdd6e84621d71e5531c15",
+      "size_in_bytes": 355
+    },
+    {
+      "_path": "lib/python3.8/site-packages/PyDemoTest/__pycache__/__init__.cpython-38.pyc",
+      "path_type": "hardlink",
+      "sha256": "51ee80de72c62f52577da1d0a1ffebc0dd4cfa9e76610f0ea19f93907493736d",
+      "size_in_bytes": 489
+    },
+    {
+      "_path": "lib/python3.8/site-packages/PyDemoTest/__pycache__/main.cpython-38.pyc",
+      "path_type": "hardlink",
+      "sha256": "54539bdd835f9cff7f676d103342fa0ee728c494283289ad9a9f90ec73546826",
+      "size_in_bytes": 664
+    },
+    {
+      "_path": "lib/python3.8/site-packages/PyDemoTest/main.py",
+      "path_type": "hardlink",
+      "sha256": "19ce80a42f356d70c6d62054223abcb3f645347f2e8095a445bea4a9fde9b2d7",
+      "size_in_bytes": 739
+    },
+    {
+      "_path": "lib/python3.8/site-packages/opmqc-0.1.2.dist-info/INSTALLER",
+      "path_type": "hardlink",
+      "sha256": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+      "size_in_bytes": 5
+    },
+    {
+      "_path": "lib/python3.8/site-packages/opmqc-0.1.2.dist-info/METADATA",
+      "path_type": "hardlink",
+      "sha256": "5136f39399acfdd0d9d413a4272a7775e8425cb409714e48beb12ec7865926e6",
+      "size_in_bytes": 959
+    },
+    {
+      "_path": "lib/python3.8/site-packages/opmqc-0.1.2.dist-info/RECORD",
+      "path_type": "hardlink",
+      "sha256": "30e49a1d9282deecdc71e6e19a7032a96c51fb822d69313d502dc9b09828d280",
+      "size_in_bytes": 982
+    },
+    {
+      "_path": "lib/python3.8/site-packages/opmqc-0.1.2.dist-info/REQUESTED",
+      "path_type": "hardlink",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_in_bytes": 0
+    },
+    {
+      "_path": "lib/python3.8/site-packages/opmqc-0.1.2.dist-info/WHEEL",
+      "path_type": "hardlink",
+      "sha256": "db07a93359e4e034b8785a58ad6d534ea3dca0635f1e184efe2e66e1c3a299ba",
+      "size_in_bytes": 92
+    },
+    {
+      "_path": "lib/python3.8/site-packages/opmqc-0.1.2.dist-info/direct_url.json",
+      "path_type": "hardlink",
+      "sha256": "dcc5fd5d3b9747ada5964f57c59134eef94b7e4112d34e8649a32cae43ad4e1b",
+      "size_in_bytes": 97
+    },
+    {
+      "_path": "lib/python3.8/site-packages/opmqc-0.1.2.dist-info/entry_points.txt",
+      "path_type": "hardlink",
+      "sha256": "c51051d92acfbf93988d6cb26afca16d046f9aa78eb989f59319b1a688fde3ca",
+      "size_in_bytes": 62
+    },
+    {
+      "_path": "lib/python3.8/site-packages/opmqc-0.1.2.dist-info/top_level.txt",
+      "path_type": "hardlink",
+      "sha256": "8908b522ae77b122449f86605b29272189bc5f044fb0c33fef4cbcc044a155ea",
+      "size_in_bytes": 11
+    }
+  ],
+  "paths_version": 1
+}

@@ -361,10 +361,13 @@ def opmag2fif(mag_path, fif_path, opm_position_path=None, ica_compatibility=True
 
     # read opm positions
     if opm_position_path == None:
-        opm_position_path = Path(__file__).parent / "data" / "opm_sanbo_3dmodel_positions64.txt"
+        opm_position_path = Path(__file__).parent / "data" / "opm_sanbo_3dmodel_position64.txt"
     positions = pd.read_csv(opm_position_path, sep='\t')
-    opm_64_ch_names = positions.loc[:, 'ch_name'].tolist()  # add stim channel, num: 65
+    opm_64_ch_names = positions.loc[:, 'ch_name'].tolist()  # add stim channel: 65
     positions = positions.to_dict(orient='records')
+
+    # positions = pd.read_csv(opm_position_path, header=None, sep='\s+')
+    # opm_64_ch_names = positions.loc[:, 0].tolist()
 
     # format like Raw.Info['pos']
     for pos_row in positions:

@@ -1,3 +1,5 @@
-mne>=1.2
-numpy>=1.24
-#sphinx==12
+pytest
+pytest-cov
+pytest-timeout
+pytest-harvest
+twine

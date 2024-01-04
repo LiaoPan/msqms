@@ -10,7 +10,7 @@
 """
 __author__ = 'LiaoPan'
 
-def build_qc_pipeline(config_file):
+def build_qc_workflow(config_file):
     """
     Create the Nipype workflow.
     Parameters

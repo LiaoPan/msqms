@@ -1,0 +1,54 @@
+# This file created by conda-build 3.26.1
+# meta.yaml template originally from:
+# /Users/reallo/Documents/Code/opmqc/conda/opmqc, last modified Thu Sep  7 10:38:52 2023
+# ------------------------------------------------
+
+package:
+  name: opmqc
+  version: 0.1.2
+source:
+  sha256: 35432aa356ed8c34ffec5fb169a82d411e10a49fa69995971c9db0aef0a2060c
+  url: https://pypi.io/packages/source/o/opmqc/opmqc-0.1.2.tar.gz
+build:
+  entry_points:
+    - print_test = PyDemoTest:test_console_script
+  number: '0'
+  script: /Users/reallo/opt/miniconda3/conda-bld/opmqc_1694055945087/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold/bin/python
+    -m pip install . -vv
+  string: py38_0
+requirements:
+  host:
+    - ca-certificates 2023.08.22 hecd8cb5_0
+    - libcxx 14.0.6 h9765a3e_0
+    - libffi 3.4.4 hecd8cb5_0
+    - ncurses 6.4 hcec6c5f_0
+    - openssl 3.0.10 hca72f7f_2
+    - pip 23.2.1 py38hecd8cb5_0
+    - python 3.8.17 h5ee71fb_0
+    - readline 8.2 hca72f7f_0
+    - setuptools 68.0.0 py38hecd8cb5_0
+    - sqlite 3.41.2 h6c40b1e_0
+    - tk 8.6.12 h5d9f67b_0
+    - wheel 0.38.4 py38hecd8cb5_0
+    - xz 5.4.2 h6c40b1e_0
+    - zlib 1.2.13 h4dc903c_0
+  run:
+    - python >=3.8,<3.9.0a0
+test:
+  commands:
+    - print_test --help
+  imports:
+    - PyDemoTest
+about:
+  dev_url: null
+  doc_url: null
+  home: https://github.com/liaopan
+  license: MIT-License
+  license_family: MIT
+  license_file: null
+  summary: TestDemo-Python project for uploading to pypi.
+extra:
+  copy_test_source_files: true
+  final: true
+  recipe-maintainers:
+    - your-github-id-here
