@@ -69,7 +69,7 @@ def _mag2data(mag_path, check_rf_increment=True, check_ch_zero=True, interpolate
             # drop bytes.
             fid.read(16)
 
-            clogger.info("STEP 0.Parse Patient Info")
+            clogger.info("Parse Patient Info")
             # 1.file header
             header = fid.read(8).decode('utf-8', errors='ignore')  # char
             patient_info["Header"] = header.replace('\x00', '')
@@ -151,7 +151,7 @@ def _mag2data(mag_path, check_rf_increment=True, check_ch_zero=True, interpolate
             # log("17.MagChannelFilter",mag_channel_filter)
 
             # ---- Parse Sensor Data Blocks ----
-            clogger.info("STEP 1.Parse Sensor Data Blocks")
+            clogger.info("Parse Sensor Data Blocks")
 
             ## block header: the number of section. | 8 bytes
             num_sections = struct.unpack('<Q', fid.read(8))[0]  # 64
@@ -218,7 +218,7 @@ def _mag2data(mag_path, check_rf_increment=True, check_ch_zero=True, interpolate
                 channel_rf_cnts.append(single_rf_cnt)
 
             # ----- Parse Trigger Data Blocks ----
-            clogger.info( "STEP3.Parse Trigger Data Blocks")
+            clogger.info("Parse Trigger Data Blocks")
             ## block header: the number of section. | 8 bytes
             trigger_num_sections = struct.unpack('<Q', fid.read(8))[0]  # 1
             log("Trigger_Num_Sections", trigger_num_sections)
@@ -286,6 +286,125 @@ def _get_filter_type(code_byte):
     type_code = defaultdict(str, type_code)
     return type_code[code_byte]
 
+
+
+def read_raw_mag(fname,verbose=None):
+    """
+
+    Parameters
+    ----------
+    fname : path-like | file-like
+        The raw filename to load.
+    verbose : bool | None
+        Control verbosity of the logging output. If None or False, no logging output.
+    Returns
+    -------
+    raw : instance of MNE.Raw object
+        A Raw object containing OPM mag data.
+    """
+    raw_dict = _mag2data(mag_path=fname,
+                         check_rf_increment=True,
+                         check_ch_zero=True,
+                         interpolate_ch_nearest=True,
+                         verbose=verbose)
+
+    clogger.info("Read opm-mag file...")
+    patient_info = raw_dict['patient_info']
+    channel_datas = raw_dict['channel_datas']
+    rf_pulse_cnts = raw_dict['channel_rf_cnts']
+    trigger_values = raw_dict['trigger_values'][0]
+    trigger_rf_cnts = raw_dict['trigger_rf_cnts']
+
+    # get the minimum range of rf pulse cnt.
+    rf_pulse_begin_cnt = []
+    rf_pulse_end_cnt = []
+    for rf in rf_pulse_cnts:
+        if rf.size > 0:
+            rf_pulse_begin_cnt.append(rf[0])
+            rf_pulse_end_cnt.append(rf[-1])
+    rf_pulse_begin_max_cnt = max(rf_pulse_begin_cnt)
+    rf_pulse_end_min_cnt = min(rf_pulse_end_cnt)
+
+    # extract data channels,and align channel data.
+    crop_datas = []
+    crop_min = 0
+    crop_max = 0
+    for ch_data, rf in zip(channel_datas, rf_pulse_cnts):
+        if rf.size > 0:
+            crop_min = int(np.where(rf_pulse_begin_max_cnt == rf)[0][0])
+            crop_max = int(np.where(rf_pulse_end_min_cnt == rf)[0][0])
+            crop_datas.append(ch_data[crop_min:crop_max])
+        else:
+            crop_datas.append(np.zeros((int(rf_pulse_end_min_cnt - rf_pulse_begin_max_cnt),)))
+
+    crop_datas = np.array(crop_datas) * 1e-15  # convert fT to Telsa.
+
+    # event trigger setting
+    trigger_rf_cnts = trigger_rf_cnts - rf_pulse_begin_max_cnt
+    trigger_chan = np.zeros((1, int(rf_pulse_end_min_cnt - rf_pulse_begin_max_cnt)))
+    # set trigger value to trigger channel.
+    trigger_index = np.array(trigger_rf_cnts[0, :][trigger_values != 0]).astype(int)
+    trigger_chan[0, trigger_index] = trigger_values[trigger_values != 0]
+
+    # combine trigger data.
+    crop_datas = np.concatenate((crop_datas, trigger_chan), axis=0)
+
+    # read opm positions
+    opm_position_path = Path(__file__).parent / "data" / "opm_sanbo_3dmodel_position64.txt"
+    positions = pd.read_csv(opm_position_path, sep='\t')
+    opm_64_ch_names = positions.loc[:, 'ch_name'].tolist()  # add stim channel: 65
+    positions = positions.to_dict(orient='records')
+
+    # format like Raw.Info['pos']
+    for pos_row in positions:
+        str_loc = pos_row['loc'].replace(' ', ',')
+        pos_row['loc'] = np.array(eval(str_loc))
+
+        if pos_row['kind'] == 1:
+            pos_row['kind'] = FIFF.FIFFV_MEG_CH  # type: ignore
+        elif pos_row['kind'] == 3:
+            pos_row['kind'] = FIFF.FIFFV_STIM_CH  # type: ignore
+
+        if pos_row['coil_type'] == 3024:
+            pos_row['coil_type'] = FIFF.FIFFV_COIL_VV_MAG_T3  # type: ignore
+        elif pos_row['coil_type'] == 0:
+            pos_row['coil_type'] = FIFF.FIFFV_COIL_NONE  # type: ignore
+
+        if pos_row['unit'] == 112:
+            pos_row['unit'] = FIFF.FIFFB_CONTINUOUS_DATA  # type: ignore
+        elif pos_row['unit'] == 107:
+            pos_row['unit'] = FIFF.FIFFB_ISOTRAK  # type: ignore
+
+    # Initialize an MNE info structure
+
+
+    #set type of channels
+    ch_types = ['mag'] * (len(opm_64_ch_names)-1)  # subtract stim channels.
+    ch_types.append('stim')
+
+
+    info = mne.create_info(
+        ch_names=opm_64_ch_names,
+        ch_types=ch_types,
+        sfreq=patient_info['sample_rate']  # clogger.info(raw.info['sfreq'])
+    )
+
+    # set other MNE Raw Info.
+    info._unlocked = True
+    info['chs'] = positions  # set 64 OPM Layout (Positions)
+    birthday = datetime.strptime(patient_info['patient_birthday'], '%Y-%m-%d')
+    birthday = (int(birthday.year), int(birthday.month), int(birthday.day))
+    gender = {"Other": 0, "Male": 1, "Female": 2}[patient_info['patient_gender']]
+    info['subject_info'] = {'birthday': birthday, 'sex': gender,
+                            'last_name': patient_info['patient_name'].encode("utf-8").decode("latin1")} # please use `.encode('latin1').decode('utf-8')` to decode Chinese content.
+    info['experimenter'] = patient_info["Header"]
+    info.set_meas_date(
+        datetime.strptime(patient_info["exam_time"], '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc))  # neet debug
+    info._unlocked = False
+
+    opm_raw = mne.io.RawArray(crop_datas, info)
+    clogger.info(opm_raw.info)
+    return opm_raw
 
 
 def opmag2fif(mag_path, fif_path, opm_position_path=None, ica_compatibility=True, check_rf_increment=True,

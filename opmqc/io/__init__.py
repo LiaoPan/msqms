@@ -1,12 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
--------------------------------------------------
-   Description :
-   Author :       LiaoPan
-   date：          2023/10/16 18:49
--------------------------------------------------
-   Change Activity:
-                   2023/10/16:
--------------------------------------------------
-"""
-__author__ = 'LiaoPan'
+"""IO module for read OPM raw data."""
+
+from .quanmag import read_raw_mag
