@@ -1,663 +1,218 @@
 # -*- coding: utf-8 -*-
-"""<Explain your Codes>"""
-# -*- coding: utf-8 -*-
-"""
--------------------------------------------------
-   Description :
-   Author :       LiaoPan
-   date：          2022/4/19 15:29
--------------------------------------------------
-   Change Activity:
-                   2022/4/19:
--------------------------------------------------
-用于MEG Pipeline Report的HTML生成
-"""
-__author__ = 'LiaoPan'
+"""Generate MEG Pipeline HTML Report"""
+import json
+import jinja2
 
-import os
-import base64
-import html
-import datetime
-import sys
+from tqdm.auto import tqdm
+from typing import Union
+from pathlib import Path
+from jinja2 import Environment, PackageLoader
 
-PY_VERSION = sys.version_info
+from opmqc.utils.logging import clogger
 
-imgpath = './imgs/IED_detection_overview.png'
 
-#
-# Tool Functions
-#
+def gen_quality_report(megfiles: [Union[str, Path]], outdir: Union[str, Path], ftype: str = 'html'):
+    """
+    Generate HTML/JSON Report for a set of MEG Raw data.
+    Parameters
+    ----------
+    megfiles
+    outdir
+    ftype:str
+        the type of generated report file.
+    Returns
+    -------
+    """
+    # validate meg files.
 
-def convert_img_to_base64(imgpath):
-    img_type = os.path.splitext(imgpath)[1][1:]
-    with open(imgpath, 'rb') as fid:
-        encoded_img = base64.b64encode(fid.read()).decode()
-        if PY_VERSION >= (3, 6):
-            encoded_img_str = f"data:image/{img_type};base64,{encoded_img}"
+    # validate outdir
+
+    for fmeg in megfiles:
+        clogger.info(f"Generating report for {fmeg}")
+        qreport = QualityReport(report_data={"Overview": ["Test"]}, minify_html=False)
+        if ftype == "json":
+            qreport.to_json(outdir)
         else:
-            encoded_img_str = "data:image/;base64,%s"%(img_type,encoded_img)
-    return encoded_img_str
-
-def get_file_with_suffix(path, suffix=".css"):
-    fileList=os.listdir(path)
-    resultList=list()
-    for f in fileList:
-        if os.path.splitext(f)[1] == suffix:
-            resultList.append(os.path.join(path, f))
-    return resultList
-
-class Report(object):
-    def __init__(self,subject_info,
-                 meg_info,
-                 coregistration_info,
-                 ied_number_info,
-                 ied_events_info,
-                 ied_clusters_info,
-                 preliminary_conclusions_info,
-                 analysis_info,
-                 reference_info):
-
-        self.html_template = './html_template'
-        self.meg_pipeline_results = './meg_pipeline_results'
-
-        self.save_html_path = './meg_report'
-
-        # 报告标题
-        self.report_title_info = "MEG Data Analysis Report"
-
-        # 被试基础信息
-        self.subject_info = subject_info
-
-        # MEG基础信息
-        self.meg_info = meg_info
-
-        # 自动配准信息
-        self.coregistration_info = coregistration_info
-
-        # IED Number and Timing
-        self.ied_number_info = ied_number_info
-
-        # IED Events Info
-        self.ied_events_info = ied_events_info
-
-        # IED Clusters Info
-        self.ied_clusters_info = ied_clusters_info
-
-        # Preliminary Conclusions
-        self.preliminary_conclusions_info = preliminary_conclusions_info
-
-        # Analysis Information
-        self.analysis_info = analysis_info
-
-        # Reference Info
-        self.reference_info = reference_info
+            qreport.to_html(outdir)
 
 
-    def _gen_img_html(self, section_info_dict):
-        section_title = section_info_dict["section_title"]
+class QualityReport(object):
+    """
+    Generate a quality report from MEG raw data.
+    """
 
-        # Begin Report Item Div
-        cHtml='\n<div class="report_item">\n'
-        cHtml+="\n"
+    def __init__(self,
+                 report_data,
+                 minify_html,
+                 ):
+        self.report_data = report_data
+        self.minify_html = minify_html
 
-        ## Report Item Title
-        cHtml += '<p class="report_item_title">\n'
-        templatePath = self.html_template
-        imgPath = os.path.join(templatePath, "source", "section_icon.png")
-        imgStr = convert_img_to_base64(imgPath)
-
-        cHtml += '\t<img src="%s" alt="report_item">\n' % imgStr
-        cHtml += "\t"+section_title+"\n"
-        cHtml += "</p>\n"
-        cHtml += "\n"
-
-        for k, v in section_info_dict.items():
-            if isinstance(v, dict):
-                commentContent = section_info_dict[k]["commentContent"]
-                img_path = section_info_dict[k]["img_path"]
-                imgStr = convert_img_to_base64(img_path)
-                cHtml += '<div class="result_w">\n'
-                cHtml += '\t<img class="result_pic" src="%s" alt="%s"/>\n' % (imgStr,  html.escape(commentContent))
-                cHtml += '\t<p class="result_caption">%s</p>\n' % (html.escape(commentContent))
-                cHtml += "</div>\n"
-                cHtml += "\n"
-
-        # End Report Item Div
-        cHtml += "</div>\n"
-
-        return cHtml
-
-    def gen_title_html(self):
+    def to_json(self, out_json_path: Union[str, Path]) -> None:
         """
-        生成Html报告的标题代码
+        write the report to json file
         """
-        # Begin Title Div
-        tHtml='\n<div class="title_w">\n'
-        tHtml+="\n"
+        with tqdm(total=1, desc="Render JSON") as pbar:
+            report_data = json.dumps(self.report_data, indent=4)
+            pbar.update()
+        self._to_file(report_data=report_data, output_file=out_json_path)
 
-        ## Title
-        tHtml+='\t<p class="title">\n'
-        tHtml+="\t\t<span>%s</span>\n" % html.escape(self.report_title_info)
-        tHtml+="\t</p>\n"
-        tHtml+="\n"
-
-        # End Title Div
-        tHtml+="</div>\n"
-        tHtml+="\n"
-
-        return tHtml
-
-    def gen_subject_basicinfo_html(self):
+    def to_html(self, out_html_path: Union[str, Path]) -> None:
         """
-        生成被试基础信息的HTML代码
-        :return:
+        write the report to html file
         """
-        subject_info = self.subject_info
-        infoHeader = {}
-        infoHeader["subjectID"] = "ID"
-        infoHeader["subjectName"] = "Name"
-        infoHeader["subjectAge"] = "Age"
-        infoHeader["subjectGender"] = "Gender"
+        with tqdm(total=1, desc="Render Html") as pbar:
+            html = HtmlReport(self.report_data).render_html()
 
-        # Begin Report Item Div
-        bHtml='\n<div class="report_item">\n'
-        bHtml+="\n"
+            if self.minify_html:
+                import minify_html
+                html = minify_html.minify(html,
+                                          minify_js=True,
+                                          minify_css=True,
+                                          )
+            pbar.update()
 
-        ## Report Item Title
-        bHtml += '<p class="report_item_title">\n'
-        templatePath = self.html_template
-        imgPath = os.path.join(templatePath, "source", "section_icon.png")
-        imgStr = convert_img_to_base64(imgPath)
+        self._to_file(report_data=html, output_file=out_html_path)
 
-        bHtml += '\t<img src="%s" alt="report_item">\n' % imgStr
-        bHtml += "\t"+"Subject information"+"\n"
-        bHtml += "</p>\n"
-        bHtml += "\n"
-
-        # End Report Item Div
-        bHtml += "</div>\n"
-
-
-        # bHtml=''
-        bHtml+='<table class="basic_info_table">\n'
-        bHtml+="<thead>\n"
-        bHtml+="\t<tr>\n"
-        for key, header in infoHeader.items():
-            bHtml+="\t\t<th>%s</th>\n" % html.escape(header)
-        bHtml+="\t</tr>\n"
-        bHtml+="</thead>\n"
-
-        bHtml+="<tbody>\n"
-        bHtml+="\t<tr>\n"
-        for key in infoHeader:
-            bHtml+="\t\t<td>%s</td>\n" % html.escape(subject_info[key])
-        bHtml+="\t</tr>\n"
-        bHtml+="</tbody>\n"
-        bHtml+="</table>\n"
-
-        return bHtml
-
-    def gen_meg_basicinfo_html(self):
+    def _to_file(self, report_data: str, output_file: Union[str, Path]) -> None:
         """
-        生成MEG的基础信息Html代码
-        :return:
+        Write the report to a file.
         """
-        meg_info = self.meg_info
-        infoHeader = {}
-        infoHeader["megSensors"] = "# Sensors"
-        infoHeader["megDate"] = "Date"
-        infoHeader["megDuration"] = "Duration"
-        infoHeader["megSegments"] = "# Segments"
-
-        # Begin Report Item Div
-        bHtml='\n<div class="report_item">\n'
-        bHtml+="\n"
-
-        ## Report Item Title
-        bHtml += '<p class="report_item_title">\n'
-        templatePath = self.html_template
-        imgPath = os.path.join(templatePath, "source", "section_icon.png")
-        imgStr = convert_img_to_base64(imgPath)
-
-        bHtml += '\t<img src="%s" alt="report_item">\n' % imgStr
-        bHtml += "\t"+"MEG information"+"\n"
-        bHtml += "</p>\n"
-        bHtml += "\n"
-
-        # End Report Item Div
-        bHtml += "</div>\n"
-
-        # bHtml=''
-        bHtml+='<table class="basic_info_table">\n'
-        bHtml+="<thead>\n"
-        bHtml+="\t<tr>\n"
-        for key, header in infoHeader.items():
-            bHtml+="\t\t<th>%s</th>\n" % html.escape(header)
-        bHtml+="\t</tr>\n"
-        bHtml+="</thead>\n"
-
-        bHtml+="<tbody>\n"
-        bHtml+="\t<tr>\n"
-        for key in infoHeader:
-            bHtml+="\t\t<td>%s</td>\n" % html.escape(meg_info[key])
-        bHtml+="\t</tr>\n"
-        bHtml+="</tbody>\n"
-        bHtml+="</table>\n"
-
-        return bHtml
-
-    def gen_coregistration_html(self):
-        return self._gen_img_html(section_info_dict=self.coregistration_info)
-
-    def gen_coregistration_html_(self):
-        section_title = self.coregistration_info["section_title"]
-
-        # Begin Report Item Div
-        cHtml='\n<div class="report_item">\n'
-        cHtml+="\n"
-
-        ## Report Item Title
-        cHtml += '<p class="report_item_title">\n'
-        templatePath = self.html_template
-        imgPath = os.path.join(templatePath, "source", "section_icon.png")
-        imgStr = convert_img_to_base64(imgPath)
-
-        cHtml += '\t<img src="%s" alt="report_item">\n' % imgStr
-        cHtml += "\t"+section_title+"\n"
-        cHtml += "</p>\n"
-        cHtml += "\n"
-
-        for k, v in self.coregistration_info.items():
-            if isinstance(v, dict):
-                commentContent = self.coregistration_info[k]["commentContent"]
-                img_path = self.coregistration_info[k]["img_path"]
-                imgStr = convert_img_to_base64(img_path)
-                cHtml += '<div class="result_w">\n'
-                cHtml += '\t<img class="result_pic" src="%s" alt="%s"/>\n' % (imgStr,  html.escape(commentContent))
-                cHtml += '\t<p class="result_caption">%s</p>\n' % (html.escape(commentContent))
-                cHtml += "</div>\n"
-                cHtml += "\n"
-        # End Report Item Div
-        cHtml += "</div>\n"
-
-        return cHtml
-
-    def gen_ied_number_and_timing_html(self):
-
-        # 棘波概览图
-        section_title = self.ied_number_info["section_title"]
-
-        # Begin Report Item Div
-        cHtml='\n<div class="report_item ied_number_timing">\n'
-        cHtml+="\n"
-
-        ## Report Item Title
-        cHtml += '<p class="report_item_title">\n'
-        templatePath = self.html_template
-        imgPath = os.path.join(templatePath, "source", "section_icon.png")
-        imgStr = convert_img_to_base64(imgPath)
-
-        cHtml += '\t<img src="%s" alt="report_item">\n' % imgStr
-        cHtml += "\t"+section_title+"\n"
-        cHtml += "</p>\n"
-        cHtml += "\n"
-
-        for k, v in self.ied_number_info.items():
-            if isinstance(v, list) and k == "IED_Timing":
-                for imginfo in v:
-                    commentContent = imginfo["commentContent"]
-                    img_path = imginfo["img_path"]
-                    imgStr = convert_img_to_base64(img_path)
-                    cHtml += '<div class="result_w">\n'
-                    cHtml += '\t<img class="result_pic" src="%s" alt="%s"/>\n' % (imgStr,  html.escape(commentContent))
-                    cHtml += '\t<p class="result_caption">%s</p>\n' % (html.escape(commentContent))
-                    cHtml += "</div>\n"
-                    cHtml += "\n"
-
-        # End Report Item Div
-        cHtml += "</div>\n"
-        cHtml += "<br>"
-
-        # 统计表格
-        itemHeader = {"BR": "Brain regions",
-                      "LT": "LT",
-                      "RT": "RT",
-                      "LP": "LP",
-                      "RP": "RP",
-                      "LO": "LO",
-                      "RO": "RO",
-                      "LF": "LF",
-                      "RF": "RF"}
-
-        ## Report Item Table Header
-        table_header = self.ied_number_info['IED_number']['table_name']
-        if len(table_header)!=0 or not table_header.isspace():
-            cHtml+='<p class="report_item_header">\n'
-            cHtml+='%s\n' % html.escape(table_header)
-            cHtml+='</p>'
-
-        ## Report Item Table
-        cHtml+='<table class="result_table">\n'
-        cHtml+="<thead>\n"
-        cHtml+="\t<tr>\n"
-        for key, header in itemHeader.items():
-            cHtml+="\t\t<th>%s</th>\n" % html.escape(header)
-        cHtml+="\t</tr>\n"
-        cHtml+="</thead>\n"
-
-        ## Report Item Body
-        cHtml+="<tbody>\n"
-
-        itemContent = self.ied_number_info['IED_number']['stats']
-        for key in itemContent.keys():
-            cHtml+="\t<tr>\n"
-            contents = itemContent[key]
-
-            if key == "numbers":
-                contents.insert(0,"Number of IED events")
-            elif key == "percentage":
-                contents.insert(0,"Percentage")
-
-            for content in contents:
-                cHtml+="\t\t<td>%s</td>\n" % html.escape(content)
-            cHtml+="\t</tr>\n"
-
-        cHtml+="</tbody>\n"
-        cHtml+="</table>\n"
-
-        cHtml+='<p class="report_item_header">\n'
-        cHtml+='%s\n' % html.escape(self.ied_number_info['IED_number']["comment_content"])
-        cHtml+='</p>'
-
-
-        return cHtml
-
-    def gen_source_imaging_ied_events_html(self):
-        return self._gen_img_html(section_info_dict=self.ied_events_info)
-
-    def gen_source_imaging_ied_clusters_html(self):
-        return self._gen_img_html(section_info_dict=self.ied_clusters_info)
-
-    def gen_preliminary_conclusions_html(self):
-
-        meg_duration_min = self.preliminary_conclusions_info["meg_duration_min"]
-        meg_position = self.preliminary_conclusions_info["meg_position"]
-        ied_events_num = self.preliminary_conclusions_info["ied_events_num"]
-        ied_clusters_num = self.preliminary_conclusions_info["ied_clusters_num"]
-
-        if PY_VERSION >= (3, 6):
-            con_meg_info = f"<b>{meg_duration_min}</b> minutes MEG recording suggests a generator at <b>{meg_position}</b>."
-            con_ied_info = f"<b>{ied_events_num}</b> IED events and <b>{ied_clusters_num}</b> IED clusters have been found."
-        else:
-            con_meg_info = "<b>%s</b>  minutes MEG recording suggests a generator at <b>%s</b> ."%(meg_duration_min, meg_position)
-            con_ied_info = "<b>%s</b>  IED events and <b>%s</b> IED clusters have been found."%(ied_events_num, ied_clusters_num)
-
-        # Begin Report Item Div
-        cHtml='\n<div class="report_item">\n'
-        cHtml+="\n"
-
-        ## Report Item Title
-        cHtml += '<p class="report_item_title">\n'
-        templatePath = self.html_template
-        imgPath = os.path.join(templatePath, "source", "section_icon.png")
-        imgStr = convert_img_to_base64(imgPath)
-
-        cHtml += '\t<img src="%s" alt="report_item">\n' % imgStr
-        cHtml += "\t"+"Preliminary Conclusions"+"\n"
-        cHtml += "</p>\n"
-        cHtml += "\n"
-
-        cHtml += '\t<p class="reference_caption">%s</p>\n' % (con_meg_info)
-        cHtml += '\t<p class="reference_caption">%s</p>\n' % (con_ied_info)
-
-        # End Report Item Div
-        cHtml += "</div>\n"
-
-        return cHtml
-
-    def gen_analysis_information_html(self):
-        # Begin Report Item Div
-        cHtml='\n<div class="report_item">\n'
-        cHtml+="\n"
-
-        ## Report Item Title
-        cHtml += '<p class="report_item_title">\n'
-        templatePath = self.html_template
-        imgPath = os.path.join(templatePath, "source", "section_icon.png")
-        imgStr = convert_img_to_base64(imgPath)
-
-        cHtml += '\t<img src="%s" alt="report_item">\n' % imgStr
-        cHtml += "\t"+"Analysis Information"+"\n"
-        cHtml += "</p>\n"
-        cHtml += "\n"
-
-        for k,v in self.analysis_info.items():
-            cHtml += '\t<p class="reference_caption"><b>%s</b>: %s</p>\n' % (html.escape(k),html.escape(v))
-
-        # End Report Item Div
-        cHtml += "</div>\n"
-
-        return cHtml
-
-    def gen_reference_html(self):
-        # Begin Report Item Div
-        cHtml='\n<div class="report_item">\n'
-        cHtml+="\n"
-
-        ## Report Item Title
-        cHtml += '<p class="report_item_title">\n'
-        templatePath = self.html_template
-        imgPath = os.path.join(templatePath, "source", "section_icon.png")
-        imgStr = convert_img_to_base64(imgPath)
-
-        cHtml += '\t<img src="%s" alt="report_item">\n' % imgStr
-        cHtml += "\t"+"Reference"+"\n"
-        cHtml += "</p>\n"
-        cHtml += "\n"
-
-        for i in self.reference_info:
-            cHtml += '\t<p class="reference_caption">%s</p>\n' % (html.escape(i))
-
-        # End Report Item Div
-        cHtml += "</div>\n"
-        return cHtml
-
-    def gen_report_head_html(self, loadCss=True, loadJs=True):
-        pageTitle=self.report_title_info
-        hHtml='\n<meta charset="UTF-8">\n'
-        hHtml+='<title>%s</title>\n' % pageTitle
-
-        templatePath=self.html_template
-        faviconStr = convert_img_to_base64(os.path.join(templatePath, 'source', 'favicon.png'))
-        hHtml+='<link rel="icon" href="%s"/>' % faviconStr
-
-        if loadCss:
-            cssFiles=get_file_with_suffix(os.path.join(templatePath, 'css'), '.css')
-            for cssPath in cssFiles:
-                hHtml+='<style type="text/css">\n'
-                hHtml+="\n\t"
-                with open(cssPath, "rb") as fid:
-                    cssStr=fid.read().decode('utf-8')
-                hHtml+=cssStr.replace("\n", "\n\t")
-                hHtml+="\n"
-                hHtml+='</style>\n'
-
-        if loadJs:
-            jsFiles=get_file_with_suffix(os.path.join(templatePath, 'js'), '.js')
-            for jsPath in jsFiles:
-                hHtml+='<script type="text/javascript">\n'
-                hHtml+="\n\t"
-                with open(jsPath, "rb") as fid:
-                    jsStr=fid.read().decode('utf-8')
-                hHtml+=jsStr.replace("\n", "\n\t")
-                hHtml+="\n"
-                hHtml+='</script>\n'
-
-        return hHtml
-
-    def gen_report_body_html(self):
-        bHtml='\n<div class="qc_report_wrap">\n'
-
-        ## Basic Html
-        bHtml += self.gen_title_html()
-        bHtml += self.gen_subject_basicinfo_html()
-        bHtml += self.gen_meg_basicinfo_html()
-        bHtml += self.gen_coregistration_html()
-        bHtml += self.gen_ied_number_and_timing_html()
-        bHtml += self.gen_source_imaging_ied_events_html()
-        bHtml += self.gen_source_imaging_ied_clusters_html()
-        bHtml += self.gen_preliminary_conclusions_html()
-        bHtml += self.gen_analysis_information_html()
-        bHtml += self.gen_reference_html()
-
-        bHtml += "</div>\n"
-        return bHtml
-
-    def gen_report_html(self):
-        headHtml = self.gen_report_head_html()
-        bodyHtml = self.gen_report_body_html()
-
-        pageHtml= \
-            """
-    <!DOCTYPE html>
-    <html lang="en">
-    
-    <head>
-    %s
-    </head>
-    
-    <body style="background-color: rgba(0, 226, 193, 0.02);margin: 0;padding: 30px 30px;">
-    %s
-    </body>
-    
-    </html>
-            """ % (headHtml.replace("\n", "\n\t"), bodyHtml.replace("\n", "\n\t"))
-
-        return pageHtml
-
-
-    def save_report_html(self, reportName="report.html"):
-
-        targetPath=self.save_html_path
-        if not os.path.exists(targetPath):
-            os.mkdir(targetPath)
-
-        ReportHtml=self.gen_report_html()
-        with open(os.path.join(targetPath, reportName), "wb") as f:
-            f.write(ReportHtml.encode('utf-8'))
-        print("[INFO]", datetime.datetime.now(), " Generate MEG Report Successfully.")
+        if not isinstance(output_file, Path):
+            output_file = Path(str(output_file))
+
+        if output_file.suffix not in [".html", ".json"]:
+            suffix = output_file.suffix
+            output_file = output_file.with_suffix(".html")
+            clogger.warning(
+                f"Extension {suffix} not supported. We use .html instead."
+                f"To remove this warning, please use .html or .json."
+            )
+
+        with tqdm(total=1, desc="Export quality report to file") as pbar:
+            output_file.write_text(report_data, encoding="utf-8")
+            pbar.update()
+
+
+class HtmlReport(object):
+    def __init__(self, report_data):
+        # Init Jinja
+        package_loader = PackageLoader(package_name="opmqc", package_path="reports/templates")
+        self.jinja2_env = Environment(loader=package_loader)
+
+        self.report_data = report_data
+
+        self.nav_title = "<strong>MEG Quality Report</strong>"
+        self.info_title_name = "MEG Data Info"
+        self.overview_title_name = "MEG Quality Overview"
+
+        # MEG data info
+        self.info_tabs = [("Overview", "overview"), ("Subject Info", "subjectinfo"), ("MEG Info", "meginfo")]
+
+        # basic info
+        self.info_basic = {
+            "Source file": "/Volumes/Touch/Code/osl_practice/MEG2224_EP_4_raw_tsss.fif",
+            "Data acquired": "2000-01-01 00:00:00+00:00",
+            "Manufacturer": "Elekta",
+            "Duration": "480 seconds",
+            "Frequency": "1000Hz",
+            "Data Size": "600MB",
+        }
+
+        # basic subject info
+        self.info_subject_dict = {
+            "Name": "Demo",
+            "Age": "23",
+            "Gender": "Male",
+        }
+        # basic meg info
+        self.info_meg_dict = {
+            "Channel Type": ["mag", "grad", "stim", "ecg", "eog"],
+            "Value": [102, 204, 3, 1, 1]
+        }
+
+        self.overview_tabs = ["Overview", "SubjectInfo", "MEGInfo"]
+        # self.overview_tabs = ["view", "info", "meg"]
+
+        self.overview_quality_dict = {
+
+        }
+
+        self.footer = 'MEG Quality Report Generated by <a href="https://github.com/liaopan/opmqc">OPMQC</a>.'
+
+    def get_template(self, template_name: str) -> jinja2.Template:
+        return self.jinja2_env.get_template(template_name)
+
+    def gen_base_template(self):
+        return self.get_template('base.html')
+
+    def gen_html_report(self):
+        # navigation settings.
+        self.nav_items = [("INFO", "info"),
+                          ("Quality Overview", "overview"),
+                          ("Artifacts", "artifacts"),
+                          ("Visual Inspection", "inspection"),
+                          ("ICA", "ica")]
+
+        # get base templates(Main HTML)
+        render_params = {
+            "title": self.nav_title,
+            "nav": True,
+            "nav_items": self.nav_items,
+            "footer": self.footer,
+
+            "info_title": self.info_title_name,
+            "info_tabs": self.info_tabs,
+
+            "info_basic": self.info_basic,
+            "info_subject_dict": self.info_subject_dict,
+            "info_meg_dict": self.info_meg_dict,
+
+            "overview_title": self.overview_title_name,
+            "overview_tabs": self.overview_tabs
+            # "overview_dict": self.overview_dict,
+        }
+
+        html = self.gen_base_template().render(**render_params)
+        return html
+
+    def gen_nav_html(self):
+        html = self.get_template("navigation.html")
+        # multi panels
+        self.nav_items = [("Quality Overview", "overview"),
+                          ("Artifacts", "artifacts"),
+                          ("Visual Inspection", "inspection"),
+                          ("ICA", "ica")]
+
+        html.render(self.nav_items)
+        return html
+
+    def gen_body_html(self):
+        html = self.get_template("navigation.html")
+        # multi panels
+        self.nav_items = [("Quality Overview", "overview"),
+                          ("Artifacts", "artifacts"),
+                          ("Visual Inspection", "inspection"),
+                          ("ICA", "ica")]
+
+        html.render(self.nav_items)
+        # panel: Quality Overview
+
+        # panel: Artifacts
+
+        # panel: Visual Inpsection
+
+        # panel: ICA(optional)
+
+        return html
+
+    def render_html(self):
+        html_page = self.gen_html_report()
+        print(html_page)
+        return html_page
+
 
 if __name__ == "__main__":
-    # 报告内容
-
-    meg_pipeline_results = './meg_pipeline_results'  # 存放报告图片的路径
-
-    # 被试基础信息
-    subject_info = {"subjectID": "MEG2407",
-                    "subjectName": "Wang Yun",
-                    "subjectAge": "18",
-                    "subjectGender": "Male"}
-
-    # MEG基础信息
-    meg_info = {"megSensors": "306",
-                "megDate": "2021.06",
-                "megDuration": "509.23 s",
-                "megSegments": "6"}
-
-    # 自动配准信息
-    coregistration_info = {
-        "section_title": "MEG-MRI Automated Co-registration",
-        "fiducials": {
-            "commentContent": "Fig 1-1. Initial labeling of the fiducials",
-            "img_path": os.path.join(meg_pipeline_results, "Fig1_1_Initial_labeling_of_the_fiducials.png")
-        }, "coregistration": {
-            "commentContent": "Fig 1-2. Final MEG-MRI co-registration",
-            "img_path": os.path.join(meg_pipeline_results, "Fig1_2_Final_MEG_MRI_co_registration.png")
-        }
-    }
-
-    # IED Number and Timing
-    ied_number_info = {
-        "section_title": "IED Number and Timing",
-        "IED_Timing": [{
-            "commentContent": "Fig 2-1. MEG2224_Li_yi_20170302_EP_4_tsss.fif IED detection overview",
-            "img_path": os.path.join(meg_pipeline_results, "Fig2_1_IED_detection_overview.png")
-        },{
-            "commentContent": "Fig 2-2. MEG2224_Li_yi_20170302_EP_4_tsss.fif IED detection overview",
-            "img_path": os.path.join(meg_pipeline_results, "Fig2_2_IED_detection_overview.png")
-        },{
-            "commentContent": "Fig 2-3. MEG2224_Li_yi_20170302_EP_4_tsss.fif IED detection overview",
-            "img_path": os.path.join(meg_pipeline_results, "Fig2_3_IED_detection_overview.png")
-        },{
-            "commentContent": "Fig 2-4. MEG2224_Li_yi_20170302_EP_4_tsss.fif IED detection overview",
-            "img_path": os.path.join(meg_pipeline_results, "Fig2_4_IED_detection_overview.png")
-        }
-        ],
-        "IED_number": {"stats": {
-            "numbers": ["14","90","13","15","29","85","10","10"], #Order: LT RT	LP	RP	LO	RO	LF	RF
-            "percentage": ["5.26%","33.83%","4.89%","5.64%","10.90%","31.95%","3.76%","3.76%"]
-        },
-            "table_name": "Table 1. Number of epochs tested positive from a particular brain region",
-            "comment_content": "LT = left temporal; RT = right temporal; LP = left parietal; RP = right parietal;LO = left occipital; RO = right occipital; LF = left frontal; RF = right frontal"
-        }
-    }
-
-    # IED Events Info
-    ied_events_info = {
-        "section_title": "Source Imaging of Detected IED Events",
-        "ECD": {
-            "commentContent": "Fig 3-1. MSI of IED events using ECD",
-            "img_path": os.path.join(meg_pipeline_results, "Fig3_1_MSI_of_IED_events_using_ECD.png")
-        },
-        "dSPM": {
-            "commentContent": "Fig 3-2. MSI of IED events using dSPM",
-            "img_path": os.path.join(meg_pipeline_results, "Fig3_2_MSI_of_IED_events_using_dSPM.png")
-        }
-    }
-
-    # IED Clusters Info
-    ied_clusters_info = {
-        "section_title": "Source Imaging of Detected IED Clusters",
-        "clusters": {
-            "commentContent": "Fig 4-1. Clustering analysis results",
-            "img_path": os.path.join(meg_pipeline_results,"Fig4_1_Clustering_analysis_results.png")
-        }
-    }
-
-    # Preliminary Conclusions
-    preliminary_conclusions_info = {
-        "meg_duration_min": "10",
-        "meg_position": "left temporal",
-        "ied_events_num": "80",
-        "ied_clusters_num": "3"
-    }
-
-    # Analysis Information
-    analysis_info = {
-        "Name": "SAMSI analysis",
-        "Description": "Source reconstruction for IED.",
-        "Input": "Raw MEG recordings & T1w image (Optional)",
-        "Output": "IED detection results; source imaging of all the detected IED events or detected IED clusters",
-        "Parameters":"Band pass-filtering = 1-100 Hz; Head model = Overlapping sphere; Source space = Surface-based cortex; Source imaging method = ECD (Default); and dSPM (Optional)"
-    }
-
-    # Reference Info
-    reference_info = [
-        "[1] MEG2224_Li_yi_20170302_EP_4_tsss.fif",
-        "[2] MEG2224_Li_yi_20170302_EP_5_tsss.fif",
-        "[3] MEG2224_Li_yi_20170302_EP_6_tsss.fif",
-        "[4] MEG2224_Li_yi_20170302_EP_7_tsss.fif",
-        "[5] MEG2224_Li_yi_20170302_EP_8_tsss.fif",
-        "[6] MEG2224_Li_yi_20170302_EP_9_tsss.fif"]
-
-    report = Report(subject_info=subject_info,
-                    meg_info=meg_info,
-                    coregistration_info=coregistration_info,
-                    ied_number_info=ied_number_info,
-                    ied_events_info=ied_events_info,
-                    ied_clusters_info=ied_clusters_info,
-                    preliminary_conclusions_info=preliminary_conclusions_info,
-                    analysis_info=analysis_info,
-                    reference_info=reference_info)
-
-    report.save_report_html()
+    navigation_title = "MEG Quality Report"
+    navigation_links = ["Quality Overview", "Artifacts", "Quality Visual Inspection", "ICA"]
+    gen_quality_report(["/Volumes/Touch/Code/osl_practice/anonymize_raw_tsss.fif"], outdir="./demo_report.html")

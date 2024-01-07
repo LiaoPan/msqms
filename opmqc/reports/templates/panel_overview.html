@@ -1,0 +1,79 @@
+<div class="tab-pane" id="overview">
+
+{% if overview_title %}
+<p class="report_item_title">{{ overview_title }}</p>
+{% endif %}
+
+    {% if overview_tabs | length > 0 %}
+    <div class="row spacing">
+        <ul class="nav nav-pills" role="tablist">
+            {% for tab in overview_tabs %}
+            <li {% if loop.first %} class="nav-item active"{% else %} class="nav-item" {% endif %}>
+                <a href="#overview-{{ tab }}"
+                   {% if loop.first %} class="nav-link active" {% else %} class="nav-link"{% endif %}
+                   data-toggle="tab">{{ tab }}</a>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <div class="tab-content" style="padding-top: 5px;">
+        {% for tab in overview_tabs %}
+
+            <div class="tab-pane {% if loop.first %} active{% endif %}"
+                 id="overview-{{ tab }}">
+
+                {% if tab == "SubjectInfo" %}
+                <h3>Subject Info Test here!!!!!</h3>
+                {% endif %}
+
+                {{ tab }}
+
+                {% if tab == "Overview" %}
+                <h3>OvTest here!!!!!</h3>
+                {% endif %}
+
+                {% if tab == "MEGInfo" %}
+                <h3>MEGINFOTest here!!!!!</h3>
+                {% endif %}
+
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+
+{% if rows | length > 0 %}
+<table class="basic_info_table">
+    {% if rows[0]['value'].__class__.__name__ == 'list' %}
+    <thead>
+    <tr>
+        <th>&nbsp;</th>
+        {% for v in rows[0]['value'] %}
+        <th style="color:inherit;">v</th>
+        {% endfor %}
+    </tr>
+    </thead>
+    {% endif %}
+    <tbody>
+    {% for row in rows %}
+    <tr {% if 'alert' in row and row['alert'] %} class="alert"{% endif %}>
+    <th>{{ row['name'] }}</th>
+    {% if row['value'].__class__.__name__ == 'list' %}
+    {% for value in row['value'] %}
+    <td style="white-space:pre white-space:nowrap">{{ value }}{% if loop.last and 'hint' in row %} {{ row['hint'] }}{% endif %}</td>
+    {% endfor %}
+    {% else %}
+    <td style="white-space:pre white-space:nowrap">{{ row['value'] }}{% if 'hint' in row %} {{ row['hint'] }}{% endif %}</td>
+    {% endif %}
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% if caption %}
+<div class="caption text-center text-muted">
+    {{ caption }}
+</div>
+{% endif %}
+</div>

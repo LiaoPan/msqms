@@ -1,0 +1,113 @@
+<div class="tab-pane active" id="info">
+
+{% if info_title %}
+<p class="report_item_title">{{ info_title }}</p>
+{% endif %}
+
+    {% if info_tabs | length > 0 %}
+    <div class="report_item">
+        <ul class="nav nav-pills" role="tablist">
+            {% for (tab,anchor_id) in info_tabs %}
+            <li {% if loop.first %} class="nav-item active"{% else %} class="nav-item" {% endif %}>
+                <a href="#info-{{ anchor_id }}"
+                   {% if loop.first %} class="nav-link active" {% else %} class="nav-link"{% endif %}
+                   data-toggle="tab">{{ tab }}</a>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <div class="tab-content" style="padding-top: 5px;">
+        {% for (tab,anchor_id) in info_tabs %}
+
+            <div class="tab-pane {% if loop.first %} active{% endif %}"
+                 id="info-{{ anchor_id }}">
+                <div class="report_text">
+
+                {% if tab == "Overview" %}
+                    {% for key,value in info_basic.items() %}
+                    <b><strong>{{key}}:</strong></b>
+                        {{value}}
+                    <br>
+                    {% endfor %}
+                {% endif %}
+
+                {% if tab == "Subject Info" %}
+                    {% for key,value in info_subject_dict.items() %}
+                    <b><strong>{{key}}:</strong></b>
+                    {{value}}
+                    <br>
+                    {% endfor %}
+                {% endif %}
+
+                {% if tab == "MEG Info" %}
+                    {% if info_meg_dict | length > 0 %}
+                    <table class="basic_info_table">
+                        <thead>
+                        <tr>
+                            <th>&nbsp;</th>
+                            {% for v in rows[0]['value'] %}
+                            <th style="color:inherit;">v</th>
+                            {% endfor %}
+                        </tr>
+                        </thead>
+                        {% endif %}
+                        <tbody>
+                        {% for row in rows %}
+                        <tr>
+                        <th>{{ row['name'] }}</th>
+                        {% if row['value'].__class__.__name__ == 'list' %}
+                        {% for value in row['value'] %}
+                        <td style="white-space:pre white-space:nowrap">{{ value }}{% if loop.last and 'hint' in row %} {{ row['hint'] }}{% endif %}</td>
+                        {% endfor %}
+                        {% else %}
+                        <td style="white-space:pre white-space:nowrap">{{ row['value'] }}{% if 'hint' in row %} {{ row['hint'] }}{% endif %}</td>
+                        {% endif %}
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+
+
+                {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+
+{% if rows | length > 0 %}
+<table class="basic_info_table">
+    {% if rows[0]['value'].__class__.__name__ == 'list' %}
+    <thead>
+    <tr>
+        <th>&nbsp;</th>
+        {% for v in rows[0]['value'] %}
+        <th style="color:inherit;">v</th>
+        {% endfor %}
+    </tr>
+    </thead>
+    {% endif %}
+    <tbody>
+    {% for row in rows %}
+    <tr {% if 'alert' in row and row['alert'] %} class="alert"{% endif %}>
+    <th>{{ row['name'] }}</th>
+    {% if row['value'].__class__.__name__ == 'list' %}
+    {% for value in row['value'] %}
+    <td style="white-space:pre white-space:nowrap">{{ value }}{% if loop.last and 'hint' in row %} {{ row['hint'] }}{% endif %}</td>
+    {% endfor %}
+    {% else %}
+    <td style="white-space:pre white-space:nowrap">{{ row['value'] }}{% if 'hint' in row %} {{ row['hint'] }}{% endif %}</td>
+    {% endif %}
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% if caption %}
+<div class="caption text-center text-muted">
+    {{ caption }}
+</div>
+{% endif %}
+</div>
