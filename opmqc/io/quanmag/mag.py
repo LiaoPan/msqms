@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 """Load Quanmag@company OPM-MEG data, and convert Quan-Mag opm data(*.mag) to other file(*.fif or *.mat)"""
 
@@ -480,8 +481,11 @@ def opmag2fif(mag_path, fif_path, opm_position_path=None, ica_compatibility=True
 
     # read opm positions
     if opm_position_path == None:
-        opm_position_path = Path(__file__).parent / "data" / "opm_sanbo_3dmodel_position64.txt"
-    positions = pd.read_csv(opm_position_path, sep='\t')
+        # opm_position_path = Path(__file__).parent / "data" / "opm_sanbo_3dmodel_position64.txt"
+        # opm_position_path = Path(__file__).parent / "data" / "opm_80_positions.txt"
+        opm_position_path = Path(__file__).parent / "data" / "OPM_HR80_Positions_MEG.xlsx"
+    positions = pd.read_excel(opm_position_path)
+    # positions = pd.read_csv(opm_position_path, sep='\t')
     opm_64_ch_names = positions.loc[:, 'ch_name'].tolist()  # add stim channel: 65
     positions = positions.to_dict(orient='records')
 
@@ -517,12 +521,12 @@ def opmag2fif(mag_path, fif_path, opm_position_path=None, ica_compatibility=True
     ch_types.append('stim')
     # opm_64_ch_names.append('STI101')
 
-    # # set 64 OPM Layout
-    # # While layouts are 2D locations, montages are 3D locations.
-    # # Montages contain sensor positions in 3D (x, y, z in meters), which can be assigned to existing EEG/MEG data.
-    # # If you’re working with EEG data exclusively, you’ll want to use Montages, not layouts.
-    # # Layouts are idealized 2D representations of sensor positions.
-    # # They are primarily used for arranging individual sensor subplots in a topoplot or for showing the approximate relative arrangement of sensors.
+    # set 64 OPM Layout
+    # While layouts are 2D locations, montages are 3D locations.
+    # Montages contain sensor positions in 3D (x, y, z in meters), which can be assigned to existing EEG/MEG data.
+    # If you’re working with EEG data exclusively, you’ll want to use Montages, not layouts.
+    # Layouts are idealized 2D representations of sensor positions.
+    # They are primarily used for arranging individual sensor subplots in a topoplot or for showing the approximate relative arrangement of sensors.
     # pos_dict = positions.set_index(0).apply(lambda x: x[[1, 2, 3]].values, axis=1).to_dict()
     #
     # opm_montage = mne.channels.make_dig_montage(pos_dict, coord_frame='head')
@@ -576,9 +580,18 @@ def opmag2fif_cmd(mag_path, fif_path, opm_position_path=None, ica_compatibility=
 if __name__=="__main__":
     # just for test and debug.
     import time
+    import os
     startt = time.time()
-    opm_mag_dir = '/Users/reallo/Downloads/opm_artifacts/lp_opm_artifacts.mag'
-    raw = opmag2fif(mag_path=opm_mag_dir, fif_path='/Users/reallo/Downloads/opm_artifacts/ta_raw.fif',ica_compatibility=False)
+    root_dir = "/Volumes/UPDATE/xuwei/请稍后解/解"
+    files = os.listdir(root_dir)
+    for file in files:
+        if ".mag" in file:
+            raw = opmag2fif(mag_path=os.path.join(root_dir,file), fif_path=os.path.join(root_dir,file.replace('.mag','.fif')),ica_compatibility=False)
+
+    # opm_mag_dir = '/Users/reallo/Downloads/opm_artifacts/lp_opm_artifacts.mag'
+    # raw = opmag2fif(mag_path=opm_mag_dir, fif_path='/Users/reallo/Downloads/opm_artifacts/ta_raw.fif',ica_compatibility=False)
+    #
+
     endt = time.time()
     print(f"Time cost:{endt-startt}")
 
