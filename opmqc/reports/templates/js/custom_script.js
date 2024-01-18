@@ -1,4 +1,5 @@
 
+
 $("select#variables-dropdown").on("change", function (e) {
     var searchText = $("select#variables-dropdown").val().toLowerCase();
     var variables = $(".variable");
@@ -8,3 +9,5 @@ $("select#variables-dropdown").on("change", function (e) {
         $(this).parent().toggle(isMatch);
     });
 });
+
+

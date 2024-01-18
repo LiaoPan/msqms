@@ -7,7 +7,6 @@
         - UI界面，可以实时加载切换，查看质控情况？（要求依赖、编码难度稍高。）
         - html页面？把数据量大的结果放置在文件夹内，将简略信息，直接编码base64放置html内？| ICA成分多，生成缓慢。
         - 可以二次编程的嵌入jupyter的html页面？默认如果没有解释器，当成默认网页，如果存在解释器，则可以二次run，查看情况；
-        
     - https://github.com/mne-tools/mne-icalabel 开源项目
 # QC_Report.html
 - SNR、NSR（noise-to-signal ratio）
@@ -29,4 +28,7 @@
 
 - the very fast parallel segment.
 - the parallel filter.
+- average qsd along with time.(important!)
 """
+
+

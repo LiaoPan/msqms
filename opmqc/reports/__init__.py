@@ -10,3 +10,5 @@
 -------------------------------------------------
 """
 __author__ = 'LiaoPan'
+
+from opmqc.reports.report import gen_quality_report

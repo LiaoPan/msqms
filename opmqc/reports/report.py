@@ -2,12 +2,16 @@
 """Generate MEG Pipeline HTML Report"""
 import json
 import jinja2
+import os.path as op
+from box import Box
 
 from tqdm.auto import tqdm
 from typing import Union
 from pathlib import Path
 from jinja2 import Environment, PackageLoader
+from mne.io import read_raw_fif
 
+from opmqc.qc import get_header_info
 from opmqc.utils.logging import clogger
 
 
@@ -29,7 +33,13 @@ def gen_quality_report(megfiles: [Union[str, Path]], outdir: Union[str, Path], f
 
     for fmeg in megfiles:
         clogger.info(f"Generating report for {fmeg}")
-        qreport = QualityReport(report_data={"Overview": ["Test"]}, minify_html=False)
+
+        # check meg file
+        if not op.exists(fmeg):
+            clogger.error(f"{fmeg} is not exists. Please check the path of file.")
+        raw = read_raw_fif(fmeg, verbose=False)
+        info = get_header_info(raw)
+        qreport = QualityReport(report_data=Box({"Overview": info}), minify_html=False)
         if ftype == "json":
             qreport.to_json(outdir)
         else:
@@ -92,6 +102,7 @@ class QualityReport(object):
         with tqdm(total=1, desc="Export quality report to file") as pbar:
             output_file.write_text(report_data, encoding="utf-8")
             pbar.update()
+        clogger.info(f"Export quality report path:{output_file}")
 
 
 class HtmlReport(object):
@@ -107,31 +118,51 @@ class HtmlReport(object):
         self.overview_title_name = "MEG Quality Overview"
 
         # MEG data info
-        self.info_tabs = [("Overview", "overview"), ("Subject Info", "subjectinfo"), ("MEG Info", "meginfo")]
+        self.info_tabs = [("Overview", "overview"), ("Participant Info", "participantinfo"), ("MEG Info", "meginfo")]
 
         # basic info
+        basic_info = self.report_data.Overview.basic_info
+        meg_info = self.report_data.Overview.meg_info
         self.info_basic = {
-            "Source file": "/Volumes/Touch/Code/osl_practice/MEG2224_EP_4_raw_tsss.fif",
-            "Data acquired": "2000-01-01 00:00:00+00:00",
-            "Manufacturer": "Elekta",
-            "Duration": "480 seconds",
-            "Frequency": "1000Hz",
-            "Data Size": "600MB",
+            "Manufacturer": basic_info.Experimenter,
+            "Duration": basic_info.Duration,
+            "Frequency": basic_info.Sampling_frequency,
+            "Highpass": basic_info.Highpass,
+            "Lowpass": basic_info.Lowpass,
+            "Data Size": basic_info.Data_size,
+            "Bad Channels": basic_info.Bad_channels,
+            "Measurement date": basic_info.Measurement_date,
+            "Source filename": basic_info.Source_filename,
         }
 
-        # basic subject info
-        self.info_subject_dict = {
-            "Name": "Demo",
-            "Age": "23",
-            "Gender": "Male",
+        # basic participant info
+        self.info_participant_dict = {
+            "Name": basic_info.Participant.name,
+            "Birthday": basic_info.Participant.birthday,
+            "Gender": basic_info.Participant.sex,
         }
         # basic meg info
-        self.info_meg_dict = {
-            "Channel Type": ["mag", "grad", "stim", "ecg", "eog"],
-            "Value": [102, 204, 3, 1, 1]
-        }
+        self.info_meg_list = [("Channel Type", "Value"),
+                              ("Mag", meg_info.n_mag),
+                              ("Grad", meg_info.n_grad),
+                              ("Stim", meg_info.n_stim),
+                              ("EEG", meg_info.n_eeg),
+                              ("ECG", meg_info.n_ecg),
+                              ("EOG", meg_info.n_eog),
+                              ("Digitized points", meg_info.n_dig)
+                              ]
 
-        self.overview_tabs = ["Overview", "SubjectInfo", "MEGInfo"]
+        self.overview_quality_list = [
+            ("Quality Indices", "Value", "Ref Value", "Status"),
+            ("Ratio of No-signal", 0.02, 0.1, "Pass"),
+            ("Ratio of HighAmp", 0.01, 0.1, "Pass"),
+            ("Bad channels", 1, 10, "Pass"),
+            ("Ratio of bad segments", 0.2, 0.1, "Failed"),
+            ("Ratio of bad segments", 0.12, 0.1, "Failed"),
+        ]
+
+        self.overview_tabs = [("Overview", "overview"), ("Epochs", "epochs"), ("Time Series", "timeseries"),
+                              ("Frequencies", "frequencies")]
         # self.overview_tabs = ["view", "info", "meg"]
 
         self.overview_quality_dict = {
@@ -165,11 +196,12 @@ class HtmlReport(object):
             "info_tabs": self.info_tabs,
 
             "info_basic": self.info_basic,
-            "info_subject_dict": self.info_subject_dict,
-            "info_meg_dict": self.info_meg_dict,
+            "info_participant_dict": self.info_participant_dict,
+            "info_meg_list": self.info_meg_list,
 
             "overview_title": self.overview_title_name,
-            "overview_tabs": self.overview_tabs
+            "overview_tabs": self.overview_tabs,
+            "overview_quality_list": self.overview_quality_list,
             # "overview_dict": self.overview_dict,
         }
 
@@ -215,4 +247,7 @@ class HtmlReport(object):
 if __name__ == "__main__":
     navigation_title = "MEG Quality Report"
     navigation_links = ["Quality Overview", "Artifacts", "Quality Visual Inspection", "ICA"]
-    gen_quality_report(["/Volumes/Touch/Code/osl_practice/anonymize_raw_tsss.fif"], outdir="./demo_report.html")
+    from opmqc.main import test_opm_fif_path,test_squid_fif_path
+
+    # gen_quality_report(["/Volumes/Touch/Code/osl_practice/anonymize_raw_tsss.fif"], outdir="./demo_report.html")
+    gen_quality_report([test_squid_fif_path], outdir="./demo_report.html")

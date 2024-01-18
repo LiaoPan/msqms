@@ -408,7 +408,7 @@ def read_raw_mag(fname,verbose=None):
     return opm_raw
 
 
-def opmag2fif(mag_path, fif_path, opm_position_path=None, ica_compatibility=True, check_rf_increment=True,
+def opmag2fif(mag_path, fif_path, opm_position_path=None, check_rf_increment=True,
               check_ch_zero=True, interpolate_ch_nearest=True, verbose=False):
     """
     Convert Quan-Mag opm data(*.mag) to fif file(*.fif).
@@ -420,8 +420,6 @@ def opmag2fif(mag_path, fif_path, opm_position_path=None, ica_compatibility=True
         the output path of converted file(*.fif).
     opm_position_path : str
         the path of opm sensor positions.(default:None)
-    ica_compatibility: bool
-        True:Used to plot_sensors()\ica.plot_properties in ica of MNE, But not compatible with Brainstorm. If you want to load in Brainstom, we should set the value of ica_compatibility to `False`.
     check_rf_increment : bool
         True indicates that the rf pulse need to be checked in increments of 1.
     check_ch_zero : bool

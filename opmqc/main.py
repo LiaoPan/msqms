@@ -5,6 +5,12 @@
 # Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
 
 
+test_opm_mag_path = "/Volumes/Touch/Datasets/OPM_Dataset/CMR_OPM_HuaRou/xuwei/Artifact/S01.LP.mag"
+test_opm_fif_path = "/Users/reallo/Downloads/opm_artifacts/ta80_raw.fif"
+test_squid_fif_path = "/Volumes/Touch/Datasets/MEG_Lab/02_liaopan/231123/run1_tsss.fif"
+
+
+
 class TtClass(object):
     """
     It is Test Class, Response for Test;It is Test Class, Response for Test;It is Test Class, Response for Test;It is Test Class, Response for Test

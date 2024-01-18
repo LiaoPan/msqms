@@ -1,4 +1,5 @@
 Instruction.rst
 .idea
 venv
+conda/outdir
 compile_upload.sh
