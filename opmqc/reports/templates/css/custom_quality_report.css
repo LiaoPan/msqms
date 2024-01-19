@@ -286,7 +286,7 @@
   border-right: 0;
   -webkit-transform-origin: center right;
   transform-origin: center right;
-  animation: loading-1 1.8s linear forwards;
+  animation: loading-1 0.5s linear forwards;
 }
 .cprogress .cprogress-value {
   width: 90%;
@@ -305,13 +305,13 @@
   border-color: #049dff;
 }
 .cprogress.blue .cprogress-left .cprogress-bar {
-  animation: loading-2 1.5s linear forwards 1.8s;
+  animation: loading-2 0.3s linear forwards 0.5s;
 }
 .cprogress.yellow .cprogress-bar {
   border-color: #fdba04;
 }
 .cprogress.yellow .cprogress-right .cprogress-bar {
-  animation: loading-3 1.8s linear forwards;
+  animation: loading-3 0.5s linear forwards;
 }
 .cprogress.yellow .cprogress-left .cprogress-bar {
   animation: none;
