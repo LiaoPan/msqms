@@ -1,10 +1,11 @@
+
 # -*- coding: utf-8 -*-
 """Load Quanmag@company OPM-MEG data, and convert Quan-Mag opm data(*.mag) to other file(*.fif or *.mat)"""
+
 
 import os
 import sys
 import mne
-import dill
 import struct
 import warnings
 import numpy as np
@@ -16,90 +17,12 @@ from os.path import exists
 from datetime import datetime, timezone
 from collections import defaultdict
 from mne.io.constants import FIFF
-from joblib import Parallel, delayed
+
 
 from opmqc.utils.utils import fill_zeros_with_nearest_value
 from opmqc.utils.logging import clogger
 
-
-def _check_mag_header(header: str, file: str) -> bool:
-    if 'QM-mag' not in header:
-        warnings.warn(
-            f"File Type Warning: The file header does not match the expected *.mag type! Please check the file {file}")
-        return False
-    else:
-        return True
-
-
-@delayed
-def _read_single_ch(seri_fid, sec_id, begin_position, num_ch_line, check_rf_increment, check_ch_zero,
-                    interpolate_ch_nearest):
-    """
-    Read single channel data from fileobject.
-    Parameters
-    ----------
-    seri_fid: file object
-        file object (open() return)
-    begin_position: int
-        the begin position of read bytes.
-    num_ch_line: int
-        The number of single channel traversals.
-    Returns
-    -------
-        the numpy of single data and single RF Pulse.
-    """
-    fid = dill.loads(seri_fid)
-    fid.seek(begin_position)
-    ## decoding channel data
-    single_ch_data = []
-    single_rf_cnt = []
-    for i in range(num_ch_line):
-        ## sensor data definition
-        # channel.id? | 8 bytes
-        ch_id = struct.unpack('<Q', fid.read(8))[0]
-        # log("Ch_Id?", ch_id)
-
-        # sync pulse counting| 8 bytes
-        sync_rf_count = struct.unpack('<2I', fid.read(8))[1]
-        # log("Sync_RF_Count:", sync_rf_count)
-
-        # data*.txt
-        ch_data = struct.unpack('<10f', fid.read(4 * 10))  # 10 lines of data are decoded once
-        # log("Channel_data:", ch_data)
-
-        # append sensor and rf pulse data: 10 line data added once.
-        ch_data = list(ch_data)
-        rf_cnt = range(sync_rf_count, sync_rf_count + 20, 2)  # rf pulse cnt incremented by 2;
-        if len(ch_data) != len(rf_cnt):
-            warnings.warn("The size of channel data and the pulse signal are inconsistent!")
-        single_ch_data.extend(ch_data)
-        single_rf_cnt.extend(rf_cnt)
-
-    single_rf_cnt = np.ceil(np.array(single_rf_cnt) / 2)
-    # check increment(+1)
-    if check_rf_increment:
-        index = np.where(np.all(np.diff(single_rf_cnt) == 1) == False)[0]
-        if len(index) == 1:
-            warnings.warn(f"The RF pulse is not incremented by 1.\n Please check channel:{sec_id}",
-                          UserWarning)
-
-    # check data*.txt # no test.
-    # check zero value in data, and interpolate. # check_zero
-    chd = np.array(single_ch_data)
-    if check_ch_zero:
-        zero_indices = np.where(chd == 0)[0]
-        if len(zero_indices) > 0:
-            warnings.warn(f"Zero values exist in channel.\n Please check channel:{sec_id}", UserWarning)
-            warnings.warn(f"data index:{zero_indices}", UserWarning)
-            if interpolate_ch_nearest:
-                clogger.info("Interpolating channel...")
-                single_ch_data = fill_zeros_with_nearest_value(chd)
-
-    return (single_ch_data, single_rf_cnt)
-
-
-def _mag2data(mag_path, check_rf_increment=True, check_ch_zero=True, interpolate_ch_nearest=True, n_jobs=-1,
-              verbose=False):
+def _mag2data(mag_path, check_rf_increment=True, check_ch_zero=True, interpolate_ch_nearest=True, verbose=False):
     """
     convert mag file(*.mag) to dict[numpy object].
 
@@ -113,18 +36,9 @@ def _mag2data(mag_path, check_rf_increment=True, check_ch_zero=True, interpolate
 
     Parameters:
       mag_path : str
-            The path of quanmag opm-meg data(*.mag).
-      check_rf_increment : bool
-            True indicates that the rf pulse need to be checked in increments of 1.
-      check_ch_zero : bool
-            True means check whether zero values exist in each channel.
-      interpolate_ch_nearest: bool
-            Notice,Prerequisite: work with `check_zero` parameter.
-            If zero values are checked in channel data, interpolate with the nearest neighbor value.
-      n_jobs: int
-            Number of jobs to run in parallel.
+        the path of quanmag opm-meg data(*.mag).
       verbose : bool
-            True: clogger.info debug-log info; False: don't clogger.info ang info.
+        True: clogger.info debug-log info; False: don't clogger.info ang info.
 
     Returns:
       -  Return Numpy Ndarray Object with event trigger(STI101)
@@ -140,8 +54,6 @@ def _mag2data(mag_path, check_rf_increment=True, check_ch_zero=True, interpolate
     if not exists(mag_path):
         clogger.info("opm path is not exists!")
 
-    clogger.info(f"Parse file {mag_path}...")
-
     # patient info
     patient_info = {}  # store patient info
 
@@ -153,181 +65,207 @@ def _mag2data(mag_path, check_rf_increment=True, check_ch_zero=True, interpolate
     trigger_values = []
     trigger_rf_cnts = []
 
-    # try:
-    with open(mag_path, 'rb') as fid:
-        # drop bytes.
-        fid.read(16)
+    try:
+        with open(mag_path, 'rb') as fid:
+            # drop bytes.
+            fid.read(16)
 
-        clogger.info("Parse Patient Info")
-        # 1.file header
-        header = fid.read(8).decode('utf-8', errors='ignore')  # char
-        patient_info["Header"] = header.replace('\x00', '')
-        log('1.Header', header)
-        print("log('1.Header', header):", header)
+            clogger.info("Parse Patient Info")
+            # 1.file header
+            header = fid.read(8).decode('utf-8', errors='ignore')  # char
+            patient_info["Header"] = header.replace('\x00', '')
+            log('1.Header', header)
 
-        # check filetype
-        if not _check_mag_header(header, mag_path):
-            return
+            # 2.software name
+            software_name = fid.read(32).decode('utf-8', errors='ignore')  # char
+            patient_info["software_name"] = software_name.replace('\x00', '')
+            log("2.Software_name", software_name)
 
-        # 2.software name
-        software_name = fid.read(32).decode('utf-8', errors='ignore')  # char
-        patient_info["software_name"] = software_name.replace('\x00', '')
-        log("2.Software_name", software_name)
+            # 3.software version
+            software_version = struct.unpack('<Q', fid.read(8))[0]  # unit64
+            patient_info["software_version"] = software_version
+            log("3.Software_version", software_version)
 
-        # 3.software version
-        software_version = struct.unpack('<Q', fid.read(8))[0]  # unit64
-        patient_info["software_version"] = software_version
-        log("3.Software_version", software_version)
+            # 4.patient id
+            patient_id = fid.read(32).decode('utf-8', errors='ignore')
+            patient_info["patient_id"] = patient_id.replace('\x00', '')
+            log('4.Patient_id', patient_id)
 
-        # 4.patient id
-        patient_id = fid.read(32).decode('utf-8', errors='ignore')
-        patient_info["patient_id"] = patient_id.replace('\x00', '')
-        log('4.Patient_id', patient_id)
+            # 5. 6. patient name: patient first name and last name.
+            patient_name = fid.read(64).decode('utf-8', errors='ignore')
+            patient_info["patient_name"] = patient_name.replace('\x00', '')
+            log('5.Patient_name', patient_name)
 
-        # 5. 6. patient name: patient first name and last name.
-        patient_name = fid.read(64).decode('utf-8', errors='ignore')
-        patient_info["patient_name"] = patient_name.replace('\x00', '')
-        log('5.Patient_name', patient_name)
+            # 7.patient birthday
+            patient_birthday = fid.read(20).decode('utf-8', errors='ignore')
+            patient_info["patient_birthday"] = patient_birthday.replace('\x00', '')
+            log("6.Patient_birthday", patient_birthday)
 
-        # 7.patient birthday
-        patient_birthday = fid.read(20).decode('utf-8', errors='ignore')
-        patient_info["patient_birthday"] = patient_birthday.replace('\x00', '')
-        log("6.Patient_birthday", patient_birthday)
+            # 8. patient gender
+            patient_gender = _get_gender(fid.read(1))  # check 1
+            patient_info["patient_gender"] = patient_gender
+            log("7.Patient_gender", patient_gender)
 
-        # 8. patient gender
-        patient_gender = _get_gender(fid.read(1))  # check 1
-        patient_info["patient_gender"] = patient_gender
-        log("7.Patient_gender", patient_gender)
+            # 9.examination project name
+            exam_name = fid.read(32).decode('utf-8', errors='ignore')
+            patient_info["exam_name"] = exam_name.replace('\x00', '')
+            log("8.Exam_name", exam_name)
 
-        # 9.examination project name
-        exam_name = fid.read(32).decode('utf-8', errors='ignore')
-        patient_info["exam_name"] = exam_name.replace('\x00', '')
-        log("8.Exam_name", exam_name)
+            # 10.examination time
+            exam_time = fid.read(20).decode('utf-8', errors='ignore')
+            patient_info["exam_time"] = exam_time.replace('\x00', '')
+            log("9.Exam_time", exam_time)
 
-        # 10.examination time
-        exam_time = fid.read(20).decode('utf-8', errors='ignore')
-        patient_info["exam_time"] = exam_time.replace('\x00', '')
-        log("9.Exam_time", exam_time)
+            # 11.record id
+            record_id = struct.unpack('<I', fid.read(4))[0]
+            patient_info["record_id"] = record_id
+            log("10.Record_ID", record_id)
 
-        # 11.record id
-        record_id = struct.unpack('<I', fid.read(4))[0]
-        patient_info["record_id"] = record_id
-        log("10.Record_ID", record_id)
+            # 12.number of channel
+            nchan = struct.unpack('<I', fid.read(4))[0]
+            patient_info["nchan"] = nchan
+            log("11.NumberOfChannel", nchan)
 
-        # 12.number of channel
-        nchan = struct.unpack('<I', fid.read(4))[0]
-        patient_info["nchan"] = nchan
-        log("11.NumberOfChannel", nchan)
+            # 13.firmware version
+            firmware_ver = struct.unpack('<Q', fid.read(8))[0]
+            patient_info["firmware_ver"] = firmware_ver
+            log("12.Firmware", firmware_ver)
 
-        # 13.firmware version
-        firmware_ver = struct.unpack('<Q', fid.read(8))[0]
-        patient_info["firmware_ver"] = firmware_ver
-        log("12.Firmware", firmware_ver)
+            # 14.sample rate
+            sample_rate = struct.unpack('<i', fid.read(4))[0]
+            patient_info["sample_rate"] = sample_rate / 2
+            log("13.Sample_rate", sample_rate / 2)
 
-        # 14.sample rate
-        sample_rate = struct.unpack('<i', fid.read(4))[0]
-        patient_info["sample_rate"] = sample_rate / 2
-        log("13.Sample_rate", sample_rate / 2)
+            # 15.type of filter
+            filter_type = _get_filter_type(fid.read(1))
+            patient_info["filter_type"] = filter_type
+            log("14.Filter_type", filter_type)
 
-        # 15.type of filter
-        filter_type = _get_filter_type(fid.read(1))
-        patient_info["filter_type"] = filter_type
-        log("14.Filter_type", filter_type)
+            # 16.number of Block
+            nblock = struct.unpack('<Q', fid.read(8))[0]
+            log("16.NumberOfBlock", nblock)
 
-        # 16.number of Block
-        nblock = struct.unpack('<Q', fid.read(8))[0]
-        log("16.NumberOfBlock", nblock)
+            clogger.info(f"Patient Info:{patient_info}")
+            # struct:MagChannelFilter: 17 bytes (16 bytes + 1 byte)
+            # 512 * sizeof(MagChannelFilter)
+            mag_channel_filter = struct.unpack('<' + 'ddb' * 512, fid.read(17 * 512))
+            # log("17.MagChannelFilter",mag_channel_filter)
 
-        clogger.info(f"Patient Info:{patient_info}")
-        # struct:MagChannelFilter: 17 bytes (16 bytes + 1 byte)
-        # 512 * sizeof(MagChannelFilter)
-        mag_channel_filter = struct.unpack('<' + 'ddb' * 512, fid.read(17 * 512))
-        # log("17.MagChannelFilter",mag_channel_filter)
+            # ---- Parse Sensor Data Blocks ----
+            clogger.info("Parse Sensor Data Blocks")
 
-        # ---- Parse Sensor Data Blocks ----
-        clogger.info("Parse Sensor Data Blocks")
+            ## block header: the number of section. | 8 bytes
+            num_sections = struct.unpack('<Q', fid.read(8))[0]  # 64
+            log("Num_Sections", num_sections)
 
-        ## block header: the number of section. | 8 bytes
-        num_sections = struct.unpack('<Q', fid.read(8))[0]  # 64
-        log("Num_Sections", num_sections)
+            # Handle Channel Data.
 
-        # all channels bytes begin position and length of channels.
-        all_ch_bytes_pos = []
-        all_ch_lines = []
+            for sec_id in tqdm(range(1, num_sections + 1, 1), file=sys.stdout):
+                print(f" Parsing channel: {sec_id}", end='', flush=True)
+                ## section header: the number of datas.
+                ##  517920 [data line number] * 56 [sensor_data:channel(8 bytes),rf pulse(8 bytes),sensor_value(4*10 bytes)] = 29003520
+                # The number of bytes of the channel | 8 bytes
+                num_ch_bytes = struct.unpack('<Q', fid.read(8))[0]
+                num_ch_line = int(num_ch_bytes / 56)  # 10 lines of data are decoded once:  51792 * 10
+                log("Num_Ch_Bytes", num_ch_bytes)
+                log("Num_Ch_Line", num_ch_line)
 
-        # Handle Channel Data and get all channels bytes position
-        for sec_id in range(1, num_sections + 1, 1):
-            # pbar.set_postfix_str(f" Parsing channel: {sec_id} ")
-            ## section header: the number of datas.
-            ##  517920 [data line number] * 56 [sensor_data:channel(8 bytes),rf pulse(8 bytes),sensor_value(4*10 bytes)] = 29003520
-            # The number of bytes of the channel | 8 bytes
-            num_ch_bytes = struct.unpack('<Q', fid.read(8))[0]
-            num_ch_line = int(num_ch_bytes / 56)  # 10 lines of data are decoded once:  51792 * 10
-            log("Num_Ch_Bytes", num_ch_bytes)
-            log("Num_Ch_Line", num_ch_line)
+                ## decoding channel data
+                single_ch_data = []
+                single_rf_cnt = []
+                for i in range(num_ch_line):
+                    ## sensor data definition
+                    # channel.id? | 8 bytes
+                    ch_id = struct.unpack('<Q', fid.read(8))[0]
+                    log("Ch_Id?", ch_id)
 
-            ## get all channel bytes index: num_ch_bytyes and num_ch_line
-            cur_pos = fid.tell()
-            all_ch_bytes_pos.append(cur_pos)
-            all_ch_lines.append(num_ch_line)
-            fid.seek(num_ch_bytes, 1)
+                    # sync pulse counting| 8 bytes
+                    sync_rf_count = struct.unpack('<2I', fid.read(8))[1]
+                    log("Sync_RF_Count:", sync_rf_count)
 
-        # Seriese file object for parallel.
-        serialized_obj = dill.dumps(fid)
-        func_params = [(sec_id, ch_info[0], ch_info[1], check_rf_increment, check_ch_zero, interpolate_ch_nearest) for
-                       sec_id, ch_info in enumerate(zip(all_ch_bytes_pos, all_ch_lines))]
+                    # data*.txt
+                    ch_data = struct.unpack('<10f', fid.read(4 * 10))  # 10 lines of data are decoded once
+                    log("Channel_data:", ch_data)
 
-        single_ch_data_list = Parallel(n_jobs=n_jobs, backend="loky")(
-            _read_single_ch(serialized_obj, *args) for args in tqdm(func_params))
-        # handle empty list and append single channel and rf pulse data.
-        channel_datas = [i[0] if i else [] for i in single_ch_data_list]
-        channel_rf_cnts = [i[1] if i else [] for i in single_ch_data_list]
+                    # append sensor and rf pulse data: 10 line data added once.
+                    ch_data = list(ch_data)
+                    rf_cnt = range(sync_rf_count, sync_rf_count + 20, 2)  # rf pulse cnt incremented by 2;
+                    if len(ch_data) != len(rf_cnt):
+                        warnings.warn("The size of channel data and the pulse signal are inconsistent!")
+                    single_ch_data.extend(ch_data)
+                    single_rf_cnt.extend(rf_cnt)
 
-        # ----- Parse Trigger Data Blocks ----
-        clogger.info("Parse Trigger Data Blocks")
-        ## block header: the number of section. | 8 bytes
-        trigger_num_sections = struct.unpack('<Q', fid.read(8))[0]  # 1
-        log("Trigger_Num_Sections", trigger_num_sections)
-        # clogger.info(fid.read(100))
-        for tri_sec_id in range(1, trigger_num_sections + 1, 1):
-            ## section header: the number of datas.
-            ##  [data line number] * 9 [rf pulse(8 bytes),trigger_value(1 bytes)]
-            # The number of bytes of the trigger | 13 bytes
-            num_ch_bytes = struct.unpack('<Q', fid.read(8))[0]
-            num_ch_line = int(num_ch_bytes / 13)
-            log("Num_Ch_Bytes", num_ch_bytes)
-            log("Num_Ch_Line", num_ch_line)
-            single_trigger_cnt = []
-            single_trigger_value = []
-            ## decoding trigger data
-            for i in range(num_ch_line):
-                ## trigger data definition
-                # sync pulse counting| 8 bytes | definition miss
-                sync_rf_id = struct.unpack('<2I', fid.read(8))
-                log("Sync_RF_id?", sync_rf_id)
+                single_rf_cnt = np.ceil(np.array(single_rf_cnt) / 2)
+                # check increment(+1)
+                if check_rf_increment:
+                    index = np.where(np.all(np.diff(single_rf_cnt) == 1) == False)[0]
+                    if len(index) == 1:
+                        warnings.warn(f"The RF pulse is not incremented by 1.\n Please check channel:{sec_id}",
+                                      UserWarning)
 
-                # sync pulse counting| 8 bytes
-                sync_rf_count = struct.unpack('<I', fid.read(4))[0]
-                log("Sync_RF_Count", sync_rf_count)
+                # check data*.txt # no test.
+                # check zero value in data, and interpolate. # check_zero
+                chd = np.array(single_ch_data)
+                if check_ch_zero:
+                    zero_indices = np.where(chd == 0)[0]
+                    if len(zero_indices) > 0:
+                        warnings.warn(f"Zero values exist in channel.\n Please check channel:{sec_id}", UserWarning)
+                        warnings.warn(f"data index:{zero_indices}", UserWarning)
+                        if interpolate_ch_nearest:
+                            clogger.info("Interpolating channel...")
+                            single_ch_data = fill_zeros_with_nearest_value(chd)
+                # append single channel and rf pulse data.
+                channel_datas.append(single_ch_data)
+                channel_rf_cnts.append(single_rf_cnt)
 
-                # trigger value | the same as type.
-                sync_rf_value = struct.unpack('<B', fid.read(1))[0]
-                log("Sync_RF_Type", sync_rf_value)
+            # ----- Parse Trigger Data Blocks ----
+            clogger.info("Parse Trigger Data Blocks")
+            ## block header: the number of section. | 8 bytes
+            trigger_num_sections = struct.unpack('<Q', fid.read(8))[0]  # 1
+            log("Trigger_Num_Sections", trigger_num_sections)
+            # clogger.info(fid.read(100))
+            for tri_sec_id in range(1, trigger_num_sections + 1, 1):
+                ## section header: the number of datas.
+                ##  [data line number] * 9 [rf pulse(8 bytes),trigger_value(1 bytes)]
+                # The number of bytes of the trigger | 13 bytes
+                num_ch_bytes = struct.unpack('<Q', fid.read(8))[0]
+                num_ch_line = int(num_ch_bytes / 13)
+                log("Num_Ch_Bytes", num_ch_bytes)
+                log("Num_Ch_Line", num_ch_line)
+                single_trigger_cnt = []
+                single_trigger_value = []
+                ## decoding trigger data
+                for i in range(num_ch_line):
+                    ## trigger data definition
+                    # sync pulse counting| 8 bytes | definition miss
+                    sync_rf_id = struct.unpack('<2I', fid.read(8))
+                    log("Sync_RF_id?", sync_rf_id)
 
-                single_trigger_cnt.append(sync_rf_count)
-                single_trigger_value.append(sync_rf_value)
+                    # sync pulse counting| 8 bytes
+                    sync_rf_count = struct.unpack('<I', fid.read(4))[0]
+                    log("Sync_RF_Count", sync_rf_count)
 
-            # append trigger info
-            single_trigger_cnt = np.ceil(np.array(single_trigger_cnt) / 2)  # handle sampling point halving
-            trigger_values.append(np.array(single_trigger_value))
-            trigger_rf_cnts.append(single_trigger_cnt)
+                    # trigger value | the same as type.
+                    sync_rf_value = struct.unpack('<B', fid.read(1))[0]
+                    log("Sync_RF_Type", sync_rf_value)
 
-    # except Exception as err:
-    #     clogger.info(err)
+                    single_trigger_cnt.append(sync_rf_count)
+                    single_trigger_value.append(sync_rf_value)
+
+                # append trigger info
+                single_trigger_cnt = np.ceil(np.array(single_trigger_cnt) / 2)  # handle sampling point halving
+                trigger_values.append(np.array(single_trigger_value))
+                trigger_rf_cnts.append(single_trigger_cnt)
+
+    except Exception as err:
+        clogger.info(err)
     clogger.info("Mag file parsing is complete.")
     return {"patient_info": patient_info,
             "channel_datas": channel_datas, "channel_rf_cnts": channel_rf_cnts,
             "trigger_values": trigger_values, "trigger_rf_cnts": trigger_rf_cnts}
+
+
+
 
 
 def _get_gender(code_byte):
@@ -353,7 +291,8 @@ def _get_filter_type(code_byte):
     return type_code[code_byte]
 
 
-def read_raw_mag(fname, verbose=None):
+
+def read_raw_mag(fname,verbose=None):
     """
 
     Parameters
@@ -442,9 +381,11 @@ def read_raw_mag(fname, verbose=None):
 
     # Initialize an MNE info structure
 
-    # set type of channels
-    ch_types = ['mag'] * (len(opm_64_ch_names) - 1)  # subtract stim channels.
+
+    #set type of channels
+    ch_types = ['mag'] * (len(opm_64_ch_names)-1)  # subtract stim channels.
     ch_types.append('stim')
+
 
     info = mne.create_info(
         ch_names=opm_64_ch_names,
@@ -459,8 +400,7 @@ def read_raw_mag(fname, verbose=None):
     birthday = (int(birthday.year), int(birthday.month), int(birthday.day))
     gender = {"Other": 0, "Male": 1, "Female": 2}[patient_info['patient_gender']]
     info['subject_info'] = {'birthday': birthday, 'sex': gender,
-                            'last_name': patient_info['patient_name'].encode("utf-8").decode(
-                                "latin1")}  # please use `.encode('latin1').decode('utf-8')` to decode Chinese content.
+                            'last_name': patient_info['patient_name'].encode("utf-8").decode("latin1")} # please use `.encode('latin1').decode('utf-8')` to decode Chinese content.
     info['experimenter'] = patient_info["Header"]
     info.set_meas_date(
         datetime.strptime(patient_info["exam_time"], '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc))  # neet debug
@@ -499,11 +439,6 @@ def opmag2fif(mag_path, fif_path, opm_position_path=None, check_rf_increment=Tru
     """
     raw_dict = _mag2data(mag_path=mag_path, check_rf_increment=check_rf_increment,
                          check_ch_zero=check_ch_zero, interpolate_ch_nearest=interpolate_ch_nearest, verbose=verbose)
-
-    # Check None Results
-    if raw_dict == None:
-        return
-
     clogger.info("Start converting...")
     patient_info = raw_dict['patient_info']
     channel_datas = raw_dict['channel_datas']
@@ -583,7 +518,7 @@ def opmag2fif(mag_path, fif_path, opm_position_path=None, check_rf_increment=Tru
     # # To plot ICA Components
     # # MEG/EOG/ECG sensors don't have digitization points; all requested
     # # channels must be EEG
-    ch_types = ['mag'] * (len(opm_64_ch_names) - 1)  # subtract stim channels.
+    ch_types = ['mag'] * (len(opm_64_ch_names)-1)  # subtract stim channels.
     ch_types.append('stim')
     # opm_64_ch_names.append('STI101')
 
@@ -610,8 +545,7 @@ def opmag2fif(mag_path, fif_path, opm_position_path=None, check_rf_increment=Tru
     birthday = (int(birthday.year), int(birthday.month), int(birthday.day))
     gender = {"Other": 0, "Male": 1, "Female": 2}[patient_info['patient_gender']]
     info['subject_info'] = {'birthday': birthday, 'sex': gender,
-                            'last_name': patient_info['patient_name'].encode("utf-8").decode(
-                                "latin1")}  # please use `.encode('latin1').decode('utf-8')` to decode Chinese content.
+                            'last_name': patient_info['patient_name'].encode("utf-8").decode("latin1")} # please use `.encode('latin1').decode('utf-8')` to decode Chinese content.
     info['experimenter'] = patient_info["Header"]
     info.set_meas_date(
         datetime.strptime(patient_info["exam_time"], '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc))  # neet debug
@@ -638,28 +572,27 @@ def opmag2fif(mag_path, fif_path, opm_position_path=None, check_rf_increment=Tru
     clogger.info("Convert OPM data to FIF file successfully.")
     clogger.info(f"Save FIF file to `{fif_path}` directory.")
 
-
 def opmag2fif_cmd(mag_path, fif_path, opm_position_path=None, ica_compatibility=True, check_rf_increment=True,
                   check_ch_zero=True, interpolate_ch_nearest=True, verbose=False):
     opmag2fif(mag_path, fif_path, opm_position_path, ica_compatibility, check_rf_increment,
               check_ch_zero, interpolate_ch_nearest, verbose)
 
 
-if __name__ == "__main__":
+if __name__=="__main__":
     # just for test and debug.
     import time
     import os
-
     startt = time.time()
-    root_dir = "/Volumes/Touch/Datasets/OPM_Dataset/CMR_OPM_HuaRou/0124怀柔采集数据/脑磁数据"
+    root_dir = "/Volumes/UPDATE/xuwei/请稍后解/解"
     files = os.listdir(root_dir)
     for file in files:
         if ".mag" in file:
-            raw = opmag2fif(mag_path=os.path.join(root_dir, file),
-                            fif_path=os.path.join(root_dir, file.replace('.mag', '.fif')))
+            raw = opmag2fif(mag_path=os.path.join(root_dir,file), fif_path=os.path.join(root_dir,file.replace('.mag','.fif')),ica_compatibility=False)
 
     # opm_mag_dir = '/Users/reallo/Downloads/opm_artifacts/lp_opm_artifacts.mag'
     # raw = opmag2fif(mag_path=opm_mag_dir, fif_path='/Users/reallo/Downloads/opm_artifacts/ta_raw.fif',ica_compatibility=False)
+    #
 
     endt = time.time()
-    print(f"Time cost:{endt - startt}")
+    print(f"Time cost:{endt-startt}")
+

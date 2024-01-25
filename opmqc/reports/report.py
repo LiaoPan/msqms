@@ -240,7 +240,7 @@ class HtmlReport(object):
 
     def render_html(self):
         html_page = self.gen_html_report()
-        print(html_page)
+        # print(html_page)
         return html_page
 
 

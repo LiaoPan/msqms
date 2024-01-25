@@ -93,6 +93,7 @@ setup(
     entry_points={
         "console_scripts": [
             "cmd = opmqc:test_console_script",
+            "opmqc_report = opmqc.cli.workflow:generate_qc_report"
         ]
     },
     # 表明当前模块依赖哪些包，若环境中没有，则会从pypi中自动下载安装！！！
