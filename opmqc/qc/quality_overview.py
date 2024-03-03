@@ -10,17 +10,32 @@ class QualityOverview(object):
         self.quality_overview_score = None
         self.parameter_config = None
 
-    def _preprocess(self):
+        self.data = self.preprocess()
+        stats = self.stats_summary()
+        self.mean_values = stats[0]
+        self.var_values = stats[1]
+        self.std_values = stats[2]
+        self.max_values = stats[3]
+        self.min_values = stats[4]
+
+    def preprocess(self):
         """ 1.down sampling 100Hz.(for speed up.)
             2.filter 1-40Hz?
             3.HFC?
         """
-        pass
+        meg_indices = mne.pick_types(raw.info, meg=True)
+        data = raw.get_data()[meg_indices]
+        return data
 
     # basic stats info
     def stats_summary(self):
-        """mean/max/min/std """
-        pass
+        """mean/max/min/std average on times"""
+        mean_values = np.mean(self.data, axis=1)
+        var_values = np.var(self.data, axis=1)
+        std_values = np.std(self.data, axis=1)
+        max_values = np.max(self.data, axis=1)
+        min_values = np.min(self.data, axis=1)
+        return (mean_values, var_values, std_values, max_values, min_values)
 
     # analysis over time
     def average_psd_over_time(self):
@@ -46,11 +61,9 @@ class QualityOverview(object):
             - zero_mask
             - zero_ratio
         """
-        meg_indices = mne.pick_types(raw.info, meg=True)
-        data = raw.get_data()[meg_indices]
-        zero_mask = np.argwhere(data == 0)
+        zero_mask = np.argwhere(self.data == 0)
         zero_count = len(zero_mask)
-        total_elements = data.size
+        total_elements = self.data.size
         zero_ratio = (zero_count / total_elements) * 100
         return zero_mask, zero_ratio
 
@@ -62,15 +75,15 @@ class QualityOverview(object):
             - NaN mask matrix
             - NaN ratio, accounts for all data points.
         """
-        meg_indices = mne.pick_types(raw.info, meg=True)
-        data = raw.get_data()[meg_indices]
-        nan_mask = np.isnan(data)
+        nan_mask = np.isnan(self.data)
         nan_count = np.sum(nan_mask)
-        total_elements = data.size
+        total_elements = self.data.size
         nan_ratio = (nan_count / total_elements) * 100
         return nan_mask, nan_ratio
 
-    def find_fat(self):
+    def find_flat(self):
+        """detect flat channels or constant channels."""
+
         pass
 
     def find_jumps(self):
