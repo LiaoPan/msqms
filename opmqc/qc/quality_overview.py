@@ -10,7 +10,7 @@ class QualityOverview(object):
         self.quality_overview_score = None
         self.parameter_config = None
 
-        self.data = self.preprocess()
+        self.data, self.ch_num = self.preprocess()
         stats = self.stats_summary()
         self.mean_values = stats[0]
         self.var_values = stats[1]
@@ -25,7 +25,8 @@ class QualityOverview(object):
         """
         meg_indices = mne.pick_types(raw.info, meg=True)
         data = raw.get_data()[meg_indices]
-        return data
+        ch_num = len(meg_indices)
+        return data, ch_num
 
     # basic stats info
     def stats_summary(self):
@@ -35,7 +36,7 @@ class QualityOverview(object):
         std_values = np.std(self.data, axis=1)
         max_values = np.max(self.data, axis=1)
         min_values = np.min(self.data, axis=1)
-        return (mean_values, var_values, std_values, max_values, min_values)
+        return [mean_values, var_values, std_values, max_values, min_values]
 
     # analysis over time
     def average_psd_over_time(self):
@@ -83,8 +84,12 @@ class QualityOverview(object):
 
     def find_flat(self):
         """detect flat channels or constant channels."""
-
-        pass
+        flat_thres = 1e-50  # Need to change to dynamic call
+        flat_chan_inds = np.argwhere(self.std_values <= flat_thres)
+        flat_chan_names = [self.raw.info['ch_names'][fc[0]] for fc in flat_chan_inds]
+        flat_chan_ratio = (len(flat_chan_names) / self.ch_num) * 100  # percentage
+        return {"flat_chan_names": flat_chan_ratio,
+                "flat_chan_ratio": flat_chan_ratio}
 
     def find_jumps(self):
         pass
