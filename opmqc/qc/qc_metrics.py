@@ -24,8 +24,6 @@
 - low correlation with other channels.?
     - neural signals recorded by neighboring electrodes are always similar.
 - average and std of each channel by sensor type.
-
-
 - the very fast parallel segment.
 - the parallel filter.
 - average qsd along with time.(important!)

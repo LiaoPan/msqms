@@ -1,0 +1,7 @@
+#  MEG Quality Accessment Parameters Config
+
+## Time Domain
+amplitude_rejection: 2000 
+
+## Frequency Domain
+

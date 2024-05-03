@@ -1,0 +1,15 @@
+#  MEG Quality Accessment Parameters Config
+
+threshold_standard_deviation: 3 # 阈值大于*倍标准差
+
+## Time Domain
+amplitude_rejection: 2000 # fT # 检测高幅度异常值的阈值
+flat_wave_detection_threshold: 1e-50 # 检测flat的阈值， std of channels.
+
+### Max Field Change
+max_field_change_threshold: 100000 # fT
+max_field_change_chunk_length: 5 # seconds
+
+
+## Frequency Domain
+frequency_domain:

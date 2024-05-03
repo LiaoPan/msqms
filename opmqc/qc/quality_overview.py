@@ -2,6 +2,7 @@
 """the overview of quality."""
 import mne
 import numpy as np
+from scipy.stats import skew,kurtosis
 
 
 class QualityOverview(object):
@@ -22,6 +23,8 @@ class QualityOverview(object):
         """ 1.down sampling 100Hz.(for speed up.)
             2.filter 1-40Hz?
             3.HFC?
+            Return:
+                data (np.array): [channels * times]
         """
         meg_indices = mne.pick_types(raw.info, meg=True)
         data = raw.get_data()[meg_indices]
@@ -30,13 +33,35 @@ class QualityOverview(object):
 
     # basic stats info
     def stats_summary(self):
-        """mean/max/min/std average on times"""
-        mean_values = np.mean(self.data, axis=1)
-        var_values = np.var(self.data, axis=1)
-        std_values = np.std(self.data, axis=1)
-        max_values = np.max(self.data, axis=1)
-        min_values = np.min(self.data, axis=1)
-        return [mean_values, var_values, std_values, max_values, min_values]
+        """mean/max/min/std/median average on times"""
+        mean_values = np.nanmean(self.data, axis=1)
+        var_values = np.nanvar(self.data, axis=1)
+        std_values = np.nanstd(self.data, axis=1)
+        max_values = np.nanmax(self.data, axis=1)
+        min_values = np.nanmin(self.data, axis=1)
+        median_values = np.nanmedian(self.data, axis=1)
+        return [mean_values, var_values, std_values, max_values, min_values,median_values]
+
+    def stats_skewness(self):
+        """
+        compute the ratio of left tail of the distributrion by channels.
+        compute the mean of skewness.
+        """
+        skewness = skew(self.data,axis=1,bias=True)
+        left_tail = len(skewness[skewness> 0])
+        left_skew_ratio = left_tail / self.data.shape[0]
+        mean_skewness = np.mean(skewness)
+        return left_skew_ratio,mean_skewness
+
+    def stats_kurtosis(self):
+        """
+        compute mean kurtosis by channel.
+        compute the playkurtic ratio by channel.
+        """
+        kurtosis_value = kurtosis(self.data, axis=1, bias=True)
+        playkurtic_ratio = len(kurtosis_value[kurtosis_value < 3]) / self.data.shape[0]
+        mean_kurtosis = np.mean(kurtosis_value)
+        return mean_kurtosis, playkurtic_ratio
 
     # analysis over time
     def average_psd_over_time(self):
@@ -93,6 +118,9 @@ class QualityOverview(object):
 
     def find_jumps(self):
         pass
+    
+    
+
 
 
 if __name__ == '__main__':

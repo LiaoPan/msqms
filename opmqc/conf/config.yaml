@@ -1,0 +1,12 @@
+#  MEG Quality Accessment Parameters Config
+defaults:
+  - opm: quality_config_default
+  - squid: quality_config_default
+  - override hydra/job_logging: disabled
+  - override hydra/hydra_logging: disabled
+
+
+hydra:
+  output_subdir: null
+  run:
+    dir: . 

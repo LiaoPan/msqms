@@ -65,7 +65,7 @@ setup(
     url=URL,
     download_url=DOWNLOAD_URL,
     packages=find_packages(),
-    python_requires=">=3.6",
+    python_requires=">=3.8",
     long_description=long_description,
     long_description_content_type='text/markdown',
     classifiers=[
