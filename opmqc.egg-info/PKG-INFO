@@ -3,12 +3,11 @@ Name: opmqc
 Version: 0.0.1
 Summary: OPMQC is a fully automated quality control tool for OPM-MEG.
 Home-page: https://github.com/liaopan/opmqc
+Download-URL: http://github.com/liaopan/opmqc
 Maintainer: reallo
 Maintainer-email: liaopan_2015@163.com
 License: MIT-License
-Download-URL: http://github.com/liaopan/opmqc
 Keywords: Neuroscience neuroimaging OPM-MEG brain.
-Platform: UNKNOWN
 Classifier: Intended Audience :: Science/Research
 Classifier: Intended Audience :: Developers
 Classifier: License :: OSI Approved
@@ -20,8 +19,13 @@ Classifier: Operating System :: POSIX
 Classifier: Operating System :: Unix
 Classifier: Operating System :: MacOS
 Classifier: Programming Language :: Python :: 3
-Requires-Python: >=3.6
+Requires-Python: >=3.8
 Description-Content-Type: text/markdown
+Requires-Dist: mne==1.5
+Requires-Dist: numpy==1.24
+Requires-Dist: mne-bids==0.14
+Requires-Dist: click
+Requires-Dist: numba
 
 # opmqc: Optically Pumped Magnetometers Quality Control Tool
 OPMQC is a fully automated quality control tool for OPM-MEG.
@@ -50,7 +54,5 @@ Please read our contributing guide.
 
 ## Citation
 When using OPMQC, please include the following citation:
-
-
 
 

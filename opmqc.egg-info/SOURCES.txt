@@ -15,9 +15,10 @@ opmqc/datasets/__init__.py
 opmqc/datasets/_fetch.py
 opmqc/datasets/config.py
 opmqc/io/__init__.py
+opmqc/io/bids.py
 opmqc/io/quanmag/__init__.py
+opmqc/io/quanmag/_mag.py
 opmqc/io/quanmag/mag.py
-opmqc/io/quanmag/mag_parallel.py
 opmqc/qc/__init__.py
 opmqc/qc/basic_info.py
 opmqc/qc/qc_metrics.py

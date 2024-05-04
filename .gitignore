@@ -3,3 +3,6 @@ Instruction.rst
 venv
 conda/outdir
 compile_upload.sh
+opmqc.egg-info/
+dist
+build
