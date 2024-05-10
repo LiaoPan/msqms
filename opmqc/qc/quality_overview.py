@@ -163,6 +163,7 @@ class QualityOverview(object):
 
     def find_jumps(self):
         pass
+
     
 
 if __name__ == '__main__':
