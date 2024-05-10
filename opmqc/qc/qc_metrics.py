@@ -29,4 +29,17 @@
 - average qsd along with time.(important!)
 """
 
+import mne
+import numpy as np
+from opmqc.libs import NoisyChannels
 
+class QC_Metrics:
+    def __init__(self,raw:mne.io.Raw):
+        self.raw = raw
+        self.bad_channels = []
+
+    def find_bad_channels(self):
+        pass
+
+if __name__ == '__main__':
+    from opmqc.main import opm_visual_fif_path

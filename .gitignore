@@ -1,8 +1,10 @@
 Instruction.rst
-.idea
-venv
-conda/outdir
 compile_upload.sh
+build.sh
+update_requirements.sh
+.idea/
+venv/
+conda/outdir/
 opmqc.egg-info/
-dist
-build
+dist/
+build/
