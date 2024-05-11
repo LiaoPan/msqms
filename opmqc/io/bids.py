@@ -60,6 +60,7 @@ def read_raw_bids_dataset(bids_root: str, datatype: Literal['meg'], subjects: Li
                 if sess == '':
                     sess = None
                 bids_path.update(subject=subj, session=sess, task=tk)
+                print("debug:",bids_path)
                 raw = read_raw_bids(bids_path, verbose=False)
                 raw_list.append(raw)
     return raw_list
