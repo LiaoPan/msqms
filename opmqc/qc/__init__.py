@@ -10,4 +10,6 @@
 -------------------------------------------------
 """
 __author__ = 'LiaoPan'
+
 from opmqc.qc.basic_info import get_header_info
+from opmqc.qc.metrics import Metrics
