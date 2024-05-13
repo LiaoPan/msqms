@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """temporally record all quality control metric."""
-
 """
 # 1. 实现柄哥常看的ICA图report.html（不是首要功能，仅需要评估数据质量）
     - 类似mne页面，点击切换？
@@ -52,6 +51,9 @@ class QC_Metrics:
         pass
 
     def time_domain_metrics(self):
+        pass
+
+    def stats_domain_metrics(self):
         pass
 
 

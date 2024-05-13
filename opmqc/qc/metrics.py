@@ -8,11 +8,14 @@ import numpy as np
 
 
 class Metrics(ABC):
-    def __init__(self, raw: mne.io.Raw):
+    def __init__(self, raw: mne.io.Raw, n_jobs=-1, verbose=False):
         self.raw = raw
+        self.samp_freq = raw.info['sfreq']
         self.meg_names = None
         self.meg_type = None
         self.meg_data = None
+        self.verbose = verbose
+        self.n_jobs = n_jobs
 
     def _get_meg_names(self, meg_type: str):
         """
