@@ -17,8 +17,8 @@ from opmqc.qc import Metrics
 class FreqDomainMetrics(Metrics):
     """frequency domian quality control"""
 
-    def __init__(self, raw: mne.io.Raw):
-        super().__init__(raw)
+    def __init__(self, raw: mne.io.Raw, n_jobs=1, verbose=False):
+        super().__init__(raw,n_jobs=n_jobs, verbose=verbose)
 
     def _get_fre_domain_features(self, signal, Fs=1000):
         """
@@ -45,7 +45,7 @@ class FreqDomainMetrics(Metrics):
         p = [p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13]
         return p
 
-    def compute_freq_features_parallel(self, n_jobs=1):  # hell: 多核心引起BrokenProcessPool问题
+    def compute_freq_metrics_parallel(self, n_jobs=1):  # hell: 多核心引起BrokenProcessPool问题
         """ 并行版本
         """
         clogger.info("Parallel cores: {}".format(n_jobs))
@@ -55,7 +55,7 @@ class FreqDomainMetrics(Metrics):
         std_freq_feat = np.std(Ps, axis=0)
         return mean_freq_feat, std_freq_feat
 
-    def compute_freq_features(self, meg_type: MEG_TYPE):
+    def compute_freq_metrics(self, meg_type: MEG_TYPE):
         """串行版本的频域特征计算
         Return:
             pd.DataFrame
@@ -98,7 +98,7 @@ if __name__ == '__main__':
     st = time.time()
     fdm_opm = FreqDomainMetrics(opm_raw.crop(0, 10))
     fdm_squid = FreqDomainMetrics(squid_raw.crop(0, 10))
-    print("opm_data freq:", fdm_opm.compute_freq_features(meg_type='mag'))
+    print("opm_data freq:", fdm_opm.compute_freq_metrics(meg_type='mag'))
     # print("squid_data:", fdm_squid.compute_freq_features(meg_type='grad'))
     et = time.time()
     print("cost time:", et - st)

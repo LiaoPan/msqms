@@ -15,7 +15,7 @@ __author__ = 'LiaoPan'
 import os
 from setuptools import setup, find_packages
 
-VERSION = '0.0.1'
+VERSION = '0.0.3'
 DISTNAME = "opmqc"
 DESCRIPTION = "OPMQC is a fully automated quality control tool for OPM-MEG."
 MAINTAINER = "reallo"

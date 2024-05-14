@@ -97,8 +97,8 @@ SELECT_PARAMETERS = {'sum_values': None,
 class TsfreshDomainMetric(Metrics):
     """Tsfresh quality control metrcis"""
 
-    def __init__(self, raw: mne.io.Raw):
-        super().__init__(raw)
+    def __init__(self, raw: mne.io.Raw, n_jobs=1, verbose=False):
+        super().__init__(raw,n_jobs=n_jobs, verbose=verbose)
         self.select_parameters = SELECT_PARAMETERS  # a list of channel names.
 
     # def _get_meg_names(self,meg_type:str):

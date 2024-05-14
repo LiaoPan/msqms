@@ -41,86 +41,27 @@ def update_config_yaml(conf:DictConfig,conf_path:str):
     assert isinstance(conf,DictConfig),"conf must be DictConfig"
     OmegaConf.save(config=conf,f=conf_path)
     print("saving f.name:",conf_path)
- 
 
-
-class TtClass(object):
-    """
-    It is Test Class, Response for Test;It is Test Class, Response for Test;It is Test Class, Response for Test;It is Test Class, Response for Test
-    """
-
-    def Ttdemo(self, cont: str):
-        """
-        It is a demo of TtClass.
-        It is a demo of TtClass.
-        It is a demo of TtClass.
-        :param cont: str for count.
-        :type cont: str
-        :return:
-        """
-        print("Test sphinx auto generate documents.")
-
-
-def print_hi(name: str, age: int):
-    """blah blah blah
-
-    :param name: string somthing
-    :type name: str
-
-    :param age: integer
-    :type age: int
-
-    :return:
-    """
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}-{str(age)}')  # Press ⌘F8 to toggle the breakpoint.
-
-
-def func(path, field_storage, temporary):
-    """基本描述 Numpy Style
-
-    Parameters
-    ----------
-    path : str
-        The path of the file to wrapssss
-    field_storage : FileStorage
-        The :class:`FileStorage` instance to wrap
-    temporary : bool
-        Whether or not to delete the file when the File instance is destructed
-
-    Returns
-    -------
-    BufferedFileStorage
-        A buffered writable file descriptor
-    """
-    print("somth")
-
-
-class DemoClass(object):
-    """
-    Demo Project
-    """
-
-    def defa(self, s: str, b: int) -> str:
-        """
-
-        Parameters
-        ----------
-        s:str
-
-        b
-
-        Returns
-        -------
-
-        """
-        pass
 
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    print_hi('Hello,OPMQC', 12)
-    main()
+    # main()
+    import mne
     # update_config_yaml(OmegaConf.create({"opm":123,"squid":123}),"./conf/temp2.yaml")
+    from opmqc.qc.freq_domain_metrics import FreqDomainMetrics
+    from opmqc.qc.tsfresh_domain_metrics import TsfreshDomainMetric
+    from opmqc.qc.time_domain_metrcis import TimeDomainMetric
+    from opmqc.qc.statistic_metrics import StatsDomainMetric
+    from opmqc.qc.entropy_metrics import EntropyDomainMetric
+
+    opm_mag_fif = r"C:\Data\Datasets\OPM-Artifacts\S01.LP.fif"
+    opm_raw = mne.io.read_raw(opm_mag_fif, verbose=False, preload=True)
+    import time
+    st = time.time()
+    fdm_opm = FreqDomainMetrics(opm_raw.crop(0, 10))
+    print("opm_data freq:", fdm_opm.compute_freq_features(meg_type='mag'))
+    et = time.time()
+    print("cost time:", et - st)
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
