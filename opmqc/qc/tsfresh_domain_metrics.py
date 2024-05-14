@@ -128,7 +128,7 @@ class TsfreshDomainMetric(Metrics):
         return meg_df
 
 
-    def compute_tsfresh_metrics(self, meg_type: MEG_TYPE):
+    def compute_tsfresh_metrics(self,meg_type: MEG_TYPE):
         """
         main function for computing tsfresh metrics.
         """
