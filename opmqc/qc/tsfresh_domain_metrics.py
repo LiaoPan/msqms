@@ -137,8 +137,8 @@ class TsfreshDomainMetric(Metrics):
 
         meg_df = self.package_meg_df(self.meg_data, self.meg_names)
         fs = extract_features(meg_df, column_id='id', default_fc_parameters=self.select_parameters, n_jobs=1)
-        fs.loc[f"avg_tsfresh_{meg_type}"] = fs.mean(axis=0)
-        fs.loc[f"std_tsfresh_{meg_type}"] = fs.std(axis=0)
+        fs.loc[f"avg_{meg_type}"] = fs.mean(axis=0)
+        fs.loc[f"std_{meg_type}"] = fs.std(axis=0)
         return fs
 
 

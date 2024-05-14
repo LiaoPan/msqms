@@ -45,9 +45,6 @@ class StatsDomainMetric(Metrics):
         flat_thres = 1e-20  # Need to change to dynamic call
         flat_info = self.find_flat(flat_thres)
         flat_ratio = flat_info['flat_chan_ratio']
-        print("zeero_ratio:", zero_ratio)
-        print("nan_ratio:", nan_ratio)
-        print("flat_ratio:", flat_ratio)
         meg_metrics['zero_ratio'] = zero_ratio
         meg_metrics['NaN_ratio'] = nan_ratio
         meg_metrics['Flat_chan_ratio'] = flat_ratio
@@ -55,8 +52,8 @@ class StatsDomainMetric(Metrics):
         # average
         meg_metrics_df = pd.DataFrame([meg_metrics], index=['metric_value'])
         print(meg_metrics_df)
-        meg_metrics_df.loc[f'avg_stats_metrics_{meg_type}'] = meg_metrics_df.mean()
-        meg_metrics_df.loc[f'std_stats_metrics_{meg_type}'] = meg_metrics_df.mean()
+        meg_metrics_df.loc[f'avg_{meg_type}'] = meg_metrics_df.mean()
+        meg_metrics_df.loc[f'std_{meg_type}'] = meg_metrics_df.mean()
 
         return meg_metrics_df
 

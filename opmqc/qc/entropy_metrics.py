@@ -38,8 +38,8 @@ class EntropyDomainMetric(Metrics):
         meg_metrics_df = pd.concat([entropy_metrics, fractal_metrics,
                                     psd_entropy_metric, energy_entropy_metric], axis=1)
 
-        meg_metrics_df.loc[f"avg_entropies_{meg_type}"] = meg_metrics_df.mean(axis=0)
-        meg_metrics_df.loc[f"avg_entropies_{meg_type}"] = meg_metrics_df.std(axis=0)
+        meg_metrics_df.loc[f"avg_{meg_type}"] = meg_metrics_df.mean(axis=0)
+        meg_metrics_df.loc[f"std_{meg_type}"] = meg_metrics_df.std(axis=0)
 
         return meg_metrics_df
     def _ant_1d_entropies(self, data: np.ndarray, samp_freq: float):

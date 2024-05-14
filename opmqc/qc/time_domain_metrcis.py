@@ -60,8 +60,8 @@ class TimeDomainMetric(Metrics):
         # average
         meg_metrics_df = pd.concat(time_list, axis=1)
 
-        meg_metrics_df.loc[f'avg_time_metrics_{meg_type}'] = meg_metrics_df.mean(axis=0)
-        meg_metrics_df.loc[f'std_time_metrics_{meg_type}'] = meg_metrics_df.mean(axis=0)
+        meg_metrics_df.loc[f'avg_{meg_type}'] = meg_metrics_df.mean(axis=0)
+        meg_metrics_df.loc[f'std_{meg_type}'] = meg_metrics_df.mean(axis=0)
 
         return meg_metrics_df
 

@@ -78,8 +78,8 @@ class FreqDomainMetrics(Metrics):
         freq_feat_df = pd.concat(freq_list)
         avg_freq_feat = freq_feat_df.mean(axis=0)
         std_freq_feat = freq_feat_df.std(axis=0)
-        freq_feat_df.loc[f'avg_freq_{meg_type}'] = avg_freq_feat
-        freq_feat_df.loc[f'std_freq_{meg_type}'] = std_freq_feat
+        freq_feat_df.loc[f'avg_{meg_type}'] = avg_freq_feat
+        freq_feat_df.loc[f'std_{meg_type}'] = std_freq_feat
 
         return freq_feat_df
 
