@@ -19,10 +19,10 @@ if system_platform == "mac":
     test_opm_fif_path = "/Users/reallo/Downloads/opm_artifacts/ta80_raw.fif"
     test_squid_fif_path = "/Volumes/Touch/Datasets/MEG_Lab/02_liaopan/231123/run1_tsss.fif"
 else:
-    test_opm_mag_path = "C:\Data\Datasets\Artifact\S01.LP.mag"
-    test_opm_fif_path = "C:\Data\Datasets\opm_artifacts\ta80_raw.fif"
-    test_squid_fif_path = "C:\Data\Datasets\MEG_Lab/02_liaopan/231123/run1_tsss.fif"
-    opm_visual_fif_path = "C:\Data\Datasets\全记录数据\opm_visual.fif"
+    test_opm_mag_path = r"C:\Data\Datasets\Artifact\S01.LP.mag"
+    test_opm_fif_path = r"C:\Data\Datasets\opm_artifacts\ta80_raw.fif"
+    test_squid_fif_path = r"C:\Data\Datasets\MEG_Lab/02_liaopan/231123/run1_tsss.fif"
+    opm_visual_fif_path = r"C:\Data\Datasets\全记录数据\opm_visual.fif"
 
 
 @hydra.main(config_path='conf',config_name="config")
@@ -60,7 +60,7 @@ if __name__ == '__main__':
     import time
     st = time.time()
     fdm_opm = FreqDomainMetrics(opm_raw.crop(0, 10))
-    print("opm_data freq:", fdm_opm.compute_freq_features(meg_type='mag'))
+    print("opm_data freq:", fdm_opm.compute_freq_metrics(meg_type='mag'))
     et = time.time()
     print("cost time:", et - st)
 

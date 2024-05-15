@@ -109,7 +109,7 @@ class TsfreshDomainMetric(Metrics):
     #     meg_names = np.array(self.raw.info['ch_names'])[picks]
     #     return meg_names
 
-    def package_meg_df(self, meg_data: np.ndarray, meg_names: np.ndarray):
+    def package_meg_df(self, meg_data: np.ndarray, meg_names: np.ndarray,meg_type:str):
         """
         Parameters:
             meg_data: channels * times
@@ -118,12 +118,11 @@ class TsfreshDomainMetric(Metrics):
          return the dataframe that suited for tefresh packages.
         """
         num_ch = meg_data.shape[0]
-        print("data shape:", meg_data.shape[0], meg_data.shape[1])
         meg_datas_list = []
         for i in range(num_ch):
-            opmdf = pd.DataFrame(meg_data[i, :], columns=['mag_value'])
-            opmdf['id'] = meg_names[i]
-            meg_datas_list.append(opmdf)
+            mdf = pd.DataFrame(meg_data[i, :], columns=[f'{meg_type}_value'])
+            mdf['id'] = meg_names[i]
+            meg_datas_list.append(mdf)
         meg_df = pd.concat(meg_datas_list)
         return meg_df
 
@@ -135,11 +134,19 @@ class TsfreshDomainMetric(Metrics):
         self.meg_data = self.raw.get_data(meg_type)  # meg_data: channels * times
         self.meg_names = self._get_meg_names(meg_type)
 
-        meg_df = self.package_meg_df(self.meg_data, self.meg_names)
-        fs = extract_features(meg_df, column_id='id', default_fc_parameters=self.select_parameters, n_jobs=1)
-        fs.loc[f"avg_{meg_type}"] = fs.mean(axis=0)
-        fs.loc[f"std_{meg_type}"] = fs.std(axis=0)
-        return fs
+        meg_df = self.package_meg_df(self.meg_data, self.meg_names, meg_type)
+
+        # Because tsfresh library is extremely memory consuming and calculation is slow,
+        # it is calculated separately in serial
+        tsfresh_list = []
+        for name, group in meg_df.groupby('id', sort=False):
+            fs = extract_features(group, column_id='id', default_fc_parameters=self.select_parameters, n_jobs=1)
+            tsfresh_list.append(fs)
+        tsfresh_df = pd.concat(tsfresh_list, axis=0)
+
+        tsfresh_df.loc[f"avg_{meg_type}"] = tsfresh_df.mean(axis=0)
+        tsfresh_df.loc[f"std_{meg_type}"] = tsfresh_df.std(axis=0)
+        return tsfresh_df
 
 
 if __name__ == '__main__':
@@ -147,19 +154,19 @@ if __name__ == '__main__':
 
     opm_mag_fif = r"C:\Data\Datasets\OPM-Artifacts\S01.LP.fif"
     opm_raw = mne.io.read_raw(opm_mag_fif, verbose=False, preload=True)
-    opm_raw.filter(0, 45).notch_filter([50, 100], verbose=False, n_jobs=8)
+    opm_raw.filter(0.1, 100,n_jobs=8).notch_filter([50, 100], verbose=False, n_jobs=8)
 
     squid_fif = Path(r"C:\Data\Datasets\MEG_Lab\02_liaopan\231123\run1_tsss.fif")
     squid_raw = mne.io.read_raw_fif(squid_fif, preload=True, verbose=False)
-    squid_raw.filter(0, 45).notch_filter([50, 100], verbose=False, n_jobs=8)
+    # squid_raw.filter(0, 45).notch_filter([50, 100], verbose=False, n_jobs=8)
 
     import time
 
     st = time.time()
     tfdm_opm = TsfreshDomainMetric(opm_raw.copy().crop(0,0.5))
-    print("Debug info：",opm_raw.copy().crop(0,0.5))
-    tfdm_squid = TsfreshDomainMetric(squid_raw.copy().crop(0,0.5))
+    # print("Debug info：",opm_raw.copy().crop(0,0.5))
+    tfdm_squid = TsfreshDomainMetric(squid_raw.copy())
     print("opm_data:", tfdm_opm.compute_tsfresh_metrics('mag'))
-    print("squid_data:", tfdm_squid.compute_tsfresh_metrics('mag'))
+    print("squid_data:", tfdm_squid.compute_tsfresh_metrics('grad'))
     et = time.time()
     print("cost time:", et - st)
