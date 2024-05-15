@@ -101,14 +101,6 @@ class TsfreshDomainMetric(Metrics):
         super().__init__(raw,n_jobs=n_jobs, verbose=verbose)
         self.select_parameters = SELECT_PARAMETERS  # a list of channel names.
 
-    # def _get_meg_names(self,meg_type:str):
-    #     """
-    #     get channel names from meg type('mag','grad').
-    #     """
-    #     picks = mne.pick_types(self.raw.info, meg_type)
-    #     meg_names = np.array(self.raw.info['ch_names'])[picks]
-    #     return meg_names
-
     def package_meg_df(self, meg_data: np.ndarray, meg_names: np.ndarray,meg_type:str):
         """
         Parameters:
@@ -158,6 +150,7 @@ if __name__ == '__main__':
 
     squid_fif = Path(r"C:\Data\Datasets\MEG_Lab\02_liaopan\231123\run1_tsss.fif")
     squid_raw = mne.io.read_raw_fif(squid_fif, preload=True, verbose=False)
+    squid_raw.resample(200, n_jobs=8)
     # squid_raw.filter(0, 45).notch_filter([50, 100], verbose=False, n_jobs=8)
 
     import time

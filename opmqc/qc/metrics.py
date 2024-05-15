@@ -21,6 +21,6 @@ class Metrics(ABC):
         """
         get channel names from meg type('mag','grad').
         """
-        picks = mne.pick_types(self.raw.info, meg_type)
+        picks = mne.pick_types(self.raw.info, meg_type, ref_meg=False)  #If True include CTF / 4D reference channels(ref_meg).
         self.meg_names = np.array(self.raw.info['ch_names'])[picks]
         return self.meg_names
