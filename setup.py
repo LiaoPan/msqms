@@ -13,9 +13,20 @@
 """
 __author__ = 'LiaoPan'
 import os
+import os.path as op
 from setuptools import setup, find_packages
 
-VERSION = '0.0.6'
+# get the version
+version = None
+with open(op.join('opmqc', '_version.py'), 'r') as fid:
+    for line in (line.strip() for line in fid):
+        if line.startswith('__version__'):
+            version = line.split('=')[1].strip().strip('\'')
+            break
+if version is None:
+    raise RuntimeError('Could not determine version')
+
+VERSION = version
 DISTNAME = "opmqc"
 DESCRIPTION = "OPMQC is a fully automated quality control tool for OPM-MEG."
 MAINTAINER = "reallo"
