@@ -11,5 +11,5 @@
 """
 __author__ = 'LiaoPan'
 
-from opmqc.utils.utils import format_timedelta
+from opmqc.utils.utils import format_timedelta, segment_raw_data
 from opmqc.utils.logging import clogger

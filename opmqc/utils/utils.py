@@ -22,3 +22,25 @@ def format_timedelta(seconds):
     minutes, seconds = divmod(remainder, 60)
     formatted_time = "{:02}:{:02}:{:06.3f}".format(hours, minutes, seconds + delta.microseconds / 1e6)
     return formatted_time
+
+
+
+def segment_raw_data(raw, seg_length: float):
+    """将Raw（mne.io.Raw）数据分段，方便拆分计算。
+    seg_length:表示分割的长度，以时间秒来算。
+    """
+    raw_list = []
+    first_time = raw.first_time
+    last_time = raw._last_time
+    duration = last_time - first_time
+    segment_times = []
+    for i in np.arange(0,duration, seg_length):
+        if i+seg_length <= duration:
+            segment_times.append([i, i+seg_length])
+            raw_list.append(raw.copy().crop(i, i+seg_length))
+        else:
+            segment_times.append([i, duration])
+            raw_list.append(raw.copy().crop(i, duration))
+    print(segment_times)
+
+    return raw_list,segment_times

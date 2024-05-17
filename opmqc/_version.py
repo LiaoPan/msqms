@@ -1,3 +1,3 @@
 # -*- coding: utf-8 -*-
 """The version number"""
-__version__ = '0.0.7'
+__version__ = '0.0.8'

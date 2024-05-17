@@ -7,6 +7,7 @@ import numpy as np
 from typing import Literal
 from opmqc.constants import MEG_TYPE
 from opmqc.qc import Metrics
+from tqdm.std import tqdm
 
 SELECT_PARAMETERS = {'sum_values': None,
                      'abs_energy': None,
@@ -26,7 +27,7 @@ SELECT_PARAMETERS = {'sum_values': None,
                      'count_below_mean': None,
                      'percentage_of_reoccurring_values_to_all_values': None,
                      'percentage_of_reoccurring_datapoints_to_all_datapoints': None,
-                     'sample_entropy': None,
+                     # 'sample_entropy': None,
                      'maximum': None,
                      'absolute_maximum': None,
                      'minimum': None,
@@ -44,13 +45,13 @@ SELECT_PARAMETERS = {'sum_values': None,
                                                  {'lag': 7},
                                                  {'lag': 8},
                                                  {'lag': 9}],
-                     'binned_entropy': [{'max_bins': 10}],
+                     # 'binned_entropy': [{'max_bins': 10}],
                      'spkt_welch_density': [{'coeff': 2}, {'coeff': 5}, {'coeff': 8}],
                      'fft_aggregated': [{'aggtype': 'centroid'},
                                         {'aggtype': 'variance'},
                                         {'aggtype': 'skew'},
                                         {'aggtype': 'kurtosis'}],
-                     'approximate_entropy': [{'m': 2, 'r': 0.5}],
+                     # 'approximate_entropy': [{'m': 2, 'r': 0.5}],  # notice: define the m according to the sample frequency.
                      'max_langevin_fixed_point': [{'m': 3, 'r': 30}],
                      'augmented_dickey_fuller': [{'attr': 'teststat'},
                                                  {'attr': 'pvalue'},
@@ -74,23 +75,22 @@ SELECT_PARAMETERS = {'sum_values': None,
                                               {'r': 3}],
                      'count_above': [{'t': 0}],
                      'count_below': [{'t': 0}],
-                     'lempel_ziv_complexity': [{'bins': 2},
-                                               {'bins': 3},
-                                               {'bins': 5},
-                                               {'bins': 10},
-                                               {'bins': 100}],
-                     'fourier_entropy': [{'bins': 2},
-                                         {'bins': 3},
-                                         {'bins': 5},
-                                         {'bins': 10},
-                                         {'bins': 100}],
-                     'permutation_entropy': [{'tau': 1, 'dimension': 3},
-                                             {'tau': 1, 'dimension': 4},
-                                             {'tau': 1, 'dimension': 5},
-                                             {'tau': 1, 'dimension': 6},
-                                             {'tau': 1, 'dimension': 7}],
+                     # 'lempel_ziv_complexity': [{'bins': 2},
+                     #                           {'bins': 3},
+                     #                           {'bins': 5},
+                     #                           {'bins': 10},
+                     #                           {'bins': 100}],
+                     # 'fourier_entropy': [{'bins': 2},
+                     #                     {'bins': 3},
+                     #                     {'bins': 5},
+                     #                     {'bins': 10},
+                     #                     {'bins': 100}],
+                     # 'permutation_entropy': [{'tau': 1, 'dimension': 3},
+                     #                         {'tau': 1, 'dimension': 4},
+                     #                         {'tau': 1, 'dimension': 5},
+                     #                         {'tau': 1, 'dimension': 6},
+                     #                         {'tau': 1, 'dimension': 7}],
                      'mean_n_absolute_max': [{'number_of_maxima': 7}],
-
                      }
 
 
@@ -99,6 +99,7 @@ class TsfreshDomainMetric(Metrics):
 
     def __init__(self, raw: mne.io.Raw, n_jobs=1, verbose=False):
         super().__init__(raw,n_jobs=n_jobs, verbose=verbose)
+        # SELECT_PARAMETERS['approximate_entropy'][0]["m"] = int(self.samp_freq * 60)  # 1min segment
         self.select_parameters = SELECT_PARAMETERS  # a list of channel names.
 
     def package_meg_df(self, meg_data: np.ndarray, meg_names: np.ndarray,meg_type:str):
@@ -129,10 +130,14 @@ class TsfreshDomainMetric(Metrics):
         meg_df = self.package_meg_df(self.meg_data, self.meg_names, meg_type)
 
         # Because tsfresh library is extremely memory consuming and calculation is slow,
-        # it is calculated separately in serial
+        # it is calculated separately in serial (groupby channels)
         tsfresh_list = []
-        for name, group in meg_df.groupby('id', sort=False):
-            fs = extract_features(group, column_id='id', default_fc_parameters=self.select_parameters, n_jobs=1)
+        for name, group in tqdm(meg_df.groupby('id', sort=False)):
+            print("group shape:", group.shape)
+            print("Num Processors:", self.n_jobs)
+            fs = extract_features(group, column_id='id',
+                                  default_fc_parameters=self.select_parameters,
+                                  n_jobs=self.n_jobs)
             tsfresh_list.append(fs)
         tsfresh_df = pd.concat(tsfresh_list, axis=0)
 
@@ -151,15 +156,24 @@ if __name__ == '__main__':
     squid_fif = Path(r"C:\Data\Datasets\MEG_Lab\02_liaopan\231123\run1_tsss.fif")
     squid_raw = mne.io.read_raw_fif(squid_fif, preload=True, verbose=False)
     squid_raw.resample(200, n_jobs=8)
+    print(squid_raw)
     # squid_raw.filter(0, 45).notch_filter([50, 100], verbose=False, n_jobs=8)
 
     import time
 
     st = time.time()
-    tfdm_opm = TsfreshDomainMetric(opm_raw.copy().crop(0,0.5))
+
+    import os
+    import multiprocessing
+
+    # 获取系统的CPU核心数
+    num_cores = multiprocessing.cpu_count()
+    print("本系统的最大核心数为:", num_cores)
+
+    tfdm_opm = TsfreshDomainMetric(opm_raw.copy(),8)
     # print("Debug info：",opm_raw.copy().crop(0,0.5))
-    tfdm_squid = TsfreshDomainMetric(squid_raw.copy())
+    # tfdm_squid = TsfreshDomainMetric(squid_raw.copy(), n_jobs=-1)
     print("opm_data:", tfdm_opm.compute_tsfresh_metrics('mag'))
-    print("squid_data:", tfdm_squid.compute_tsfresh_metrics('grad'))
+    # print("squid_data:", tfdm_squid.compute_tsfresh_metrics('grad'))
     et = time.time()
     print("cost time:", et - st)

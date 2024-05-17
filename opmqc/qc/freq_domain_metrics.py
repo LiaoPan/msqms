@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 """frequency domian quality control metric."""
+from joblib import Parallel, delayed
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
+
 import mne
+
 from pathlib import Path
-from joblib import Parallel, delayed
 from opmqc.utils import clogger
 import multiprocessing
 from typing import Literal
@@ -18,9 +20,10 @@ class FreqDomainMetrics(Metrics):
     """frequency domian quality control"""
 
     def __init__(self, raw: mne.io.Raw, n_jobs=1, verbose=False):
-        super().__init__(raw,n_jobs=n_jobs, verbose=verbose)
+        super().__init__(raw, n_jobs=n_jobs, verbose=verbose)
 
-    def _get_fre_domain_features(self, signal, Fs=1000):
+    @staticmethod
+    def _get_fre_domain_features(signal, Fs=1000):
         """
         计算1d signal的频域特征
         """
@@ -45,41 +48,42 @@ class FreqDomainMetrics(Metrics):
         p = [p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13]
         return p
 
-    def compute_freq_metrics_parallel(self, n_jobs=1):  # hell: 多核心引起BrokenProcessPool问题
+    def compute_freq_metrics(self, meg_type: MEG_TYPE):  # hell: 多核心引起BrokenProcessPool问题
         """ 并行版本
         """
-        clogger.info("Parallel cores: {}".format(n_jobs))
-        Ps = Parallel(n_jobs)(
-            delayed(self._get_fre_domain_features)(single_ch_data) for single_ch_data in self.meg_data)
-        mean_freq_feat = np.mean(Ps, axis=0)
-        std_freq_feat = np.std(Ps, axis=0)
-        return mean_freq_feat, std_freq_feat
+        if self.n_jobs == 1:
+            self.meg_type = meg_type
+            self.meg_data = self.raw.get_data(meg_type)
+            self.meg_names = self._get_meg_names(meg_type)
 
-    def compute_freq_metrics(self, meg_type: MEG_TYPE):
-        """串行版本的频域特征计算
-        Return:
-            pd.DataFrame
-            rows: channels_name and average of all channels
-            columns: frequencies metrics.
-        """
+            freq_list = []
+            for i in range(self.meg_data.shape[0]):
+                p = self._get_fre_domain_features(self.meg_data[i, :])
 
-        self.meg_type = meg_type
-        self.meg_data = self.raw.get_data(meg_type)
-        self.meg_names = self._get_meg_names(meg_type)
+                freq_list.append(pd.DataFrame([{"p1": p[0], "p2": p[1], "p3": p[2], "p4": p[3], "p5": p[4],
+                                                "p6": p[5], "p7": p[6], "p8": p[7], "p9": p[8], "p10": p[9],
+                                                "p11": p[10], "p12": p[11], "p13": p[12]}], index=[self.meg_names[i]]))
 
-        freq_list = []
-        for i in range(self.meg_data.shape[0]):
-            p = self._get_fre_domain_features(self.meg_data[i, :])
+            freq_feat_df = pd.concat(freq_list)
+            avg_freq_feat = freq_feat_df.mean(axis=0)
+            std_freq_feat = freq_feat_df.std(axis=0)
+            freq_feat_df.loc[f'avg_{meg_type}'] = avg_freq_feat
+            freq_feat_df.loc[f'std_{meg_type}'] = std_freq_feat
+        else:
+            self.meg_type = meg_type
+            self.meg_data = self.raw.get_data(meg_type)
+            self.meg_names = self._get_meg_names(meg_type)
+            clogger.info("Parallel cores: {}".format(self.n_jobs))
 
-            freq_list.append(pd.DataFrame([{"p1": p[0], "p2": p[1], "p3": p[2], "p4": p[3], "p5": p[4],
-                                            "p6": p[5], "p7": p[6], "p8": p[7], "p9": p[8], "p10": p[9],
-                                            "p11": p[10], "p12": p[11], "p13": p[12]}], index=[self.meg_names[i]]))
+            freq_list = Parallel(self.n_jobs, verbose=10)(delayed(self._get_fre_domain_features)(single_ch_data, self.samp_freq) for single_ch_data in self.meg_data)
 
-        freq_feat_df = pd.concat(freq_list)
-        avg_freq_feat = freq_feat_df.mean(axis=0)
-        std_freq_feat = freq_feat_df.std(axis=0)
-        freq_feat_df.loc[f'avg_{meg_type}'] = avg_freq_feat
-        freq_feat_df.loc[f'std_{meg_type}'] = std_freq_feat
+            freq_feat_df = pd.DataFrame(freq_list, columns=["p1", "p2", "p3", "p4", "p5", "p6", "p7","p8", "p9", "p10", "p11", "p12", "p13"],
+                                        index=self.meg_names)
+
+            avg_freq_feat = freq_feat_df.mean(axis=0)
+            std_freq_feat = freq_feat_df.std(axis=0)
+            freq_feat_df.loc[f'avg_{meg_type}'] = avg_freq_feat
+            freq_feat_df.loc[f'std_{meg_type}'] = std_freq_feat
 
         return freq_feat_df
 
@@ -90,14 +94,14 @@ if __name__ == '__main__':
     # opm_raw.filter(0, 45).notch_filter([50, 100], verbose=False, n_jobs=-1)
 
     squid_fif = Path(r"C:\Data\Datasets\MEG_Lab\02_liaopan\231123\run1_tsss.fif")
-    squid_raw = mne.io.read_raw_fif(squid_fif, preload=True, verbose=False)
+    # squid_raw = mne.io.read_raw_fif(squid_fif, preload=True, verbose=False)
     # squid_raw.filter(0, 45).notch_filter([50, 100], verbose=False, n_jobs=-1)
 
     import time
 
     st = time.time()
-    fdm_opm = FreqDomainMetrics(opm_raw.crop(0, 10))
-    fdm_squid = FreqDomainMetrics(squid_raw.crop(0, 10))
+    fdm_opm = FreqDomainMetrics(opm_raw.crop(0, 10), n_jobs=8)
+    # fdm_squid = FreqDomainMetrics(squid_raw.crop(0, 10))
     print("opm_data freq:", fdm_opm.compute_freq_metrics(meg_type='mag'))
     # print("squid_data:", fdm_squid.compute_freq_features(meg_type='grad'))
     et = time.time()

@@ -11,20 +11,33 @@ from joblib import Parallel, delayed
 
 from opmqc.qc import Metrics
 from opmqc.constants import MEG_TYPE
-
+from opmqc.utils import segment_raw_data
 
 class EntropyDomainMetric(Metrics):
     def __init__(self, raw: mne.io.Raw,n_jobs=-1, verbose=False):
         super().__init__(raw, n_jobs=n_jobs, verbose=verbose)
 
-    def compute_entropy_metrics(self, meg_type: MEG_TYPE):
+    def compute_entropy_metrics(self, meg_type: MEG_TYPE, seg_length=100):
+        raw_list,_ = segment_raw_data(self.raw, seg_length)
+        meg_metrics_list = []
+        for raw_i in raw_list:
+            mdf = self._compute_entropy_metrics(raw_i, meg_type)
+            meg_metrics_list.append(mdf)
+
+        # combine and average
+        mml = meg_metrics_list[0]
+        for i in meg_metrics_list[1:]:
+            mml += i
+        meg_metrics_df = mml / len(meg_metrics_list)
+        return meg_metrics_df
+
+    def _compute_entropy_metrics(self, raw:mne.io.Raw, meg_type: MEG_TYPE):
         """
         compute all entropy metrics
         """
-        meg_metrics = dict()
         self.meg_type = meg_type
         self.meg_names = self._get_meg_names(self.meg_type)
-        self.meg_data = self.raw.get_data(meg_type)
+        self.meg_data = raw.get_data(meg_type)
         entropy_metrics = self.compute_entropies(self.meg_data)
         # print("entropy_metrics: ", entropy_metrics)
 
@@ -42,7 +55,9 @@ class EntropyDomainMetric(Metrics):
         meg_metrics_df.loc[f"std_{meg_type}"] = meg_metrics_df.std(axis=0)
 
         return meg_metrics_df
-    def _ant_1d_entropies(self, data: np.ndarray, samp_freq: float):
+
+    @staticmethod
+    def _ant_1d_entropies(data: np.ndarray, samp_freq: float):
         # Permutation entropy
         permutation_entropy = ant.perm_entropy(data, normalize=True)
         # Spectral entropy
@@ -64,28 +79,29 @@ class EntropyDomainMetric(Metrics):
         """## 1.计算MEG脑磁数据的8种熵有关的特征
         计算熵的8种特征，并按通道计算熵特征的均值和标准差
         """
-        from joblib import Parallel, delayed
-        entropy_list = []
-        single_entropies = Parallel(self.n_jobs)(
-            delayed(self._ant_1d_entropies)(single_ch_data, self.samp_freq) for single_ch_data in data)
+        if self.n_jobs == 1:
+            single_entropies = Parallel(self.n_jobs)(
+                delayed(self._ant_1d_entropies)(single_ch_data, self.samp_freq) for single_ch_data in data)
 
-        entropy_df = pd.DataFrame(single_entropies,
-                                  columns=["permutation_entropy", "spectral_entropy",
-                                           "svd_entropy", "approximate_entropy", "sample_entropy",
-                                           "hjorth_mobility", "hjorth_complexity", "num_of_zero_crossings"],
-                                  index=self.meg_names)
-        # entropy_df.loc[f"avg_entropy_{self.meg_type}"] = entropy_df.mean(axis=0)
-        # entropy_df.loc[f"std_entropy_{self.meg_type}"] = entropy_df.std(axis=0)
-        # mean_entropies = np.mean(single_entropies, axis=0)
-        # std_entropies = np.std(single_entropies, axis=0)
-        # print("TEST------")
-        # print(mean_entropies,entropy_df["avg_entropy_"+self.meg_type])
-        # print(std_entropies,entropy_df["std_entropy_"+self.meg_type])
+            entropy_df = pd.DataFrame(single_entropies,
+                                      columns=["permutation_entropy", "spectral_entropy",
+                                               "svd_entropy", "approximate_entropy", "sample_entropy",
+                                               "hjorth_mobility", "hjorth_complexity", "num_of_zero_crossings"],
+                                      index=self.meg_names)
+        else:
+            single_entropies = Parallel(self.n_jobs)(
+                delayed(self._ant_1d_entropies)(single_ch_data, self.samp_freq) for single_ch_data in data)
 
+            entropy_df = pd.DataFrame(single_entropies,
+                                      columns=["permutation_entropy", "spectral_entropy",
+                                               "svd_entropy", "approximate_entropy", "sample_entropy",
+                                               "hjorth_mobility", "hjorth_complexity", "num_of_zero_crossings"],
+                                      index=self.meg_names)
         return entropy_df
 
     # Fractal dimension
-    def _ant_1d_fractal_dimension(self, data: np.ndarray):
+    @staticmethod
+    def _ant_1d_fractal_dimension(data: np.ndarray):
         """
         ## 2.计算4种分形有关的特征
         # PFD信号的复杂度可以用分形维数来度量
@@ -106,7 +122,6 @@ class EntropyDomainMetric(Metrics):
     def compute_fractal_dimension(self, data: np.ndarray):
         """计算4种分形特征，并按通道计算均值和方差
         """
-
         single_fractal = Parallel(self.n_jobs)(
             delayed(self._ant_1d_fractal_dimension)(single_ch_data) for single_ch_data in data)
         # mean_fractal = np.mean(single_fractal, axis=0)
@@ -116,7 +131,8 @@ class EntropyDomainMetric(Metrics):
                                   index=self.meg_names)
         return fractal_df
 
-    def _power_spectral_entropy(self, data, fs):
+    @staticmethod
+    def _power_spectral_entropy(data, fs):
         freq, psd = welch(data, fs)
         psd_norm = np.divide(psd, psd.sum())
         pse = entropy(psd_norm)
@@ -134,7 +150,8 @@ class EntropyDomainMetric(Metrics):
                                       )
         return psd_entropy_df
 
-    def _sinch_energy_entropy(self, data: np.ndarray):
+    @staticmethod
+    def _sinch_energy_entropy(data: np.ndarray):
         """
         计算单通道的能量、能量熵
         ##以自然指数为底
@@ -172,18 +189,19 @@ if __name__ == '__main__':
     opm_raw = mne.io.read_raw(opm_mag_fif, verbose=False, preload=True)
     opm_raw.filter(0, 45).notch_filter([50, 100], verbose=False, n_jobs=-1)
 
-    squid_fif = Path(r"C:\Data\Datasets\MEG_Lab\02_liaopan\231123\run1_tsss.fif")
-    squid_raw = mne.io.read_raw_fif(squid_fif, preload=True, verbose=False)
-    squid_raw.filter(0, 45).notch_filter([50, 100], verbose=False, n_jobs=-1)
+    # squid_fif = Path(r"C:\Data\Datasets\MEG_Lab\02_liaopan\231123\run1_tsss.fif")
+    # squid_raw = mne.io.read_raw_fif(squid_fif, preload=True, verbose=False)
+    # squid_raw.filter(0, 45).notch_filter([50, 100], verbose=False, n_jobs=-1)
 
     import time
 
     st = time.time()
-    edm_opm = EntropyDomainMetric(opm_raw.crop(0,0.5),n_jobs=1)
-    edm_squid = EntropyDomainMetric(squid_raw.crop(0,0.5),n_jobs=1)
+    print("opm_raw：",opm_raw)
+    edm_opm = EntropyDomainMetric(opm_raw, n_jobs=8)
+    # edm_squid = EntropyDomainMetric(squid_raw.crop(0,0.5),n_jobs=1)
     opm = edm_opm.compute_entropy_metrics('mag')
     print("opm_data:",opm.head(3))
-    suqid = edm_squid.compute_entropy_metrics('grad')
-    print("squid_data:", suqid.head(3))
+    # suqid = edm_squid.compute_entropy_metrics('grad')
+    # print("squid_data:", suqid.head(3))
     et = time.time()
     print("cost time:", et - st)
