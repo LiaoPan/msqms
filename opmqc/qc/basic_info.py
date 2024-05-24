@@ -9,8 +9,14 @@ from mne.io import read_raw_fif
 from mne import channel_type
 from mne.utils.misc import _pl
 from mne.utils import sizeof_fmt
-from mne.io._digitization import _dig_kind_proper, _dig_kind_rev, _dig_kind_ints
+
 from mne import pick_types
+
+try:
+    from mne.io._digitization import _dig_kind_proper, _dig_kind_rev, _dig_kind_ints
+except ImportError:
+    # for mne==1.6.0
+    from mne._fiff._digitization import _dig_kind_proper, _dig_kind_rev, _dig_kind_ints
 
 from collections import Counter, defaultdict
 from box import Box

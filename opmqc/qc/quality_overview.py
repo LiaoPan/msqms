@@ -5,6 +5,7 @@ import numpy as np
 from scipy.stats import skew,kurtosis
 from opmqc.libs.pyprep.find_noisy_channels import NoisyChannels
 from opmqc.utils.logging import clogger
+from opmqc.libs.osl import detect_badsegments, detect_badchannels
 
 class QualityOverview(object):
     def __init__(self, raw):
@@ -121,8 +122,16 @@ class QualityOverview(object):
         bad_channel = ch_names[ids[0]]
         clogger.info(f"channel name:{bad_channel}")
         return bad_channel
-    def find_bad_segments(self):
-        pass
+
+    def find_bad_channels_by_osl(self):
+        bad_channel = detect_badchannels(self.raw,picks='mag',ref_meg=False)
+        clogger.info(f"channel name:{bad_channel}")
+        return bad_channel
+
+    def find_bad_segments_by_osl(self):
+        bad_segs = detect_badsegments(self.raw, ref_meg=False)
+        clogger.info(f"bad segments:{bad_segs}")
+        return bad_segs
 
     def find_zero_values(self):
         """
@@ -176,5 +185,17 @@ if __name__ == '__main__':
     raw = read_raw_fif(test_squid_fif_path,verbose=False)
     qov = QualityOverview(raw)
     # print(qov.mean_values)
-    qov.find_bad_channels()
+    # qov.find_bad_channels()
     qov.find_bad_channels_by_psd()
+    qov.find_bad_channels_by_osl()
+    qov.find_bad_segments_by_osl()
+
+
+
+    raw = read_raw_fif(test_opm_fif_path,verbose=False)
+    qov = QualityOverview(raw)
+    # print(qov.mean_values)
+    # qov.find_bad_channels()
+    qov.find_bad_channels_by_psd()
+    qov.find_bad_channels_by_osl()
+    qov.find_bad_segments_by_osl()

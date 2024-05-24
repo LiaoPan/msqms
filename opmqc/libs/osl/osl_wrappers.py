@@ -86,7 +86,6 @@ def gesd(x, alpha=0.05, p_out=.1, outlier_side=0):
             rm_idx[j] = np.nanargmax(temp)
             sample = np.nanmax(temp)
             R[j] = sample - np.nanmean(temp)
-
         R[j] = R[j] / np.nanstd(temp)
         temp[int(rm_idx[j])] = np.nan
 
@@ -310,6 +309,7 @@ def detect_badsegments(
         ref_meg='auto',
         mode=None,
         detect_zeros=True,
+        annotate=False,
 ):
     """Set bad segments in an MNE :py:class:`Raw <mne.io.Raw>` object as defined by the Generalized ESD test in :py:func:`osl.preprocessing.osl_wrappers.gesd <osl.preprocessing.osl_wrappers.gesd>`.
 
@@ -335,11 +335,16 @@ def detect_badsegments(
         segments with zeros from MaxFiltering as bad.
     detect_zeros : bool
         Should we detect segments of zeros based on the maxfilter files?
+    annotate : bool
+        add annotations to the Raw object.
 
     Returns
     -------
-    raw : :py:class:`mne.io.Raw <mne.io.Raw>`
-        MNE raw object with bad segments annotated.
+    if annotate is False:
+        bad segments : the dict of bad segments(including onset and duration).
+    if annotate is True:
+        raw : :py:class:`mne.io.Raw <mne.io.Raw>`
+            MNE raw object with bad segments annotated.
 
     Notes
     -----
@@ -437,7 +442,7 @@ def detect_badsegments(
         offsets_secs = raw.first_samp / raw.info["sfreq"] + XX_times[offsets.astype(int)]
         durations_secs = offsets_secs - onsets_secs
 
-        raw.annotations.append(onsets_secs, durations_secs, descriptions)
+        bad_segments_annots = {"onsets":onsets_secs, "durations": durations_secs}
 
         mod_dur = durations_secs.sum()
         full_dur = raw.n_times / raw.info["sfreq"]
@@ -445,10 +450,14 @@ def detect_badsegments(
         s = "Modality {0}{1} - {2:02f}/{3} seconds rejected     ({4:02f}%)"
         logger.info(s.format("picks", descp2, mod_dur, full_dur, pc))
 
-    return raw
+        if annotate:
+            raw.annotations.append(onsets_secs, durations_secs, descriptions)
+            return raw
+        else:
+            return bad_segments_annots
 
 
-def detect_badchannels(raw, picks, ref_meg="auto", significance_level=0.05):
+def detect_badchannels(raw, picks, ref_meg="auto", significance_level=0.05,annotate=False):
     """Set bad channels in an MNE :py:class:`Raw <mne.io.Raw>` object as defined by the Generalized ESD test in :py:func:`osl.preprocessing.osl_wrappers.gesd <osl.preprocessing.osl_wrappers.gesd>`.
 
     Parameters
@@ -461,11 +470,16 @@ def detect_badchannels(raw, picks, ref_meg="auto", significance_level=0.05):
         ref_meg argument to pass with :py:func:`mne.pick_types <mne.pick_types>`.
     significance_level : float
         Significance level for detecting outliers. Must be between 0-1.
+    annotate : bool
+        add annotations to the Raw object.
 
     Returns
     -------
-    raw : :py:class:`mne.io.Raw <mne.io.Raw>`
-        MNE Raw object with bad channels marked.
+    if annotate is False:
+            bad_channels :  the list of bad channels.
+    if annotate is True:
+        raw : :py:class:`mne.io.Raw <mne.io.Raw>`
+            MNE raw object with bad channels annotated.
 
     Notes
     -----
@@ -507,11 +521,15 @@ def detect_badchannels(raw, picks, ref_meg="auto", significance_level=0.05):
     pc = (bdinds.sum() / len(bdinds)) * 100
     logger.info(s.format(picks, bdinds.sum(), len(bdinds), pc))
 
+    bad_channels = []
     # concatenate newly found bads to existing bads
     if np.any(bdinds):
-        raw.info["bads"].extend(list(ch_names[np.where(bdinds)[0]]))
+        bad_channels.extend(list(ch_names[np.where(bdinds)[0]]))
+        if annotate:
+            raw.info["bads"].extend(list(ch_names[np.where(bdinds)[0]]))
+            return raw
 
-    return raw
+    return bad_channels
 
 
 def drop_bad_epochs(

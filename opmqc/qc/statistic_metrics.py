@@ -10,6 +10,7 @@ from opmqc.qc import Metrics
 from opmqc.constants import MEG_TYPE
 from opmqc.utils import clogger
 from opmqc.libs.pyprep.find_noisy_channels import NoisyChannels
+from opmqc.libs.osl import detect_badsegments, detect_badchannels
 
 
 class StatsDomainMetric(Metrics):
@@ -35,10 +36,18 @@ class StatsDomainMetric(Metrics):
         meg_metrics['median_offset'] = median_offset
         meg_metrics['std_median_offset'] = std_median_offset
 
+        # bad channels detection
         # bad_ch_ratio_by_pyprep = self.find_bad_channels_by_prep()
         bad_ch_ratio_by_psd = self.find_bad_channels_by_psd()
+        bad_ch_ratio_by_osl = self.find_bad_channels_by_osl()
+
         # meg_metrics['BadChanRatio_Prep'] = bad_ch_ratio_by_pyprep
         meg_metrics['BadChanRatio_PSD'] = bad_ch_ratio_by_psd
+        meg_metrics['BadChanRatio_OSL'] = bad_ch_ratio_by_osl
+
+        # bad segments detection
+        bad_segs_num = self.find_bad_segments_by_osl()
+        meg_metrics['BadSegmentsNum'] = bad_segs_num
 
         _, zero_ratio = self.find_zero_values(self.meg_data)
         _, nan_ratio = self.find_NaN_values(self.meg_data)
@@ -140,6 +149,21 @@ class StatsDomainMetric(Metrics):
         bad_channel = ch_names[ids[0]]
         bad_channels_ratio = len(bad_channel) / len(self.meg_names)
         return bad_channels_ratio
+
+    def find_bad_channels_by_osl(self):
+        bad_channel = detect_badchannels(self.raw, picks=self.meg_type,ref_meg=False)
+        bad_channels_ratio = len(bad_channel) / len(self.meg_names)
+        clogger.info(f"channel name:{bad_channel}--bad channels ratio:{bad_channels_ratio}")
+        return bad_channels_ratio
+
+    def find_bad_segments_by_osl(self):
+        bad_segs_num = 0
+        bad_segs = detect_badsegments(self.raw,picks=self.meg_type,ref_meg=False)
+        if np.any(bad_segs):
+            bad_segs_num = len(bad_segs['onsets'])
+        clogger.info(f"bad segments:{bad_segs}--bad segments num:{bad_segs_num}")
+        return bad_segs_num
+
 
     def find_zero_values(self, data: np.ndarray):
         """
