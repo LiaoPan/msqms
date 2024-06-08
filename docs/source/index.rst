@@ -113,14 +113,14 @@ Features
    .. grid-item::
       :columns: 6 6 6 4
 
-      .. card:: :material-regular:`menu_book;2em` Tutorials for OPM-MEG
+      .. card:: :material-regular:`menu_book;2em` Tutorials for OPM
          :class-card: sd-text-black sd-bg-light
          :link: tutorials.html
 
    .. grid-item::
       :columns: 6 6 6 4
 
-      .. card:: :material-regular:`token;2em` Tutorials for SQUID-MEG
+      .. card:: :material-regular:`token;2em` Tutorials for SQUID
          :class-card: sd-text-black sd-bg-light
          :link: advanced_tutorials.html
 
