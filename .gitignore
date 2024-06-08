@@ -10,3 +10,5 @@ dist/
 build/
 docs/build/
 README_private.md
+.vscode
+**/.DS_Store

@@ -148,30 +148,19 @@ Features
 
 
 .. toctree::
+   :hidden:
    :maxdepth: 2
    :caption: Quickstart
 
    quickstart/installation
    opmqc
 
-
 .. toctree::
+   :hidden:
    :maxdepth: 2
    :caption: Tutorials
 
    quickstart/installation
    opmqc
    apis/apis
-
-
-Appendix
-=========
-:doc:`apis/apis`
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
 
