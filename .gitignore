@@ -8,3 +8,5 @@ conda/outdir/
 opmqc.egg-info/
 dist/
 build/
+docs/build/
+README_private.md

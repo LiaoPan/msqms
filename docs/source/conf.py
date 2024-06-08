@@ -16,10 +16,13 @@ import sys
 curdir = os.path.dirname(__file__)
 sys.path.append(os.path.abspath(os.path.join(curdir, "..", "..", "opmqc")))
 
+# import opmqc
+# release = opmqc.__version__
+
 # -- Project information -----------------------------------------------------
 
 project = 'opmqc'
-copyright = '2023, LiaoPan'
+copyright = '2024, LiaoPan'
 author = 'LiaoPan'
 
 # The full version, including alpha/beta/rc tags
@@ -33,7 +36,7 @@ release = '0.0.1'
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
-    # 'sphinx.ext.autosummary',
+    'sphinx.ext.autosummary',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
     'sphinx_design',
@@ -44,15 +47,42 @@ extensions = [
 #     "colon_fence"
 # ]
 
+autosummary_generate = True
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = []
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "build"]
 
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3.8", None),
+    "sphinx": ("https://www.sphinx-doc.org/en/master", None),
+    "pst": ("https://pydata-sphinx-theme.readthedocs.io/en/latest/", None),
+}
+nitpick_ignore = [
+    ("py:class", "docutils.nodes.document"),
+    ("py:class", "docutils.parsers.rst.directives.body.Sidebar"),
+]
 
+suppress_warnings = ["myst.domains", "ref.ref"]
+
+numfig = True
+
+myst_enable_extensions = [
+    "dollarmath",
+    "amsmath",
+    "deflist",
+    # "html_admonition",
+    # "html_image",
+    "colon_fence",
+    # "smartquotes",
+    # "replacements",
+    # "linkify",
+    # "substitution",
+]
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -61,6 +91,14 @@ exclude_patterns = []
 # html_theme = 'alabaster'
 # html_theme = 'sphinx_rtd_theme'
 html_theme = 'sphinx_book_theme'
+html_logo = '_static/logo.png'
+html_favicon = '_static/favicon.png'
+html_title = 'OPMQC Documentation'
+
+html_theme_options = {
+    'logo_only': True,
+    'show_toc_level': 2,
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
