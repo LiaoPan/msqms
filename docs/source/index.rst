@@ -99,6 +99,13 @@ Features
    .. grid-item::
       :columns: 6 6 6 4
 
+      .. card:: :material-regular:`bolt;2em` Guide for Beginner
+         :class-card: sd-text-black sd-bg-light
+         :link: tutorials.html
+
+   .. grid-item::
+      :columns: 6 6 6 4
+
       .. card:: :material-regular:`library_books;2em` Core Concepts
          :class-card: sd-text-black sd-bg-light
          :link: core_concepts.html
@@ -106,45 +113,38 @@ Features
    .. grid-item::
       :columns: 6 6 6 4
 
-      .. card:: :material-regular:`science;2em` BDP Tutorials
+      .. card:: :material-regular:`menu_book;2em` Tutorials for OPM-MEG
          :class-card: sd-text-black sd-bg-light
          :link: tutorials.html
 
    .. grid-item::
       :columns: 6 6 6 4
 
-      .. card:: :material-regular:`token;2em` Advanced Tutorials
+      .. card:: :material-regular:`token;2em` Tutorials for SQUID-MEG
          :class-card: sd-text-black sd-bg-light
          :link: advanced_tutorials.html
 
    .. grid-item::
       :columns: 6 6 6 4
 
-      .. card:: :material-regular:`settings;2em` BDP Toolboxes
+      .. card:: :material-regular:`terminal;2em` Command Tools
          :class-card: sd-text-black sd-bg-light
          :link: toolboxes.html
 
-   .. grid-item::
-      :columns: 6 6 6 4
-
-      .. card:: :material-regular:`rocket_launch;2em` FAQ
-         :class-card: sd-text-black sd-bg-light
-         :link: FAQ.html
 
    .. grid-item::
       :columns: 6 6 6 4
 
-      .. card:: :material-regular:`data_exploration;2em` API documentation
+      .. card:: :material-regular:`webhook;2em` API documentation
          :class-card: sd-text-black sd-bg-light
-         :link: api.html
+         :link: apis/opmqc.html
 
    .. grid-item::
       :columns: 6 6 6 4
 
-      .. card:: :material-regular:`settings;2em` Examples
+      .. card:: :material-regular:`settings;2em` Quality Reference
          :class-card: sd-text-black sd-bg-light
-         :link: https://OPMQC-examples.readthedocs.io/en/latest/index.html
-
+         :link: quality_reference.html
 
 
 .. toctree::
