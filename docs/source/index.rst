@@ -153,14 +153,16 @@ Features
    :caption: Quickstart
 
    quickstart/installation
-   opmqc
+   quickstart/quick_guide.rst
+   quickstart/cmd.rst
 
 .. toctree::
    :hidden:
    :maxdepth: 2
    :caption: Tutorials
 
-   quickstart/installation
-   opmqc
-   apis/apis
+   tutorial/core_concepts.rst
+   tutorial/example_opm.rst
+   tutorial/example_squid.rst
+   apis/opmqc.rst
 

@@ -14,10 +14,31 @@ import os
 import sys
 
 curdir = os.path.dirname(__file__)
-sys.path.append(os.path.abspath(os.path.join(curdir, "..", "..", "opmqc")))
+# sys.path.insert(0,os.path.abspath(os.path.join(curdir, "..", "..", "opmqc")))
+sys.path.insert(0,os.path.abspath(os.path.join("..", "..")))
 
-# import opmqc
-# release = opmqc.__version__
+import opmqc
+release = opmqc.__version__
+
+def run_apidoc(app):
+    """Generage API documentation"""
+    import better_apidoc
+    better_apidoc.APP = app
+    try:
+        better_apidoc.main([
+            'better-apidoc',
+            '-t',
+            os.path.join('.', 'source', '_templates'),
+            '--force',
+            '--no-toc',
+            '--separate',
+            '-o',
+            os.path.join('.', 'source', 'apis'),
+            os.path.join('..', 'opmqc'),
+        ])
+    except Exception as e:
+        print(e)
+
 
 # -- Project information -----------------------------------------------------
 
@@ -37,10 +58,12 @@ release = '0.0.1'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
+    'sphinx_autodoc_typehints',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
     'sphinx_design',
-    'sphinx.ext.napoleon'
+    'sphinx.ext.napoleon',
+    'sphinx_copybutton'
 ]
 
 # myst_enable_extensions = [
@@ -96,7 +119,6 @@ html_favicon = '_static/favicon.png'
 html_title = 'OPMQC Documentation'
 
 html_theme_options = {
-    'logo_only': True,
     'show_toc_level': 2,
 }
 
@@ -104,3 +126,10 @@ html_theme_options = {
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+html_css_files = [
+    'css/custom.css',
+]
+# -----------------------------------------------------------------------------
+def setup(app):
+    app.connect('builder-inited', run_apidoc)
