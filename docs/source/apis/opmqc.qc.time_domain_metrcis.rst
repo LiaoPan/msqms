@@ -16,6 +16,7 @@ opmqc.qc.time_domain_metrcis module
     -------
 
     Classes:
+    ************
 
     .. autosummary::
         :nosignatures:

@@ -16,6 +16,7 @@ opmqc.libs.osl.osl_wrappers module
     -------
 
     Functions:
+    ************
 
     .. autosummary::
         :nosignatures:

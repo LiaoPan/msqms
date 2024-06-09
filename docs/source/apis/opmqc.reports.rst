@@ -8,12 +8,12 @@ opmqc.reports package
     
 
 
-    Submodules:
+    Submodules
+    -------------
 
     .. toctree::
        :maxdepth: 1
 
-       opmqc.reports.ref_report
        opmqc.reports.report
 
 

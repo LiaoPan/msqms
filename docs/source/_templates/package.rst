@@ -12,7 +12,8 @@
     {%- endif %}
 
 {% if submodules %}
-    Submodules:
+    Submodules
+    -------------
 
     .. toctree::
        :maxdepth: 1
@@ -22,7 +23,8 @@
     {%- endif -%}
 
 {% if subpackages %}
-    Subpackages:
+    Subpackages
+    -------------
 
     .. toctree::
        :maxdepth: 1

@@ -8,7 +8,8 @@ opmqc.datasets package
     
 
 
-    Submodules:
+    Submodules
+    -------------
 
     .. toctree::
        :maxdepth: 1

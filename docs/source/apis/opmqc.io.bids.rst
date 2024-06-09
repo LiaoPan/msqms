@@ -16,6 +16,7 @@ opmqc.io.bids module
     -------
 
     Functions:
+    ************
 
     .. autosummary::
         :nosignatures:

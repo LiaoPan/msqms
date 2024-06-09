@@ -16,6 +16,7 @@ opmqc.qc.visual_inspection module
     -------
 
     Classes:
+    ************
 
     .. autosummary::
         :nosignatures:

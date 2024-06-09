@@ -8,7 +8,8 @@ opmqc.cli package
     
 
 
-    Submodules:
+    Submodules
+    -------------
 
     .. toctree::
        :maxdepth: 1

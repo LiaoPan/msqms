@@ -16,6 +16,7 @@ opmqc.simulation.simulate module
     -------
 
     Functions:
+    ************
 
     .. autosummary::
         :nosignatures:

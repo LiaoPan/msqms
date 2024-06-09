@@ -16,6 +16,7 @@ opmqc.libs.pyprep.ransac module
     -------
 
     Functions:
+    ************
 
     .. autosummary::
         :nosignatures:

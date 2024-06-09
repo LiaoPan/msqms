@@ -16,6 +16,7 @@ opmqc.libs.pyprep.removeTrend module
     -------
 
     Functions:
+    ************
 
     .. autosummary::
         :nosignatures:

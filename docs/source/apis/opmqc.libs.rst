@@ -8,7 +8,8 @@ opmqc.libs package
     
 
 
-    Subpackages:
+    Subpackages
+    -------------
 
     .. toctree::
        :maxdepth: 1

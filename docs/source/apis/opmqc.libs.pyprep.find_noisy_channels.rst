@@ -16,6 +16,7 @@ opmqc.libs.pyprep.find_noisy_channels module
     -------
 
     Classes:
+    ************
 
     .. autosummary::
         :nosignatures:

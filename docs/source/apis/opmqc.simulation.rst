@@ -8,7 +8,8 @@ opmqc.simulation package
     
 
 
-    Submodules:
+    Submodules
+    -------------
 
     .. toctree::
        :maxdepth: 1

@@ -8,7 +8,8 @@ opmqc.libs.pyprep package
     
 
 
-    Submodules:
+    Submodules
+    -------------
 
     .. toctree::
        :maxdepth: 1

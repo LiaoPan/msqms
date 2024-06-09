@@ -16,6 +16,7 @@ opmqc.io.quanmag.mag module
     -------
 
     Functions:
+    ************
 
     .. autosummary::
         :nosignatures:

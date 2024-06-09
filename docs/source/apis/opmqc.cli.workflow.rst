@@ -16,6 +16,7 @@ opmqc.cli.workflow module
     -------
 
     Functions:
+    ************
 
     .. autosummary::
         :nosignatures:

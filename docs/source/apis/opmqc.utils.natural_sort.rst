@@ -16,6 +16,7 @@ opmqc.utils.natural_sort module
     -------
 
     Functions:
+    ************
 
     .. autosummary::
         :nosignatures:

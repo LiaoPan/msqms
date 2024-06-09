@@ -16,6 +16,7 @@ opmqc.libs.pyprep.reference module
     -------
 
     Classes:
+    ************
 
     .. autosummary::
         :nosignatures:

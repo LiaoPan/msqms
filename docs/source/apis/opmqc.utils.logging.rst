@@ -16,6 +16,7 @@ opmqc.utils.logging module
     -------
 
     Functions:
+    ************
 
     .. autosummary::
         :nosignatures:

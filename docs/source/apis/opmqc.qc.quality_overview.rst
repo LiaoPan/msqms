@@ -16,6 +16,7 @@ opmqc.qc.quality_overview module
     -------
 
     Classes:
+    ************
 
     .. autosummary::
         :nosignatures:

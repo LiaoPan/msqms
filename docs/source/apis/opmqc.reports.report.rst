@@ -16,6 +16,7 @@ opmqc.reports.report module
     -------
 
     Classes:
+    ************
 
     .. autosummary::
         :nosignatures:
@@ -24,6 +25,7 @@ opmqc.reports.report module
         QualityReport
 
     Functions:
+    ************
 
     .. autosummary::
         :nosignatures:

@@ -36,6 +36,14 @@ opmqc.workflows.opmqc\_reference module
    :undoc-members:
    :show-inheritance:
 
+opmqc.workflows.quality\_reference module
+-----------------------------------------
+
+.. automodule:: opmqc.workflows.quality_reference
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Module contents
 ---------------
 

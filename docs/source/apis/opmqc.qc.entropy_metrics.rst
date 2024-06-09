@@ -16,6 +16,7 @@ opmqc.qc.entropy_metrics module
     -------
 
     Classes:
+    ************
 
     .. autosummary::
         :nosignatures:

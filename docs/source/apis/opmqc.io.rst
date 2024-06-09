@@ -8,13 +8,15 @@ opmqc.io package
     
 
 
-    Submodules:
+    Submodules
+    -------------
 
     .. toctree::
        :maxdepth: 1
 
        opmqc.io.bids
-    Subpackages:
+    Subpackages
+    -------------
 
     .. toctree::
        :maxdepth: 1

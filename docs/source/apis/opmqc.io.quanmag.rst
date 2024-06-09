@@ -8,7 +8,8 @@ opmqc.io.quanmag package
     
 
 
-    Submodules:
+    Submodules
+    -------------
 
     .. toctree::
        :maxdepth: 1

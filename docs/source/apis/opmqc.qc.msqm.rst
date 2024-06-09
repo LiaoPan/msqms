@@ -16,6 +16,7 @@ opmqc.qc.msqm module
     -------
 
     Classes:
+    ************
 
     .. autosummary::
         :nosignatures:

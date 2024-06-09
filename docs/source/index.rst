@@ -101,35 +101,35 @@ Features
 
       .. card:: :material-regular:`bolt;2em` Guide for Beginner
          :class-card: sd-text-black sd-bg-light
-         :link: tutorials.html
+         :link: quickstart/quick_guide.html
 
    .. grid-item::
       :columns: 6 6 6 4
 
       .. card:: :material-regular:`library_books;2em` Core Concepts
          :class-card: sd-text-black sd-bg-light
-         :link: core_concepts.html
+         :link: tutorial/core_concepts.html
 
    .. grid-item::
       :columns: 6 6 6 4
 
       .. card:: :material-regular:`menu_book;2em` Tutorials for OPM
          :class-card: sd-text-black sd-bg-light
-         :link: tutorials.html
+         :link: tutorial/example_opm.html
 
    .. grid-item::
       :columns: 6 6 6 4
 
       .. card:: :material-regular:`token;2em` Tutorials for SQUID
          :class-card: sd-text-black sd-bg-light
-         :link: advanced_tutorials.html
+         :link: tutorial/example_squid.html
 
    .. grid-item::
       :columns: 6 6 6 4
 
       .. card:: :material-regular:`terminal;2em` Command Tools
          :class-card: sd-text-black sd-bg-light
-         :link: toolboxes.html
+         :link: quickstart/cmd.html
 
 
    .. grid-item::

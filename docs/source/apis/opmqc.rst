@@ -8,14 +8,16 @@ opmqc package
     
 
 
-    Submodules:
+    Submodules
+    -------------
 
     .. toctree::
        :maxdepth: 1
 
        opmqc.constants
        opmqc.main
-    Subpackages:
+    Subpackages
+    -------------
 
     .. toctree::
        :maxdepth: 1

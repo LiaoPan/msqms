@@ -16,6 +16,7 @@ opmqc.qc.statistic_metrics module
     -------
 
     Classes:
+    ************
 
     .. autosummary::
         :nosignatures:

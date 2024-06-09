@@ -16,6 +16,7 @@ opmqc.qc.tsfresh_domain_metrics module
     -------
 
     Classes:
+    ************
 
     .. autosummary::
         :nosignatures:

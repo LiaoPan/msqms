@@ -19,6 +19,7 @@
     {%- if exceptions %}
 
     Exceptions:
+    ************
 
     .. autosummary::
         :nosignatures:
@@ -30,6 +31,7 @@
     {%- if classes %}
 
     Classes:
+    ************
 
     .. autosummary::
         :nosignatures:
@@ -41,6 +43,7 @@
     {%- if functions %}
 
     Functions:
+    ************
 
     .. autosummary::
         :nosignatures:
@@ -54,6 +57,7 @@
     {%- if data %}
 
     Data:
+    ************
 
     .. autosummary::
         :nosignatures:

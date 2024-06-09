@@ -16,6 +16,7 @@ opmqc.qc.basic_info module
     -------
 
     Functions:
+    ************
 
     .. autosummary::
         :nosignatures:

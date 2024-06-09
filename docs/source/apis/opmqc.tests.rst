@@ -8,7 +8,8 @@ opmqc.tests package
     
 
 
-    Submodules:
+    Submodules
+    -------------
 
     .. toctree::
        :maxdepth: 1

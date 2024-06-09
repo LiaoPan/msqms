@@ -16,6 +16,7 @@ opmqc.qc.freq_domain_metrics module
     -------
 
     Classes:
+    ************
 
     .. autosummary::
         :nosignatures:

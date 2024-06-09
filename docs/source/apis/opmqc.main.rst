@@ -16,6 +16,7 @@ opmqc.main module
     -------
 
     Functions:
+    ************
 
     .. autosummary::
         :nosignatures:

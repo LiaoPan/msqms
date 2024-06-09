@@ -16,6 +16,7 @@ opmqc.utils.utils module
     -------
 
     Functions:
+    ************
 
     .. autosummary::
         :nosignatures:
