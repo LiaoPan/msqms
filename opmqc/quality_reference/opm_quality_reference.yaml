@@ -1,0 +1,14 @@
+# quality references
+quality_1: [0,10]
+quality_2: [5,10]
+
+
+quality_3:
+  mean: 2
+  std: 3
+  sigma_3_range: [0,10]
+
+quality_4:
+  mean: 2
+  std: 3
+  sigma_3_range: [0,10]
