@@ -10,6 +10,5 @@ flat_wave_detection_threshold: 1e-20 # 检测flat的阈值， std of channels.
 max_field_change_threshold: 100000 # fT
 max_field_change_chunk_length: 5 # seconds
 
-
 ## Frequency Domain
 frequency_domain:
