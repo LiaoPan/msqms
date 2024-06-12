@@ -19,8 +19,8 @@ from opmqc.qc import Metrics
 class FreqDomainMetrics(Metrics):
     """frequency domian quality control"""
 
-    def __init__(self, raw: mne.io.Raw, n_jobs=1, verbose=False):
-        super().__init__(raw, n_jobs=n_jobs, verbose=verbose)
+    def __init__(self, raw: mne.io.Raw,data_type, n_jobs=1, verbose=False):
+        super().__init__(raw, n_jobs=n_jobs,data_type=data_type,verbose=verbose)
 
     @staticmethod
     def _get_fre_domain_features(signal, Fs=1000):

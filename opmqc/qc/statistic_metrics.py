@@ -11,15 +11,15 @@ from opmqc.constants import MEG_TYPE
 from opmqc.utils import clogger
 from opmqc.libs.pyprep.find_noisy_channels import NoisyChannels
 from opmqc.libs.osl import detect_badsegments, detect_badchannels
-
+from opmqc.utils import normative_score
 
 class StatsDomainMetric(Metrics):
-    def __init__(self, raw: mne.io.Raw, n_jobs=1, verbose=False):
-        super().__init__(raw, n_jobs=n_jobs, verbose=verbose)
+    def __init__(self, raw: mne.io.Raw, data_type, n_jobs=1, verbose=False):
+        super().__init__(raw, n_jobs=n_jobs, data_type=data_type,verbose=verbose)
 
     def compute_stats_metrics(self, meg_type: MEG_TYPE):
         """
-        calculate  total meg_data(all_channels * all_timepoints)  quality metrics.
+        calculate total meg_data(all_channels * all_timepoints) quality metrics.
         """
         meg_metrics = dict()
         self.meg_type = meg_type
@@ -39,20 +39,26 @@ class StatsDomainMetric(Metrics):
         # bad channels detection
         # bad_ch_ratio_by_pyprep = self.find_bad_channels_by_prep()
         bad_ch_ratio_by_psd = self.find_bad_channels_by_psd()
-        bad_ch_ratio_by_osl = self.find_bad_channels_by_osl()
+        # bad_ch_ratio_by_osl = self.find_bad_channels_by_osl()
+
+        bad_ch_ratio_by_osl = bad_ch_ratio_by_psd  # just for debug.
 
         # meg_metrics['BadChanRatio_Prep'] = bad_ch_ratio_by_pyprep
-        meg_metrics['BadChanRatio_PSD'] = bad_ch_ratio_by_psd
-        meg_metrics['BadChanRatio_OSL'] = bad_ch_ratio_by_osl
+        meg_metrics['BadChanRatio'] = (bad_ch_ratio_by_osl + bad_ch_ratio_by_psd)/2
 
         # bad segments detection
         bad_segs_num = self.find_bad_segments_by_osl()
-        meg_metrics['BadSegmentsNum'] = bad_segs_num
+        bad_segs_thres = float(self.data_type_specific_config['BadSegmentsRatio_threshold'])
+        bad_segs_ratio = normative_score(bad_segs_num, bad_segs_thres)
+        meg_metrics['BadSegmentsRatio'] = bad_segs_ratio
+        clogger.info(f"BadSegmentsRatio is {bad_segs_ratio}")
 
         _, zero_ratio = self.find_zero_values(self.meg_data)
         _, nan_ratio = self.find_NaN_values(self.meg_data)
-        flat_thres = 1e-20  # Need to change to dynamic call
-        flat_info = self.find_flat(flat_thres)
+
+        flat_thres_det = self.data_type_specific_config['flat_wave_detection_threshold']
+
+        flat_info = self.find_flat(flat_thres_det)
         flat_ratio = flat_info['flat_chan_ratio']
         meg_metrics['Zero_ratio'] = zero_ratio
         meg_metrics['NaN_ratio'] = nan_ratio
@@ -60,16 +66,15 @@ class StatsDomainMetric(Metrics):
 
         # average
         meg_metrics_df = pd.DataFrame([meg_metrics], index=[f'avg_{meg_type}'])
-        # print(meg_metrics_df)
+
         # meg_metrics_df.loc[f'avg_{meg_type}'] = meg_metrics_df.mean()
-        meg_metrics_df.loc[f'std_{meg_type}'] = meg_metrics_df.mean()
+        meg_metrics_df.loc[f'std_{meg_type}'] = [0] * len(meg_metrics_df.columns) # meg_metrics_df.std()
 
         return meg_metrics_df
 
     def compute_skewness(self, data: np.ndarray):
-        """
-        # 1.计算偏度(Skewness)
-        # skewness 衡量分布的shape
+        """ Skewness: measure the shape of the distribution
+
         # skewness = 0, normally distributed
         # skewness > 0,  more weight in the left tail of the distribution.
         # skewnees < 0， more weight in the right tail of the distribution.
@@ -85,8 +90,7 @@ class StatsDomainMetric(Metrics):
         return left_skew_ratio, mean_skewness, std_skewness
 
     def compute_kurtosis(self, data: np.ndarray):
-        """
-        # 2.计算峰度(Kurtosis)
+        """Kurtosis:
         # It is also a statistical term and an important characteristic of frequency distribution.
         # It determines whether a distribution is heavy-tailed in respect of the distribution.
         # It provides information about the shape of a frequency distribution.
@@ -135,8 +139,7 @@ class StatsDomainMetric(Metrics):
         return bad_channels_ratio
 
     def find_bad_channels_by_psd(self):
-        """
-        Calculate the PSD(power spectral density) of all channels,
+        """Calculate the PSD (power spectral density) of all channels.
         find the ones that exceed the mean plus standard deviation, and determine them as bad channels.
         """
         ch_names = np.array(self.raw.info['ch_names'])
@@ -151,7 +154,9 @@ class StatsDomainMetric(Metrics):
         return bad_channels_ratio
 
     def find_bad_channels_by_osl(self):
-        bad_channel = detect_badchannels(self.raw, picks=self.meg_type,ref_meg=False)
+        """Find the bad channels by OSL Library.
+        """
+        bad_channel = detect_badchannels(self.raw, picks=self.meg_type, ref_meg=False)
         bad_channels_ratio = len(bad_channel) / len(self.meg_names)
         clogger.info(f"channel name:{bad_channel}--bad channels ratio:{bad_channels_ratio}")
         return bad_channels_ratio
@@ -189,23 +194,26 @@ class StatsDomainMetric(Metrics):
         """
         nan_mask = np.isnan(data)
         nan_count = np.sum(nan_mask)
-        total_elements = data.size
-        nan_ratio = (nan_count / total_elements) * 100
+        # total_elements = data.size
+        thres = float(self.data_type_specific_config['NaN_ratio_threshold'])
+        nan_ratio = normative_score(nan_count, thres)
+        # nan_ratio = (nan_count / total_elements) * 100
         return nan_mask, nan_ratio
 
     def find_flat(self, flat_thres):
         """detect flat channels or constant channels."""
+        if isinstance(flat_thres,str):
+            flat_thres = float(flat_thres)
         std_values = np.nanstd(self.meg_data, axis=1)
         flat_chan_inds = np.argwhere(std_values <= flat_thres)
         flat_chan_names = [self.raw.info['ch_names'][fc[0]] for fc in flat_chan_inds]
         flat_chan_ratio = (len(flat_chan_names) / len(self.meg_names)) * 100  # percentage
-        return {"flat_chan_names": flat_chan_ratio,
+        return {"flat_chan_names": flat_chan_names,
                 "flat_chan_ratio": flat_chan_ratio}
 
     def compute_mag_field_change(self, data: np.ndarray):
-        """
-        # 5.计算Mag Field Change,记录磁场变化程度
-        按通道计算磁场变化的最大值,及其磁场变化平均值和方差
+        """Calculate the Mag Field Change,and record the degree of magnetic field change.
+        Calculate the maximum value of the magnetic field change, and the mean value and variance of the magnetic field change by channel.
         """
         diff_field = np.abs(np.diff(data, axis=1))
 
@@ -215,8 +223,8 @@ class StatsDomainMetric(Metrics):
         return max_field_change, mean_field_change, std_field_change
 
     def compute_baseline_offset(self, data: np.ndarray):
-        """# 6.baseline offset，计算每个通道基线漂移程度（mean、median）；
-        计算通道数据均值相对于总体均值、总体中位数的平均偏移程度
+        """Baseline offset: Calculate the baseline drift of each channel (mean, median)；
+        Calculate the average deviation degree of the channel data mean relative to the population mean and population median.
         """
         overall_mean = np.mean(data)
         channel_means = np.mean(data, axis=1)
@@ -250,8 +258,8 @@ if __name__ == '__main__':
     import time
 
     st = time.time()
-    sdm_opm = StatsDomainMetric(opm_raw.crop(0, 0.5), n_jobs=1)
-    sdm_squid = StatsDomainMetric(squid_raw.crop(0, 0.5), n_jobs=1)
+    sdm_opm = StatsDomainMetric(opm_raw.crop(0, 0.5), n_jobs=1, data_type='opm')
+    sdm_squid = StatsDomainMetric(squid_raw.crop(0, 0.5), n_jobs=1, data_type='squid')
     print("opm_data:", sdm_opm.compute_stats_metrics('mag'))
     print("squid_data:", sdm_squid.compute_stats_metrics('mag'))
     et = time.time()

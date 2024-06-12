@@ -14,8 +14,8 @@ from opmqc.constants import MEG_TYPE
 from opmqc.utils import segment_raw_data
 
 class EntropyDomainMetric(Metrics):
-    def __init__(self, raw: mne.io.Raw,n_jobs=-1, verbose=False):
-        super().__init__(raw, n_jobs=n_jobs, verbose=verbose)
+    def __init__(self, raw: mne.io.Raw,data_type,n_jobs=-1, verbose=False):
+        super().__init__(raw, n_jobs=n_jobs,data_type=data_type,verbose=verbose)
 
     def compute_entropy_metrics(self, meg_type: MEG_TYPE, seg_length=100):
         raw_list,_ = segment_raw_data(self.raw, seg_length)

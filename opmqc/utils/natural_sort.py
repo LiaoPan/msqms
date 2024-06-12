@@ -2,12 +2,13 @@
 import re
 
 def natural_sort_key(s):
-    """
-    Sort string with natural order.
+    """Sort string with natural order.
+
     Parameters
     ----------
     s: list(str)
         the list of strings.
+
     Returns
     -------
     list

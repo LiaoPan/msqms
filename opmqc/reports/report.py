@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Generate MEG Pipeline HTML Report"""
+import mne
 import json
 import jinja2
 import os.path as op
@@ -13,16 +14,17 @@ from mne.io import read_raw_fif
 
 from opmqc.qc import get_header_info
 from opmqc.utils.logging import clogger
-
+from opmqc.qc.msqm import MSQM
 
 def gen_quality_report(megfiles: [Union[str, Path]], outdir: Union[str, Path], ftype: str = 'html'):
-    """
-    Generate HTML/JSON Report for a set of MEG Raw data.
+    """Generate HTML/JSON Report for a set of MEG Raw data.
+
     Parameters
     ----------
-    megfiles
-    outdir
-    ftype:str
+    megfiles : [Union[str, Path]]
+    outdir : Union[str, Path]
+        the folder where the report will be saved.
+    ftype : str
         the type of generated report file.
     Returns
     -------
@@ -38,6 +40,19 @@ def gen_quality_report(megfiles: [Union[str, Path]], outdir: Union[str, Path], f
         if not op.exists(fmeg):
             clogger.error(f"{fmeg} is not exists. Please check the path of file.")
         raw = read_raw_fif(fmeg, verbose=False)
+
+        # compute the msqm score and obtain the reference values & hints[↑↓✔]
+        # "msqm_score":98,
+        # "S": {"lower_bound","upper_bound,"hints":"✔"}
+        # "I": {"score":0.9,"value":10e-12,"lower_bound":,"upper_bound,"hints":"↓"}
+        raw.filter(0.1, 100, n_jobs=-1, verbose=False).notch_filter([50, 100], verbose=False, n_jobs=-1)
+        msqm = MSQM(raw, 'opm', verbose=10, n_jobs=4)
+        msqm = msqm.compute_msqm_score()
+        msqm_score = msqm['msqm_score']
+        details = msqm['details']
+        print("msqm_score", msqm_score)
+        print("details", details)
+
         info = get_header_info(raw)
         qreport = QualityReport(report_data=Box({"Overview": info}), minify_html=False)
         if ftype == "json":
@@ -250,4 +265,4 @@ if __name__ == "__main__":
     from opmqc.main import test_opm_fif_path,test_squid_fif_path
 
     # gen_quality_report(["/Volumes/Touch/Code/osl_practice/anonymize_raw_tsss.fif"], outdir="./demo_report.html")
-    gen_quality_report([test_squid_fif_path], outdir="./demo_report.html")
+    gen_quality_report([test_squid_fif_path], outdir="./new_demo_report.html")

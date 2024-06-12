@@ -12,22 +12,33 @@ from typing import Literal, Optional, List
 def read_raw_bids_dataset(bids_root: str, datatype: Literal['meg'], subjects: List[str] = None,
                           sessions: List[str] = None,
                           tasks: List[str] = None, suffixes: List[str] = None,
-                          print_dir: bool = False, bids_report: bool = False) -> List[Raw]:
+                          print_dir: bool = False, bids_report: bool = False):
     """
     Read and load MEG data from a BIDS dataset.
 
-    Parameters:
-    bids_root (str): The root path of the BIDS dataset.
-    datatype (Literal['meg']): The type of data to read, currently only 'meg' is supported.
-    subjects (str, optional): The specific subjects to load. Default is None, which loads all subjects.
-    sessions (str, optional): The specific sessions to load. Default is None, which loads all sessions.
-    tasks (str, optional): The specific tasks to load. Default is None, which loads all tasks.
-    suffixes (str, optional): Additional suffix to consider when loading data. Default is None.
-    print_dir (bool, optional): If True, print the directory tree structure. Default is False.
-    bids_report (bool, optional): If True, generate a BIDS report. Default is False.
+    Parameters
+    ----------
+    bids_root : str
+        The root path of the BIDS dataset.
+    datatype ():Literal['meg']
+        The type of data to read, currently only 'meg' is supported.
+    subjects : (str, optional)
+        The specific subjects to load. Default is None, which loads all subjects.
+    sessions : (str, optional)
+        The specific sessions to load. Default is None, which loads all sessions.
+    tasks : (str, optional)
+        The specific tasks to load. Default is None, which loads all tasks.
+    suffixes : (str, optional)
+        Additional suffix to consider when loading data. Default is None.
+    print_dir : (bool, optional)
+        If True, print the directory tree structure. Default is False.
+    bids_report : (bool, optional)
+        If True, generate a BIDS report. Default is False.
 
-    Returns:
-    List[Raw]: A list of MNE Raw objects containing the loaded data.
+    Returns
+    -------
+        raw_list : List[mne.io.Raw]
+            A list of MNE Raw objects containing the loaded data.
     """
 
     if print_dir:

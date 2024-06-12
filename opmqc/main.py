@@ -25,23 +25,38 @@ else:
     opm_visual_fif_path = r"C:\Data\Datasets\全记录数据\opm_visual.fif"
 
 
-@hydra.main(config_path='conf',config_name="config")
-def main(cfg:DictConfig)->None:
+@hydra.main(config_path='conf', config_name="config")
+def main(cfg: DictConfig) -> None:
+    """
+    Main entry point
+
+    Parameters
+    ----------
+    cfg : DictConfig
+        configuration file
+
+    Returns
+    -------
+        None
+    """
     print(OmegaConf.to_yaml(cfg))
     update_config_yaml(cfg,conf_path="temp.yaml") # will auto save into outputs/{timestamp}/temp.yaml
      
 def update_config_yaml(conf:DictConfig,conf_path:str):
     """save configure yaml file.
-    Args:
-        conf (DictConfig): config object(omegaconf.DictConfig)
-        conf_path (str):  file path with *.yaml
-    Example:
+
+    Parameters:
+        conf : DictConfig
+            config object(omegaconf.DictConfig)
+        conf_path : str
+            file path with *.yaml
+
+    Examples:
         update_config_yaml(OmegaConf.create({"opm":123,"squid":123}),"./conf/temp.yaml")
     """
     assert isinstance(conf,DictConfig),"conf must be DictConfig"
     OmegaConf.save(config=conf,f=conf_path)
     print("saving f.name:",conf_path)
-
 
 
 # Press the green button in the gutter to run the script.

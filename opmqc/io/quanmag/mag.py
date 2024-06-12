@@ -36,6 +36,7 @@ def _read_single_ch(seri_fid, sec_id, begin_position, num_ch_line, check_rf_incr
                     interpolate_ch_nearest):
     """
     Read single channel data from fileobject.
+
     Parameters
     ----------
     seri_fid: file object
@@ -354,7 +355,7 @@ def _get_filter_type(code_byte):
 
 
 def read_raw_mag(fname, verbose=None):
-    """
+    """read opm raw data (Quanmag corporation.)
 
     Parameters
     ----------
@@ -473,8 +474,8 @@ def read_raw_mag(fname, verbose=None):
 
 def opmag2fif(mag_path, fif_path, opm_position_path=None, check_rf_increment=True,
               check_ch_zero=True, interpolate_ch_nearest=True, verbose=False):
-    """
-    Convert Quan-Mag opm data(*.mag) to fif file(*.fif).
+    """Convert Quan-Mag opm data(*.mag) to fif file(*.fif).
+
     Parameters
     ----------
     mag_path:str
@@ -641,6 +642,7 @@ def opmag2fif(mag_path, fif_path, opm_position_path=None, check_rf_increment=Tru
 
 def opmag2fif_cmd(mag_path, fif_path, opm_position_path=None, ica_compatibility=True, check_rf_increment=True,
                   check_ch_zero=True, interpolate_ch_nearest=True, verbose=False):
+    """command wrapper for opmag2fif"""
     opmag2fif(mag_path, fif_path, opm_position_path, ica_compatibility, check_rf_increment,
               check_ch_zero, interpolate_ch_nearest, verbose)
 

@@ -2,18 +2,217 @@
 """
 MEG quality assessment based on MEG Signal Quality Metrics(MSQMs)
 """
-
+import mne
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+from pathlib import Path
+from metrics import Metrics
+from opmqc.constants import DATA_TYPE, METRICS_COLUMNS
+from opmqc.utils import read_yaml
+from opmqc.qc.freq_domain_metrics import FreqDomainMetrics
+from opmqc.qc.tsfresh_domain_metrics import TsfreshDomainMetric
+from opmqc.qc.time_domain_metrcis import TimeDomainMetric
+from opmqc.qc.statistic_metrics import StatsDomainMetric
+from opmqc.qc.entropy_metrics import EntropyDomainMetric
 
-class MSQM(object):
-    def __init__(self,data):
-        self.data = data
+from typing import Dict
+from joblib import Parallel, delayed
 
-    def _get_paramters(self):
-        pass
 
-    def compute_msqm(self):
-        raise NotImplementedError
+class MSQM(Metrics):
+    def __init__(self, raw: mne.io.Raw, data_type: DATA_TYPE, n_jobs=1, verbose=False):
+        """
+
+        Parameters
+        ----------
+        raw : mne.io.Raw
+            the object of the MEG raw data
+        data_type : DATA_TYPE
+            the data type of the MEG data.(opm or squid)
+        """
+        super().__init__(raw, data_type, n_jobs=n_jobs, verbose=verbose)
+        self.data_type = data_type
+        self.meg_type = 'mag'
+        self.metric_category_names = ['time_domain', 'freq_domain', 'entropy_domain', 'fractal', 'artifacts']
+
+        # quality reference ranges
+        self.quality_ref_dict = self.get_quality_references()
+
+        # configure
+        config_dict = self.get_configure()
+        self.config_default = config_dict['default']
+        self.data_type_specific_config = config_dict['data_type']
+
+    def get_quality_references(self) -> Dict:
+        """ Get quality reference according to data type of MEG.(opm or squid)
+        """
+        if self.data_type == 'opm':
+            quality_ref_fpath = Path(__file__).parent.parent / 'quality_reference' / 'opm_quality_reference.yaml'
+        else:
+            quality_ref_fpath = Path(__file__).parent.parent / 'quality_reference' / 'squid_quality_reference.yaml'
+        quality_ref_dict = read_yaml(quality_ref_fpath)
+
+        return quality_ref_dict
+
+    def _get_single_quality_ref_dict(self, metric_name, bound_sigma=None, limit_sigma=None) -> Dict:
+        """Get single quality reference.
+
+        Parameters
+        ----------
+        metric_name : str
+            the name of metric score
+        bound_sigma : float, optional
+            if sigma is not None, recalculating the reference range instead of
+            taking the upper and lower bounds in the quality_reference file(*_quality_reference.yaml).
+        limit_sigma : float, optional
+            the sigma used to calculate upper and lower limits.
+        Returns
+        -------
+            Reference range value for a single quality metric score
+        """
+        mean = self.quality_ref_dict[metric_name]['mean']
+        std = self.quality_ref_dict[metric_name]['std']
+        bounds = self.quality_ref_dict[metric_name]['range']
+        if len(bounds) != 2:
+            raise ValueError("The length of the quality metric range is incorrect (not equal to 2).")
+        lower_bound, upper_bound = bounds[0], bounds[-1]
+
+        maximum_k = mean - limit_sigma * std
+        minimum_l = mean - limit_sigma * std
+
+        if bound_sigma is not None:
+            lower_bound = mean - bound_sigma * std
+            upper_bound = mean + bound_sigma * std
+
+        print("limit_sigma:", limit_sigma)
+        print("bound_sigma:", bound_sigma)
+
+        return {"lower_bound": lower_bound, "upper_bound": upper_bound,
+                "mean:": mean, "std:": std,
+                "maximum_k": maximum_k, "minimum_l": minimum_l}
+
+    def get_configure(self) -> Dict:
+        """ get configuration parameters from configuration file[conf folder].
+        """
+        default_config_fpath = Path(__file__).parent.parent / 'conf' / 'config.yaml'
+        if self.data_type == 'opm':
+            config_fpath = Path(__file__).parent.parent / 'conf' / 'opm' / 'quality_config.yaml'
+        else:
+            config_fpath = Path(__file__).parent.parent / 'conf' / 'squid' / 'quality_config.yaml'
+        config = read_yaml(config_fpath)
+        default_config = read_yaml(default_config_fpath)
+        return {'default': default_config, 'data_type': config}
+
+    @staticmethod
+    def _calculate_quality_metric(metric_name, raw, meg_type, n_jobs, data_type):
+        if metric_name == "tfresh":
+            m = TsfreshDomainMetric(raw, data_type=data_type, n_jobs=n_jobs)
+            res = m.compute_tsfresh_metrics(meg_type)
+        if metric_name == "time_domain":
+            m = TimeDomainMetric(raw, data_type=data_type)
+            res = m.compute_time_metrics(meg_type)
+        elif metric_name == "freq_domain":
+            m = FreqDomainMetrics(raw, data_type=data_type)
+            res = m.compute_freq_metrics(meg_type=meg_type)
+        elif metric_name == "entropy_domain":
+            m = EntropyDomainMetric(raw, n_jobs=n_jobs, data_type=data_type)
+            res = m.compute_entropy_metrics(meg_type=meg_type)
+        elif metric_name == "stats_domain":
+            m = StatsDomainMetric(raw, data_type=data_type)
+            res = m.compute_stats_metrics(meg_type)
+        else:
+            res = None
+
+        return res
+
+    def compute_single_metric(self, metric_score, metric_name):
+        """single quality metric score is calculated based on the range of quality metric.
+        """
+        bound_sigma = self.data_type_specific_config['bound_threshold_std_dev']
+        limit_sigma = self.data_type_specific_config['limit_threshold_std_dev']
+        single_quality_ref = self._get_single_quality_ref_dict(metric_name, bound_sigma=bound_sigma,
+                                                               limit_sigma=limit_sigma)
+        lower_bound, upper_bound = single_quality_ref['lower_bound'], single_quality_ref['upper_bound']
+        maximum_k, minimum_l = single_quality_ref['maximum_k'], single_quality_ref['minimum_l']
+
+        quality_score = None
+        hint = None
+        if minimum_l < metric_score < lower_bound:
+            quality_score = 1 - (lower_bound - metric_score) / (lower_bound - minimum_l)
+            hint = "↓"
+        elif lower_bound <= metric_score <= upper_bound:
+            quality_score = 1
+            hint = "✔"
+        elif upper_bound < metric_score < maximum_k:
+            quality_score = 1 - (metric_score - upper_bound) / (maximum_k - upper_bound)
+            hint = "↑"
+        elif metric_score <= minimum_l or metric_score >= maximum_k:
+            quality_score = 0
+            hint = "outlier"
+        # check
+        if quality_score > 1 or quality_score < 0:
+            raise ValueError(f"normative quality score {quality_score} is wrong! Please check your input.")
+        return {"quality_score": quality_score,
+                "lower_bound": lower_bound,
+                "upper_bound": upper_bound,
+                "hint": hint}
+
+    def calculate_category_score(self, metrics_df):
+        """average metrics in one category """
+        categories_score = {}
+        details = {}
+        for metric_cate_name in self.metric_category_names:
+            metric_column_names = METRICS_COLUMNS[metric_cate_name]
+            metrics = metrics_df[metric_column_names].loc['avg_mag'].tolist()
+            weights = np.array([1] * len(metrics))
+            metrics_score = []
+            for idx, metric_name in enumerate(metric_column_names):
+                score = self.compute_single_metric(metrics[idx], metric_name)
+                quality_score = score["quality_score"]
+                metrics_score.append(quality_score)
+                details[metric_name] = score
+
+            metrics_score = np.array(metrics_score)
+            print("metrics:", metrics_score)
+            print("weights:", weights)
+            category_score = np.sum(weights * metrics_score) / np.sum(weights)
+            categories_score[metric_cate_name] = category_score
+        return {"categories_score": categories_score, "details": details}
+
+    def compute_msqm_score(self):
+        """
+
+        # compute the msqm score and obtain the reference values & hints[↑↓✔]
+        # "msqm_score":98,
+        # "S": {"lower_bound","upper_bound,"hint":"✔"}
+        # "I": {"score":0.9,"value":10e-12,"lower_bound":,"upper_bound,"hints":"↓"}
+
+        """
+        metric_list = Parallel(self.n_jobs, verbose=self.verbose)(
+            delayed(self._calculate_quality_metric)(metric_cate_name, self.raw, self.meg_type, self.n_jobs,
+                                                    self.data_type) for metric_cate_name in self.metric_category_names)
+        print("metric_list", metric_list)
+        metrics_df = pd.concat(metric_list, axis=1)
+        print("metrics_df", metrics_df)
+        print("metrics_df columns", metrics_df.columns)
+
+        category_scores_dict = self.calculate_category_score(metrics_df)
+        category_weights = np.array(self.config_default['category_weights'])
+        category_scores = category_scores_dict["categories_score"]
+        details = category_scores_dict["details"]
+        msqm_score = np.sum(category_weights * category_scores) / np.sum(category_weights)
+
+        return {"msqm_score": msqm_score, "details": details}
+
+
+if __name__ == '__main__':
+    opm_mag_fif = r"C:\Data\Datasets\OPM-Artifacts\S01.LP.fif"
+    opm_raw = mne.io.read_raw(opm_mag_fif, verbose=False, preload=True)
+    opm_raw.filter(0.1, 100, n_jobs=-1, verbose=False).notch_filter([50, 100], verbose=False, n_jobs=-1)
+    msqm = MSQM(opm_raw, 'opm', verbose=10, n_jobs=4)
+    msqm = msqm.compute_msqm_score()
+    msqm_score = msqm['msqm_score']
+    details = msqm['details']
+    print("msqm_score:", msqm_score)
 

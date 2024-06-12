@@ -10,3 +10,15 @@ hydra:
   output_subdir: null
   run:
     dir: . 
+
+
+# MSQM Score Weights
+
+
+## weights for each metric category
+category_weights:
+  - 1 # time_domain
+  - 1 # frequency_domain
+  - 1 # entropy
+  - 1 # fractal
+  - 1 # artifacts

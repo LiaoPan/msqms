@@ -1,10 +1,11 @@
 #  MEG Quality Accessment Parameters Config
 
-threshold_standard_deviation: 3 # 阈值大于*倍标准差
+bound_threshold_std_dev: 1 # Threshold values greater than * times standard deviation are defined as upper and lower bounds.
+limit_threshold_std_dev: 3 # Threshold values greater than * times standard deviation are defined as upper and lower limits.
 
 ## Time Domain
-amplitude_rejection: 2000 # fT # 检测高幅度异常值的阈值
-flat_wave_detection_threshold: 1e-20 # 检测flat的阈值， std of channels.
+amplitude_rejection: 2000 # fT # Threshold for detecting high-magnitude outliers
+flat_wave_detection_threshold: 1e-12 # The threshold for detecting flat (std of channels).
 
 ### Max Field Change
 max_field_change_threshold: 100000 # fT
@@ -12,3 +13,11 @@ max_field_change_chunk_length: 5 # seconds
 
 ## Frequency Domain
 frequency_domain:
+
+
+## Normative score
+# when the number of bad segments/NaN/Flat is equal to the threshold value, the score is 0.5
+BadSegmentsRatio_threshold: 20 # the number of bad segments.
+NaN_ratio_threshold: 20 # the number of Nan values.
+
+

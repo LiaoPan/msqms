@@ -13,8 +13,8 @@ from opmqc.libs.pyprep.find_noisy_channels import NoisyChannels
 
 
 class TimeDomainMetric(Metrics):
-    def __init__(self, raw: mne.io.Raw, n_jobs=1, verbose=False):
-        super().__init__(raw, n_jobs=n_jobs, verbose=verbose)
+    def __init__(self, raw: mne.io.Raw,data_type, n_jobs=1, verbose=False):
+        super().__init__(raw, n_jobs=n_jobs,data_type=data_type,verbose=verbose)
 
     # @hydra.main(config_path="conf",config_name="config")
     def compute_time_metrics(self, meg_type: MEG_TYPE):
@@ -61,7 +61,7 @@ class TimeDomainMetric(Metrics):
         meg_metrics_df = pd.concat(time_list, axis=1)
 
         meg_metrics_df.loc[f'avg_{meg_type}'] = meg_metrics_df.mean(axis=0)
-        meg_metrics_df.loc[f'std_{meg_type}'] = meg_metrics_df.mean(axis=0)
+        meg_metrics_df.loc[f'std_{meg_type}'] = meg_metrics_df.std(axis=0)
 
         return meg_metrics_df
 
