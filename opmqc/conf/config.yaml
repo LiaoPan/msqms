@@ -17,8 +17,9 @@ hydra:
 
 ## weights for each metric category
 category_weights:
-  - 1 # time_domain
-  - 1 # frequency_domain
-  - 1 # entropy
-  - 1 # fractal
-  - 1 # artifacts
+  time_domain: 1
+  frequency_domain: 1
+  entropy: 1
+  fractal: 1
+  artifacts: 1
+

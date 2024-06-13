@@ -1,13 +1,21 @@
 <div class="tab-pane" id="overview">
 
-    <div class="cprogress blue">
-         <span class="cprogress-left">
-             <span class="cprogress-bar"></span>
-         </span>
-        <span class="cprogress-right">
-            <span class="cprogress-bar"></span>
-                 </span>
-        <div class="cprogress-value">9/Good</div>
+{#    <div class="cprogress blue">#}
+{#         <span class="cprogress-left">#}
+{#             <span class="cprogress-bar"></span>#}
+{#         </span>#}
+{#        <span class="cprogress-right">#}
+{#            <span class="cprogress-bar"></span>#}
+{#                 </span>#}
+{#        {% if msqm_score %}#}
+{#            <div class="cprogress-value">{{ msqm_score }}</div>#}
+{#        {% endif %}#}
+{#    </div>#}
+
+    <div class="pie animate" style={{ msqm_score_css }}>
+        {% if msqm_score %}
+            {{ msqm_score }}
+        {% endif %}
     </div>
 
     <div class="report_item">
@@ -33,7 +41,6 @@
                  id="overview-{{ anchor_id }}">
                 <div class="report_text">
 
-
                     {% if tab == "Overview" %}
                         {% if overview_quality_list | length > 0 %}
                         <table class="basic_info_table">
@@ -52,8 +59,6 @@
                                     {% for v in row %}
                                         <td style="white-space:pre white-space:nowrap">{{ v }}</td>
                                     {% endfor %}
-
-
                             </tr>
 
                             {% endfor %}
@@ -62,16 +67,129 @@
 
                     {% endif %}
 
-                    {% if tab == "Epochs" %}
-                        <h3>Epochs Info Test here!!!!!</h3>
-                    {% endif %}
-
                     {% if tab == "Time Series" %}
-                        <h3>Time Series here!!!!!</h3>
+                        {% if time_quality_list | length > 0 %}
+                        <table class="basic_info_table">
+                            <thead>
+                            <tr>
+                                {% for v in time_quality_list[0] %}
+                                <th style="white-space: nowrap;">{{v}}</th>
+                                {% endfor %}
+                            </tr>
+                            </thead>
+                            {% endif %}
+                            <tbody>
+                            {% for row in time_quality_list[1:] %}
+                            <tr>
+
+                                    {% for v in row %}
+                                        <td style="white-space:pre white-space:nowrap">{{ v }}</td>
+                                    {% endfor %}
+                            </tr>
+
+                            {% endfor %}
+                            </tbody>
+                        </table>
                     {% endif %}
 
                     {% if tab == "Frequencies" %}
-                        <h3>Frequencies here!!!!!</h3>
+                        {% if freq_quality_list | length > 0 %}
+                        <table class="basic_info_table">
+                            <thead>
+                            <tr>
+                                {% for v in freq_quality_list[0] %}
+                                <th style="white-space: nowrap;">{{v}}</th>
+                                {% endfor %}
+                            </tr>
+                            </thead>
+                            {% endif %}
+                            <tbody>
+                            {% for row in freq_quality_list[1:] %}
+                            <tr>
+
+                                    {% for v in row %}
+                                        <td style="white-space:pre white-space:nowrap">{{ v }}</td>
+                                    {% endfor %}
+                            </tr>
+
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    {% endif %}
+
+                    {% if tab == "Entropy" %}
+                        {% if entropy_quality_list | length > 0 %}
+                        <table class="basic_info_table">
+                            <thead>
+                            <tr>
+                                {% for v in entropy_quality_list[0] %}
+                                <th style="white-space: nowrap;">{{v}}</th>
+                                {% endfor %}
+                            </tr>
+                            </thead>
+                            {% endif %}
+                            <tbody>
+                            {% for row in entropy_quality_list[1:] %}
+                            <tr>
+
+                                    {% for v in row %}
+                                        <td style="white-space:pre white-space:nowrap">{{ v }}</td>
+                                    {% endfor %}
+                            </tr>
+
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    {% endif %}
+
+                    {% if tab == "Fractal" %}
+                        {% if fractal_quality_list | length > 0 %}
+                        <table class="basic_info_table">
+                            <thead>
+                            <tr>
+                                {% for v in fractal_quality_list[0] %}
+                                <th style="white-space: nowrap;">{{v}}</th>
+                                {% endfor %}
+                            </tr>
+                            </thead>
+                            {% endif %}
+                            <tbody>
+                            {% for row in fractal_quality_list[1:] %}
+                            <tr>
+
+                                    {% for v in row %}
+                                        <td style="white-space:pre white-space:nowrap">{{ v }}</td>
+                                    {% endfor %}
+                            </tr>
+
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    {% endif %}
+
+                {% if tab == "Artifacts" %}
+                        {% if artifacts_quality_list | length > 0 %}
+                        <table class="basic_info_table">
+                            <thead>
+                            <tr>
+                                {% for v in artifacts_quality_list[0] %}
+                                <th style="white-space: nowrap;">{{v}}</th>
+                                {% endfor %}
+                            </tr>
+                            </thead>
+                            {% endif %}
+                            <tbody>
+                            {% for row in artifacts_quality_list[1:] %}
+                            <tr>
+
+                                    {% for v in row %}
+                                        <td style="white-space:pre white-space:nowrap">{{ v }}</td>
+                                    {% endfor %}
+                            </tr>
+
+                            {% endfor %}
+                            </tbody>
+                        </table>
                     {% endif %}
 
                 </div>

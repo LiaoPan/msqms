@@ -14,11 +14,22 @@ class VisualInspection(object):
     def __init__(self, raw):
         self.raw = raw
 
-    def _downsample_mask(self,mask, downsample_dim=1000):
-        """
-        将heatmap降采样到特定维度，以处理时间轴过长问题。
-        方法2：根据downsample_dim设置默认展示的heatmap维度，即无论数据多长，都会压缩到downsample_dim,对其数据求和。
-        这种方法好处是，时间无论多长，都能cover住。[默认推荐]
+    def _downsample_mask(self, mask, downsample_dim=1000):
+        """Downsample the heatmap to a specific dimension to handle excessive time.
+
+        The heatmap dimensions displayed by default are set according to `downsample_dim`, that is, no matter how long the data is,
+        it is compressed to `downsample_dim` and its data is summed.
+        The advantage of this method is that it can cover no matter how long it is. [Default Recommendation]
+
+        Parameters
+        ----------
+        mask : numpy.ndarray[bool]
+            A boolean mask with the same shape as the data.
+        downsample_dim : int
+            The dimension value to which mask is reduced.
+        Returns
+        -------
+
         """
         n_row = mask.shape[0]
         n_col = mask.shape[1]
@@ -29,24 +40,38 @@ class VisualInspection(object):
         return down_mask
 
     def visualize_heatmap(self,data, bad_mask, sfreq=1000, label='NaN', adaptive=True, downsample_dim=1000):
-        """
-        Visualize the positions of NaN values in multi-channel brain data matrix and display the percentage of NaN values.
+        """Visualize the positions of NaN values in multi-channel brain data matrix and display the percentage of NaN values. [Implemented based on plotly]
 
-        Parameters:
-            data (numpy.ndarray): Multi-channel brain data matrix.
-            bad_mask (numpy.ndarray): matrix containing indices of bad values(NaN\Bad Segments\Zeros\constant value etc).
-            adaptive(bool): deal with the long time problem when plotting the heatmap.
-            adaptive_n(int): divide all time points into N buckets.
-            title(str): the title of heatmap.
-        Returns:
-            None
+            Parameters
+            ----------
+            data : numpy.ndarray
+                Multi-channel brain data matrix.
+            bad_mask : numpy.ndarray
+                matrix containing indices of bad values(NaN\Bad Segments\Zeros\constant value etc).
+            sfreq : float
+                sample frequency in Hz
+            label :
+                the label of heatmap
+            adaptive : bool
+                deal with the long time problem when plotting the heatmap.
+            downsample_dim : int
+                The heatmap dimensions displayed by default are set according to downsample_dim,
+                that is, no matter how long the data is, it is compressed to downsample_dim and its data is summed.
+            title : str
+                the title of heatmap.
+
+            Returns
+            -------
+                None
         """
+
         # Calculate bad percentage
         total_samples = data.shape[0] * data.shape[1]
         bad_percentage = np.sum(bad_mask) / total_samples * 100
 
         # split the mask
-        bad_mask = self._downsample_mask(bad_mask, downsample_dim)
+        if adaptive:
+            bad_mask = self._downsample_mask(bad_mask, downsample_dim)
 
         # Create a figure and plot the NaN mask
         # plt.figure(figsize=(24, 6))
@@ -64,7 +89,7 @@ class VisualInspection(object):
         xlabels = [f"{interval_time * i}s" for i in np.arange(0, downsample_dim, int(downsample_dim / 10))]
         # plt.xticks(np.arange(0,downsample_dim,int(downsample_dim/10)),xlabels)
 
-        # 创建布局
+        # create layout
         layout = go.Layout(
             title=f'{label} Values in MEG Data, {label} Percentage: {bad_percentage:.6f}%',
             # xaxis=dict(title='Time'),
@@ -80,7 +105,7 @@ class VisualInspection(object):
 
         )
 
-        # 绘制图表
+        # draw a diagram
         fig = go.Figure(data=godata, layout=layout)
         fig.show()
 
@@ -215,8 +240,11 @@ class VisualInspection(object):
 
     def visual_psd(raw):
         from mne.viz._mpl_figure import _line_figure, _split_picks_by_type
-        from mne._fiff.pick import _picks_to_idx
         from mne.defaults import _handle_default
+        try:
+            from mne._fiff.pick import _picks_to_idx
+        except ImportError as e:
+            print(e)
 
         scalings = _handle_default("scalings", None)
         units = _handle_default("units", None)
@@ -239,6 +267,7 @@ class VisualInspection(object):
                 lambda x: 10 * np.log10(np.maximum(x * scaling ** 2, np.finfo(float).tiny)), axis=0)
 
             # 将对数转换后的结果与 'freq' 列合并
+            # Merge the log-converted result with the 'freq' column
             df_log['freq'] = df['freq']
 
             # 创建频谱图的数据
@@ -253,7 +282,6 @@ class VisualInspection(object):
                 )
                 traces.append(trace)
 
-            # 创建布局
             unit = units_list[idx]
             if "/" in unit:
                 unit = f"({unit})"
@@ -262,12 +290,11 @@ class VisualInspection(object):
                 title=titles_list[idx],
                 xaxis=dict(title='Frequency (Hz)'),
                 yaxis=dict(title=ylabel),
-                width=1200,  # 设置图的宽度 1800 to html
-                height=800,  # 设置图的高度
-                title_x=0.5,  # 设置标题居中
+                width=1200,
+                height=800,
+                title_x=0.5,  # center title
             )
 
-            # 绘制图表
             fig = go.Figure(data=traces, layout=layout)
             fig.show()
             pyo.plot(fig, filename=f'spectrum_plot_opm_visual_{titles_list[idx]}.html')
@@ -292,7 +319,6 @@ class VisualInspection(object):
                                   'Mean': mean_values,
                                   'Std': std_values,
                                   'Variance': var_values})
-        display(result_df)
         # Plot the barplot
         fig, ax = plt.subplots(1, 2, figsize=(12, 24))
         plt.tight_layout()
@@ -400,8 +426,6 @@ class VisualInspection(object):
         plt.xlabel('Channel Index')
         plt.ylabel('Bad Channels')
         plt.title('Bad Channels Distribution')
-    def plot_psd(self):
-        pass
 
     def plot_average_psd(self):
         """
@@ -413,10 +437,6 @@ class VisualInspection(object):
         pass
 
     def plot_power_on_ts(self):
-        pass
-
-    def plot_gfp(self):
-
         pass
 
     def plot_chan_variance_ts(self):
@@ -479,30 +499,22 @@ class VisualInspection(object):
         """
         pass
 
-    def _downsample_mask(self,mask, downsample_dim=1000):
-        """
-        将heatmap降采样到特定维度，以处理时间轴过长问题。
-        方法2：根据downsample_dim设置默认展示的heatmap维度，即无论数据多长，都会压缩到downsample_dim,对其数据求和。
-        这种方法好处是，时间无论多长，都能cover住。[默认推荐]
-        """
-        n_row = mask.shape[0]
-        n_col = mask.shape[1]
-        interval_size = np.ceil(n_col / downsample_dim).astype(int)
-        down_mask = np.zeros((n_row, downsample_dim), dtype=int)
-        for i in range(downsample_dim):
-            down_mask[:, i] = np.sum(mask[:, i * interval_size:(i + 1) * interval_size], axis=1)
-        return down_mask
 
-    def visualize_heatmap(data, bad_mask, sfreq=1000, label='NaN', adaptive=True, downsample_dim=1000):
-        """
-        Visualize the positions of NaN values in multi-channel brain data matrix and display the percentage of NaN values.
 
+    def visualize_heatmap(self,data, bad_mask, sfreq=1000, label='NaN', adaptive=True, downsample_dim=1000):
+        """Visualize the positions of NaN values in multi-channel brain data matrix and display the percentage of NaN values.
+        
         Parameters:
-            data (numpy.ndarray): Multi-channel brain data matrix.
-            bad_mask (numpy.ndarray): matrix containing indices of bad values(NaN\Bad Segments\Zeros\constant value etc).
-            adaptive(bool): deal with the long time problem when plotting the heatmap.
-            adaptive_n(int): divide all time points into N buckets.
-            title(str): the title of heatmap.
+            data : numpy.ndarray
+                Multi-channel brain data matrix.
+            bad_mask : numpy.ndarray
+                matrix containing indices of bad values(NaN\Bad Segments\Zeros\constant value etc).
+            adaptive : bool
+                deal with the long time problem when plotting the heatmap.
+            adaptive_n : int
+                divide all time points into N buckets.
+            title : str
+                the title of heatmap.
         Returns:
             None
         """
@@ -533,9 +545,6 @@ class VisualInspection(object):
         # Show the plot
         plt.show()
 
-
-
-
 if __name__ == '__main__':
     import mne
     import numpy as np
@@ -543,21 +552,26 @@ if __name__ == '__main__':
     import seaborn as sns
     from pathlib import Path
 
-    opm_mag_fif = "C:\Data\Datasets\Artifact\S01.LP.fif"
+    opm_mag_fif = r"C:\Data\Datasets\OPM-Artifacts\S01.LP.fif"
     opm_raw = mne.io.read_raw(opm_mag_fif, verbose=False)
     opm_raw.first_samp
 
-    squid_fif = Path(r"C:\Data\Datasets\MEG_Lab\02_liaopan\231123\run1_tsss.fif")
-    squid_raw = mne.io.read_raw_fif(squid_fif)
-    print(squid_raw.first_samp)
-    print(squid_raw.first_time)
-    squid_raw.time_as_index(7000)
+    # squid_fif = Path(r"C:\Data\Datasets\MEG_Lab\02_liaopan\231123\run1_tsss.fif")
+    # squid_raw = mne.io.read_raw_fif(squid_fif)
+    # print(squid_raw.first_samp)
+    # print(squid_raw.first_time)
+    # squid_raw.time_as_index(7000)
+    # squid_data = squid_raw.get_data('mag', start=0, stop=6000)
+    # print("squid_data shape:", squid_data.shape)
 
     opm_data = opm_raw.get_data('mag', start=0, stop=6000)
-    squid_data = squid_raw.get_data('mag', start=0, stop=6000)
     print("opm_data shape:", opm_data.shape)
-    print("squid_data shape:", squid_data.shape)
 
-    opm_mag_visual = "C:\Data\Datasets\全记录数据\opm_visual.fif"
+    opm_mag_visual = r"C:\Data\Datasets\全记录数据\opm_visual.fif"
     opm_raw_visual = mne.io.read_raw(opm_mag_visual, verbose=False)
     opm_data_visual = opm_raw_visual.get_data('mag', start=0, stop=200)
+    opm_data_visual_2 = opm_data_visual.get_data('mag')
+
+    VisualInspection()
+
+

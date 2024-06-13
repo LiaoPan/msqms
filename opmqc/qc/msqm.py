@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 from pathlib import Path
-from metrics import Metrics
+from opmqc.qc.metrics import Metrics
 from opmqc.constants import DATA_TYPE, METRICS_COLUMNS
 from opmqc.utils import read_yaml
 from opmqc.qc.freq_domain_metrics import FreqDomainMetrics
@@ -22,7 +22,7 @@ from joblib import Parallel, delayed
 
 class MSQM(Metrics):
     def __init__(self, raw: mne.io.Raw, data_type: DATA_TYPE, n_jobs=1, verbose=False):
-        """
+        """MEG quality assessment based on MEG Signal Quality Metrics (MSQMs)
 
         Parameters
         ----------
@@ -34,7 +34,6 @@ class MSQM(Metrics):
         super().__init__(raw, data_type, n_jobs=n_jobs, verbose=verbose)
         self.data_type = data_type
         self.meg_type = 'mag'
-        self.metric_category_names = ['time_domain', 'freq_domain', 'entropy_domain', 'fractal', 'artifacts']
 
         # quality reference ranges
         self.quality_ref_dict = self.get_quality_references()
@@ -43,6 +42,10 @@ class MSQM(Metrics):
         config_dict = self.get_configure()
         self.config_default = config_dict['default']
         self.data_type_specific_config = config_dict['data_type']
+
+        # Get the metric type based on the configuration file.
+        self.metric_category_names = list(self.config_default['category_weights'].keys())  # ['time_domain', 'freq_domain', 'entropy', 'fractal', 'artifacts']
+
 
     def get_quality_references(self) -> Dict:
         """ Get quality reference according to data type of MEG.(opm or squid)
@@ -85,9 +88,6 @@ class MSQM(Metrics):
             lower_bound = mean - bound_sigma * std
             upper_bound = mean + bound_sigma * std
 
-        print("limit_sigma:", limit_sigma)
-        print("bound_sigma:", bound_sigma)
-
         return {"lower_bound": lower_bound, "upper_bound": upper_bound,
                 "mean:": mean, "std:": std,
                 "maximum_k": maximum_k, "minimum_l": minimum_l}
@@ -106,6 +106,7 @@ class MSQM(Metrics):
 
     @staticmethod
     def _calculate_quality_metric(metric_name, raw, meg_type, n_jobs, data_type):
+
         if metric_name == "tfresh":
             m = TsfreshDomainMetric(raw, data_type=data_type, n_jobs=n_jobs)
             res = m.compute_tsfresh_metrics(meg_type)
@@ -149,11 +150,12 @@ class MSQM(Metrics):
             hint = "↑"
         elif metric_score <= minimum_l or metric_score >= maximum_k:
             quality_score = 0
-            hint = "outlier"
+            hint = "✘"
         # check
         if quality_score > 1 or quality_score < 0:
             raise ValueError(f"normative quality score {quality_score} is wrong! Please check your input.")
         return {"quality_score": quality_score,
+                "metric_score": metric_score,
                 "lower_bound": lower_bound,
                 "upper_bound": upper_bound,
                 "hint": hint}
@@ -174,8 +176,6 @@ class MSQM(Metrics):
                 details[metric_name] = score
 
             metrics_score = np.array(metrics_score)
-            print("metrics:", metrics_score)
-            print("weights:", weights)
             category_score = np.sum(weights * metrics_score) / np.sum(weights)
             categories_score[metric_cate_name] = category_score
         return {"categories_score": categories_score, "details": details}
@@ -191,28 +191,36 @@ class MSQM(Metrics):
         """
         metric_list = Parallel(self.n_jobs, verbose=self.verbose)(
             delayed(self._calculate_quality_metric)(metric_cate_name, self.raw, self.meg_type, self.n_jobs,
-                                                    self.data_type) for metric_cate_name in self.metric_category_names)
-        print("metric_list", metric_list)
-        metrics_df = pd.concat(metric_list, axis=1)
-        print("metrics_df", metrics_df)
-        print("metrics_df columns", metrics_df.columns)
+                                                    self.data_type) for metric_cate_name in ["time_domain","freq_domain","entropy_domain","stats_domain"])
 
-        category_scores_dict = self.calculate_category_score(metrics_df)
-        category_weights = np.array(self.config_default['category_weights'])
-        category_scores = category_scores_dict["categories_score"]
-        details = category_scores_dict["details"]
+        metrics_df = pd.concat(metric_list, axis=1)
+
+        category_scores_res = self.calculate_category_score(metrics_df)
+        category_scores_dict = category_scores_res['categories_score']
+        category_weights_dict = self.config_default['category_weights']
+
+        category_weights = np.array([category_weights_dict[k] for k in self.metric_category_names])
+        category_scores = np.array([category_scores_dict[k] for k in self.metric_category_names])
+
+        details = category_scores_res["details"]
         msqm_score = np.sum(category_weights * category_scores) / np.sum(category_weights)
 
-        return {"msqm_score": msqm_score, "details": details}
+        return {"msqm_score": msqm_score, "details": details, "category_scores": category_scores_dict}
 
 
 if __name__ == '__main__':
-    opm_mag_fif = r"C:\Data\Datasets\OPM-Artifacts\S01.LP.fif"
+    # opm_mag_fif = r"C:\Data\Datasets\OPM-Artifacts\S01.LP.fif" # 0.63
+    # opm_mag_fif = r"C:\Data\Datasets\OPM-COG.v1\sub-01\ses-opm\meg\sub-01_ses-opm_task-aef_run-01_meg.fif" # 0.746
+    # opm_mag_fif = r"C:\Data\Datasets\OPM-FACE.v2\sub-01\ses-01\meg\sub-01_ses-01_task-face_run-01_meg.fif" # 0.811
+    # opm_mag_fif = r"C:\Data\Code\opmqc_noise_simulation\4.step\OPM\noisy_raw\high_amplitude.noisy_ch0.2.fif" # 0.464
+    # opm_mag_fif = r"C:\Data\Code\opmqc_noise_simulation\4.step\OPM\noisy_raw\high_amplitude.noisy_ch0.8.fif" #0.507
+    opm_mag_fif = r"C:\Data\Code\opmqc_noise_simulation\4.step\OPM\noisy_raw\high_amplitude.noisy_ch1.0.fif"  # 0.449
+
     opm_raw = mne.io.read_raw(opm_mag_fif, verbose=False, preload=True)
     opm_raw.filter(0.1, 100, n_jobs=-1, verbose=False).notch_filter([50, 100], verbose=False, n_jobs=-1)
     msqm = MSQM(opm_raw, 'opm', verbose=10, n_jobs=4)
     msqm = msqm.compute_msqm_score()
     msqm_score = msqm['msqm_score']
     details = msqm['details']
+    print("details:", details)
     print("msqm_score:", msqm_score)
-

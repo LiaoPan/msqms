@@ -10,10 +10,26 @@ METRICS_COLUMNS = {
                     'hjorth_mobility', 'hjorth_complexity', 'num_of_zero_crossings', 'DFA', 'max_mean_offset',
                     'mean_offset', 'Zero_ratio',
                     'std_mean_offset', 'max_median_offset', 'median_offset', 'std_median_offset'],
-    "freq_domain": ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8', 'p9', 'p10', 'p11', 'p12', 'p13'],
+    "frequency_domain": ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8', 'p9', 'p10', 'p11', 'p12', 'p13'],
     "fractal": ['PFD', 'KFD', 'HFD'],
-    "entropy_domain": ['permutation_entropy', 'spectral_entropy', 'svd_entropy', 'approximate_entropy',
-                       'sample_entropy',
-                       'power_spectral_entropy', 'Total_Energy', 'Total_Entropy',
-                       'Energy_Entropy_Ratio'],
-    "artifacts": ['BadChanRatio', 'BadSegmentsNum', 'NaN_ratio', 'Flat_chan_ratio']}
+    "entropy": ['permutation_entropy', 'spectral_entropy', 'svd_entropy', 'approximate_entropy',
+                'sample_entropy', 'power_spectral_entropy', 'Total_Energy', 'Total_Entropy', 'Energy_Entropy_Ratio'],
+    "artifacts": ['BadChanRatio', 'BadSegmentsRatio', 'NaN_ratio', 'Flat_chan_ratio']}
+
+# For HTML Report Display
+## For metric category mappings
+METRICS_REPORT_MAPPING = {"time_domain": "Time Metrics",
+                          "frequency_domain": "Frequency Metrics",
+                          "entropy": "Entropy Metrics",
+                          "fractal": "Fractal Metrics",
+                          "artifacts": "Artifacts",
+                          }
+
+## For single metric mappings
+METRICS_MAPPING = {
+    "NaN_ratio": "Ratio of No-signal",
+    "Flat_chan_ratio": "Ratio of Flat Channels",
+    "BadChanRatio": "Ratio of Bad Channels",
+    "BadSegmentsRatio": "Ratio of Bad Segments"
+}
+
