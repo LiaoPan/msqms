@@ -207,7 +207,7 @@ class StatsDomainMetric(Metrics):
         std_values = np.nanstd(self.meg_data, axis=1)
         flat_chan_inds = np.argwhere(std_values <= flat_thres)
         flat_chan_names = [self.raw.info['ch_names'][fc[0]] for fc in flat_chan_inds]
-        flat_chan_ratio = (len(flat_chan_names) / len(self.meg_names)) * 100  # percentage
+        flat_chan_ratio = (len(flat_chan_names) / len(self.meg_names)) #* 100  # percentage
         return {"flat_chan_names": flat_chan_names,
                 "flat_chan_ratio": flat_chan_ratio}
 
