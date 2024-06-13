@@ -1,6 +1,7 @@
 Instruction.rst
 compile_upload.sh
 build.sh
+*.sh
 update_requirements.sh
 .idea/
 venv/
@@ -12,3 +13,6 @@ docs/build/
 README_private.md
 .vscode
 **/.DS_Store
+**/__pycache__/
+*.fif
+imgs/

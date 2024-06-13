@@ -5,7 +5,7 @@ limit_threshold_std_dev: 3 # Threshold values greater than * times standard devi
 
 ## Time Domain
 amplitude_rejection: 2000 # fT # Threshold for detecting high-magnitude outliers
-flat_wave_detection_threshold: 1.4813950845069537e-08 # The threshold for detecting flat ((mean + 3*std) of channels).
+flat_wave_detection_threshold: 1e-12 # The threshold for detecting flat (std of channels).
 
 ### Max Field Change
 max_field_change_threshold: 100000 # fT

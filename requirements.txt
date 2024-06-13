@@ -20,3 +20,4 @@ PyWavelets==1.6.0
 tsfresh==0.20.0
 fire==0.6.0
 psutil==5.9.8
+Deprecated>=1.2.14

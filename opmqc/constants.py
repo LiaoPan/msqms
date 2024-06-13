@@ -28,8 +28,8 @@ METRICS_REPORT_MAPPING = {"time_domain": "Time Metrics",
 ## For single metric mappings
 METRICS_MAPPING = {
     "NaN_ratio": "Ratio of No-signal",
-    "Flat_chan_ratio": "Ratio of Flat Channels",
-    "BadChanRatio": "Ratio of Bad Channels",
-    "BadSegmentsRatio": "Ratio of Bad Segments"
+    "Flat_chan_ratio": "Ratio of FlatChannels",
+    "BadChanRatio": "Ratio of BadChannels",
+    "BadSegmentsRatio": "Ratio of BadSegments"
 }
 

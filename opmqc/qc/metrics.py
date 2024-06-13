@@ -26,6 +26,15 @@ class Metrics(ABC):
         self.config_default = config_dict['default']
         self.data_type_specific_config = config_dict['data_type']
 
+        # cache variances for report
+        self.zero_mask = None
+        self.nan_mask = None
+        self.bad_chan_mask = None
+        self.bad_seg_mask = None
+        self.flat_mask = None
+        self.bad_chan_names = None
+        self.bad_chan_index = None
+
     def _get_meg_names(self, meg_type: str):
         """
         get channel names from meg type('mag','grad').

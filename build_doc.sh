@@ -1,2 +1,4 @@
 #!/usr/bin/env bash
-python setup.py sdist bdist_wheel
+cd docs
+./make clean
+./make html

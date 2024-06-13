@@ -29,7 +29,7 @@ class VisualInspection(object):
     @staticmethod
     def _mkdir(fpath: Path):
         absolute_fpath = fpath.resolve()
-        absolute_fpath.mkdir(parents=True, exist_ok=True)
+        fpath.mkdir(parents=True, exist_ok=True)
         return absolute_fpath
 
     def _downsample_mask(self, mask, downsample_dim=1000):
@@ -41,8 +41,8 @@ class VisualInspection(object):
 
         Parameters
         ----------
-        mask : numpy.ndarray[bool]
-            A boolean mask with the same shape as the data.
+        mask : numpy.ndarray
+            A boolean mask with the same shape as the data.[bool]
         downsample_dim : int
             The dimension value to which mask is reduced.
         Returns
@@ -53,6 +53,7 @@ class VisualInspection(object):
         n_col = mask.shape[1]
         interval_size = np.ceil(n_col / downsample_dim).astype(int)
         down_mask = np.zeros((n_row, downsample_dim), dtype=int)
+
         for i in range(downsample_dim):
             down_mask[:, i] = np.sum(mask[:, i * interval_size:(i + 1) * interval_size], axis=1)
         return down_mask
@@ -470,10 +471,10 @@ class VisualInspection(object):
         -------
 
         """
-        pass
+        raise NotImplementedError
 
     def plot_power_on_ts(self):
-        pass
+        raise NotImplementedError
 
     def plot_chan_variance_ts(self):
         """
@@ -489,7 +490,7 @@ class VisualInspection(object):
         -------
 
         """
-        pass
+        raise NotImplementedError
 
     def plot_constant_dist(self):
         """
@@ -505,30 +506,16 @@ class VisualInspection(object):
         Returns
         -------
         """
-        pass
+        raise NotImplementedError
 
     def plot_bad_channel_dist(self):
-        pass
+        raise NotImplementedError
 
     def plot_bad_segment_dist(self):
-        pass
+        raise NotImplementedError
 
-    def plot_bad_trails_dist(self):
-        pass
 
-    def plot_no_signals(self):
-        pass
 
-    def plot_high_amplitude(self):
-        pass
-
-    def plot_low_freq_and_high_amp(self):
-        """
-        Low frequency and high amplitude.
-        Returns
-        -------
-        """
-        pass
 
     @deprecated(reason="This version of the implementation is based on matplotlib and has no interactive effects.")
     def _visualize_heatmap(self, data, bad_mask, sfreq=1000, label='NaN', adaptive=True, downsample_dim=1000):

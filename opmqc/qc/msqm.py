@@ -46,6 +46,15 @@ class MSQM(Metrics):
         # Get the metric type based on the configuration file.
         self.metric_category_names = list(self.config_default['category_weights'].keys())  # ['time_domain', 'freq_domain', 'entropy', 'fractal', 'artifacts']
 
+        # cache variances for report
+        self.zero_mask = None
+        self.nan_mask = None
+        self.bad_chan_mask = None
+        self.bad_seg_mask = None
+        self.flat_mask = None
+        self.bad_chan_names = None
+        self.bad_chan_index = None
+
 
     def get_quality_references(self) -> Dict:
         """ Get quality reference according to data type of MEG.(opm or squid)
@@ -106,7 +115,7 @@ class MSQM(Metrics):
 
     @staticmethod
     def _calculate_quality_metric(metric_name, raw, meg_type, n_jobs, data_type):
-
+        cache_report = None
         if metric_name == "tfresh":
             m = TsfreshDomainMetric(raw, data_type=data_type, n_jobs=n_jobs)
             res = m.compute_tsfresh_metrics(meg_type)
@@ -122,10 +131,21 @@ class MSQM(Metrics):
         elif metric_name == "stats_domain":
             m = StatsDomainMetric(raw, data_type=data_type)
             res = m.compute_stats_metrics(meg_type)
-        else:
-            res = None
 
-        return res
+            # cache for report.
+            cache_report = {
+                "zero_mask": m.zero_mask,
+                "nan_mask": m.nan_mask,
+                "bad_chan_mask": m.bad_chan_mask,
+                "bad_seg_mask": m.bad_seg_mask,
+                "flat_mask": m.flat_mask,
+                "bad_chan_names": m.bad_chan_names,
+            }
+
+        else:
+            res = [None, None]
+
+        return [res, cache_report]
 
     def compute_single_metric(self, metric_score, metric_name):
         """single quality metric score is calculated based on the range of quality metric.
@@ -189,9 +209,24 @@ class MSQM(Metrics):
         # "I": {"score":0.9,"value":10e-12,"lower_bound":,"upper_bound,"hints":"↓"}
 
         """
-        metric_list = Parallel(self.n_jobs, verbose=self.verbose)(
+        metric_lists = Parallel(self.n_jobs, verbose=self.verbose)(
             delayed(self._calculate_quality_metric)(metric_cate_name, self.raw, self.meg_type, self.n_jobs,
                                                     self.data_type) for metric_cate_name in ["time_domain","freq_domain","entropy_domain","stats_domain"])
+        # get metrics and cache mask for reports
+        metric_list = []
+        cache_report = None
+        for i in metric_lists:
+            metric_list.append(i[0])
+            if i[1] is not None:
+                cache_report = i[1]
+
+        if cache_report is not None:
+            self.zero_mask = cache_report['zero_mask']
+            self.nan_mask = cache_report['nan_mask']
+            self.bad_chan_mask = cache_report['bad_chan_mask']
+            self.bad_seg_mask = cache_report['bad_seg_mask']
+            self.flat_mask = cache_report['flat_mask']
+            self.bad_chan_names = cache_report['bad_chan_names']
 
         metrics_df = pd.concat(metric_list, axis=1)
 

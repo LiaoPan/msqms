@@ -103,7 +103,6 @@ setup(
     # },
     entry_points={
         "console_scripts": [
-            "cmd = opmqc:test_console_script",
             "opmqc_report = opmqc.cli.workflow:generate_qc_report"
         ]
     },

@@ -1,8 +1,7 @@
 # coding:utf-8
-# This is a sample Python script.
-
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
+"""
+For debug purposes only
+"""
 import platform
 import hydra
 from omegaconf import DictConfig, OmegaConf
@@ -21,9 +20,9 @@ if system_platform == "mac":
 else:
     test_opm_mag_path = r"C:\Data\Datasets\Artifact\S01.LP.mag"
     test_opm_fif_path = r"C:\Data\Datasets\OPM-Artifacts\S01.LP.fif"
+    # test_opm_fif_path = r"C:\Data\Code\opmqc\sub-01.fif"
     test_squid_fif_path = r"C:\Data\Datasets\MEG_Lab/02_liaopan/231123/run1_tsss.fif"
     opm_visual_fif_path = r"C:\Data\Datasets\全记录数据\opm_visual.fif"
-
 
 @hydra.main(config_path='conf', config_name="config")
 def main(cfg: DictConfig) -> None:
@@ -79,4 +78,3 @@ if __name__ == '__main__':
     et = time.time()
     print("cost time:", et - st)
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
