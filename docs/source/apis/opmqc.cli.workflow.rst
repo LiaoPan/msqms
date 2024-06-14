@@ -7,7 +7,7 @@ opmqc.cli.workflow module
 .. currentmodule:: opmqc.cli.workflow
 
 .. automodule:: opmqc.cli.workflow
-    :members: CONTEXT_SETTINGS, build_qc_workflow, test_opm_fif_path, test_squid_fif_path
+    :members: CONTEXT_SETTINGS, build_qc_workflow
     :undoc-members:
     :show-inheritance:
     :member-order: bysource

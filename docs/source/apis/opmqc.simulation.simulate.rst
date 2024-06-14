@@ -7,21 +7,7 @@ opmqc.simulation.simulate module
 .. currentmodule:: opmqc.simulation.simulate
 
 .. automodule:: opmqc.simulation.simulate
-    :members: add_noise_to_data_with_snr
-    :undoc-members:
-    :show-inheritance:
-    :member-order: bysource
-
-    Summary
-    -------
-
-    Functions:
-    ************
-
-    .. autosummary::
-        :nosignatures:
-
-        add_noise_to_data_with_snr
+    
 
 
 
@@ -29,6 +15,3 @@ opmqc.simulation.simulate module
 
 
 
-
-    Reference
-    ---------

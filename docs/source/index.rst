@@ -23,8 +23,8 @@ Features
 
          .. div:: sd-font-normal
 
-            OPMQC supports object-oriented transformations, including
-            JIT compilation, Autograd.
+            OPMQC can achieve a more reliable and consistent data quality distribution based on large MEG datasets.
+            This results in quantitative signal quality indicators that are more stable and better suited for extensive MEG research.
 
    .. grid-item::
       :columns: 12 12 12 6
@@ -36,56 +36,33 @@ Features
 
          .. div:: sd-font-normal
 
-            OPMQC provides various numerical integration methods for ODEs, SDEs, DDEs, FDEs, etc.
+            OPMQC is implemented modularly and provides command-line tools for generating quality reports, as well as functional interfaces for easy integration into third-party software.
 
    .. grid-item::
       :columns: 12 12 12 6
 
-      .. card:: Model Building
+      .. card:: Minimal preprocessing
          :class-card: sd-border-0
          :shadow: none
          :class-title: sd-fs-5
 
          .. div:: sd-font-normal
 
-            OPMQC provides a modular and composable programming interface for building dynamics.
+            OPMQC workflows should be as minimal as possible to estimate the MSQMs score on the original data or their minimally processed derivatives.
 
    .. grid-item::
       :columns: 12 12 12 6
 
-      .. card:: Model Simulation
+      .. card:: Interoperability and standards
          :class-card: sd-border-0
          :shadow: none
          :class-title: sd-fs-5
 
          .. div:: sd-font-normal
 
-            OPMQC supports dynamics simulation for various brain objects with parallel supports.
+            OPMQC provides each quality control indicator along with its reference range,
+            offering researchers better interpretability and relatively objective standards.
 
-
-   .. grid-item::
-      :columns: 12 12 12 6
-
-      .. card:: Model Training
-         :class-card: sd-border-0
-         :shadow: none
-         :class-title: sd-fs-5
-
-         .. div:: sd-font-normal
-
-            OPMQC supports dynamics training with various machine learning algorithms, like FORCE learning, ridge regression, back-propagation, etc.
-
-   .. grid-item::
-      :columns: 12 12 12 6
-
-      .. card:: Model Analysis
-         :class-card: sd-border-0
-         :shadow: none
-         :class-title: sd-fs-5
-
-         .. div:: sd-font-normal
-
-            OPMQC supports dynamics analysis for low- and high-dimensional systems, including phase plane, bifurcation, linearization, and fixed/slow point analysis.
 
 .. grid::
 
@@ -162,7 +139,11 @@ Features
    :caption: Tutorials
 
    tutorial/core_concepts.rst
-   tutorial/example_opm.rst
-   tutorial/example_squid.rst
    apis/opmqc.rst
+..   tutorial/example_opm.rst
+..   tutorial/example_squid.rst
+
+
+
+
 

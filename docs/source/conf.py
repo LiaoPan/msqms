@@ -63,7 +63,8 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx_design',
     'sphinx.ext.napoleon',
-    'sphinx_copybutton'
+    'sphinx_copybutton',
+    'sphinx_click',
 ]
 
 # myst_enable_extensions = [

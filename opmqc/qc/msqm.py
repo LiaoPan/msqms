@@ -46,16 +46,6 @@ class MSQM(Metrics):
         # Get the metric type based on the configuration file.
         self.metric_category_names = list(self.config_default['category_weights'].keys())  # ['time_domain', 'freq_domain', 'entropy', 'fractal', 'artifacts']
 
-        # cache variances for report
-        self.zero_mask = None
-        self.nan_mask = None
-        self.bad_chan_mask = None
-        self.bad_seg_mask = None
-        self.flat_mask = None
-        self.bad_chan_names = None
-        self.bad_chan_index = None
-
-
     def get_quality_references(self) -> Dict:
         """ Get quality reference according to data type of MEG.(opm or squid)
         """
@@ -90,7 +80,7 @@ class MSQM(Metrics):
             raise ValueError("The length of the quality metric range is incorrect (not equal to 2).")
         lower_bound, upper_bound = bounds[0], bounds[-1]
 
-        maximum_k = mean - limit_sigma * std
+        maximum_k = mean + limit_sigma * std
         minimum_l = mean - limit_sigma * std
 
         if bound_sigma is not None:
@@ -178,6 +168,8 @@ class MSQM(Metrics):
                 "metric_score": metric_score,
                 "lower_bound": lower_bound,
                 "upper_bound": upper_bound,
+                "maximum_k": maximum_k,
+                "minimum_l": minimum_l,
                 "hint": hint}
 
     def calculate_category_score(self, metrics_df):
@@ -209,6 +201,7 @@ class MSQM(Metrics):
         # "I": {"score":0.9,"value":10e-12,"lower_bound":,"upper_bound,"hints":"↓"}
 
         """
+        # metric_lists = self._calculate_quality_metric("stats_domain", self.raw, self.meg_type, self.n_jobs,self.data_type)
         metric_lists = Parallel(self.n_jobs, verbose=self.verbose)(
             delayed(self._calculate_quality_metric)(metric_cate_name, self.raw, self.meg_type, self.n_jobs,
                                                     self.data_type) for metric_cate_name in ["time_domain","freq_domain","entropy_domain","stats_domain"])

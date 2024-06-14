@@ -14,7 +14,6 @@ opmqc.cli package
     .. toctree::
        :maxdepth: 1
 
-       opmqc.cli.parser
        opmqc.cli.workflow
 
 

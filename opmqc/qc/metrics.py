@@ -13,6 +13,7 @@ from opmqc.utils import read_yaml
 class Metrics(ABC):
     def __init__(self, raw: mne.io.Raw, data_type, n_jobs=-1, verbose=False):
         self.raw = raw
+        self.origin_raw = raw.copy()
         self.samp_freq = raw.info['sfreq']
         self.meg_names = None
         self.meg_type = None

@@ -11,6 +11,4 @@ from opmqc.qc import get_header_info
 
 raw = read_raw_fif(test_opm_fif_path, verbose=False)
 info = get_header_info(raw)
-print("Basic Info:", info)
-
 gen_quality_report()

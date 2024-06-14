@@ -20,7 +20,6 @@ opmqc.qc package
        opmqc.qc.metrics
        opmqc.qc.msqm
        opmqc.qc.qc_metrics
-       opmqc.qc.quality_overview
        opmqc.qc.statistic_metrics
        opmqc.qc.time_domain_metrcis
        opmqc.qc.tsfresh_domain_metrics

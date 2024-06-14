@@ -1,9 +1,27 @@
-BadChanRatio_PSD:
-  mean: 0.0737592770627273
+BadChanRatio:
+  mean: 0.02
   range:
-  - 0.052658117505926846
-  - 0.09486043661952774
-  std: 0.021101159556800444
+  - 0.0
+  - 0.04
+  std: 0.02
+BadSegmentsRatio:
+  mean: 0.00125
+  range:
+  - 0.0
+  - 0.0025
+  std: 0.00125
+NaN_ratio:
+  mean: 0.00125
+  range:
+  - 0.0
+  - 0.0025
+  std: 0.00125
+Flat_chan_ratio:
+  mean: 0.00125
+  range:
+  - 0.0
+  - 0.0025
+  std: 0.00125
 C:
   mean: 14.25946561475017
   range:

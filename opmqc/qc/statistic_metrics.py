@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 """Time Domain quality control metric."""
 import mne
-import hydra
 import numpy as np
 import pandas as pd
-from omegaconf import DictConfig, OmegaConf
+from mne.preprocessing import annotate_muscle_zscore
 from scipy.stats import skew, kurtosis
 from opmqc.qc import Metrics
 from opmqc.constants import MEG_TYPE
@@ -26,6 +25,8 @@ class StatsDomainMetric(Metrics):
         self.meg_type = meg_type
         self.meg_names = self._get_meg_names(self.meg_type)
         self.meg_data = self.raw.get_data(meg_type)
+        if self.data_type == 'squid':
+            self.raw.pick(self.meg_type)
 
         max_mean_offset, mean_offset, std_mean_offset, max_median_offset, median_offset, std_median_offset = self.compute_baseline_offset(
             self.meg_data)
@@ -38,24 +39,25 @@ class StatsDomainMetric(Metrics):
         meg_metrics['std_median_offset'] = std_median_offset
 
         # bad channels detection
-        # bad_ch_ratio_by_pyprep,bad_chan_names_prep = self.find_bad_channels_by_prep()
+        bad_ch_ratio_by_pyprep, bad_chan_names_prep = self.find_bad_channels_by_prep()
         bad_ch_ratio_by_psd, bad_chan_names_psd = self.find_bad_channels_by_psd()
-        # bad_ch_ratio_by_osl,bad_chan_names_osl = self.find_bad_channels_by_osl()
+        bad_ch_ratio_by_osl, bad_chan_names_osl = self.find_bad_channels_by_osl()
 
         bad_chan_names = []
         bad_chan_names.extend(bad_chan_names_psd)
-        # bad_chan_names.extend(bad_chan_names_prep)
-        # bad_chan_names.extend(bad_chan_names_osl)
+        bad_chan_names.extend(bad_chan_names_osl)
+        bad_chan_names.extend(bad_chan_names_prep)
 
-        self.bad_chan_names = [i for i in bad_chan_names]
+        self.bad_chan_names = [i for i in list(set(bad_chan_names))]  # deduplicate
         self.bad_chan_index = self._get_channel_index(self.bad_chan_names)
         self.bad_chan_mask = np.full(self.meg_data.shape, False, dtype=bool)
         self.bad_chan_mask[self.bad_chan_index] = True
 
-        bad_ch_ratio_by_osl = bad_ch_ratio_by_psd  # just for debug.(fast)
-
-        # meg_metrics['BadChanRatio_Prep'] = bad_ch_ratio_by_pyprep
-        meg_metrics['BadChanRatio'] = (bad_ch_ratio_by_osl + bad_ch_ratio_by_psd) / 2
+        # bad_ch_ratio_by_osl = bad_ch_ratio_by_psd  # just for debug.(fast)
+        # Average the ratio of bad channels to reduce false detection errors.
+        # meg_metrics['BadChanRatio'] = (bad_ch_ratio_by_osl + bad_ch_ratio_by_psd + bad_ch_ratio_by_pyprep) / 3  # average
+        meg_metrics['BadChanRatio'] = len(self.bad_chan_names) / len(self.meg_names)
+        clogger.info(f"Get all bad channel:{self.bad_chan_names}--BadChanRatio:{meg_metrics['BadChanRatio']}")
 
         # bad segments detection
         bad_segs_num, self.bad_seg_mask = self.find_bad_segments_by_osl()
@@ -131,9 +133,8 @@ class StatsDomainMetric(Metrics):
     def find_bad_channels_by_prep(self):
         noisy_data = NoisyChannels(self.raw, random_state=1337)
         # find bad by corr
-
-        noisy_data.find_bad_by_correlation()
-        clogger.info(f"pyprep: finding bad channels by corr.{noisy_data.bad_by_correlation}")
+        # noisy_data.find_bad_by_correlation()
+        # clogger.info(f"pyprep: finding bad channels by corr.{noisy_data.bad_by_correlation}")
 
         # find bad by deviation
         noisy_data.find_bad_by_deviation()
@@ -151,8 +152,8 @@ class StatsDomainMetric(Metrics):
         clogger.info(f"pyprep: finding bad channels by hfonoise.{noisy_data.bad_by_hf_noise}")
 
         # find bad by ransac
-        noisy_data.find_bad_by_ransac(channel_wise=True, max_chunk_size=1)
-        clogger.info(f"pyprep: finding bad channels by ransac[slow].{noisy_data.bad_by_ransac}")
+        # noisy_data.find_bad_by_ransac(channel_wise=True, max_chunk_size=1)
+        # clogger.info(f"pyprep: finding bad channels by ransac[slow].{noisy_data.bad_by_ransac}")
 
         bad_channels = noisy_data.get_bads()
         clogger.info(f"Get All Bad Channels:{bad_channels}")
@@ -161,7 +162,7 @@ class StatsDomainMetric(Metrics):
 
     def find_bad_channels_by_psd(self):
         """Calculate the PSD (power spectral density) of all channels.
-        find the ones that exceed the mean plus standard deviation, and determine them as bad channels.
+        find the ones that exceed the mean plus 3*standard deviation, and determine them as bad channels.
         """
         ch_names = np.array(self.raw.info['ch_names'])
         psd = self.raw.compute_psd()
@@ -169,9 +170,10 @@ class StatsDomainMetric(Metrics):
         ch_mean_psd = np.mean(psd_data, axis=1)
         total_mean = np.mean(ch_mean_psd)
         total_std = np.std(ch_mean_psd)
-        ids = np.where(ch_mean_psd > total_mean + total_std)
+        ids = np.where((ch_mean_psd > total_mean + 3 * total_std))
         bad_channel = ch_names[ids[0]]
         bad_channels_ratio = len(bad_channel) / len(self.meg_names)
+        clogger.info(f"Detect BadChannels by PSD: {bad_channel}")
         return bad_channels_ratio, bad_channel
 
     def find_bad_channels_by_osl(self):
@@ -179,18 +181,31 @@ class StatsDomainMetric(Metrics):
         """
         bad_channel = detect_badchannels(self.raw, picks=self.meg_type, ref_meg=False)
         bad_channels_ratio = len(bad_channel) / len(self.meg_names)
-        clogger.info(f"channel name:{bad_channel}--bad channels ratio:{bad_channels_ratio}")
+        clogger.info(f"Bad channel name:{bad_channel}--Bad channels ratio:{bad_channels_ratio}")
         return bad_channels_ratio, bad_channel
 
     def find_bad_segments_by_osl(self):
         bad_segs_num = 0
-        bad_segs = detect_badsegments(self.raw, picks=self.meg_type, ref_meg=False, segment_len=1000,
-                                      detect_zeros=False, significance_level=0.05)
+        bad_segs_osl = detect_badsegments(self.raw, picks=self.meg_type, ref_meg=False, segment_len=1000,
+                                          detect_zeros=False, significance_level=0.05, annotate=False)
+        # mne
+        annot_muscle, _ = annotate_muscle_zscore(self.origin_raw, ch_type=self.meg_type, threshold=5,
+                                                 filter_freq=[110, 140])
+        # merge
+        osl_onsets = bad_segs_osl['onsets']
+        mne_onsets = annot_muscle.onset
+        bad_segs = {"onsets": mne_onsets, "durations": annot_muscle.duration}
+        tmp_onset = []
+        tmp_dur = []
+        for idx, o in enumerate(osl_onsets):
+            if o not in mne_onsets:
+                tmp_onset.append(o)
+                tmp_dur.append(bad_segs_osl['durations'][idx])
+
         if np.any(bad_segs):
             bad_segs_num = len(bad_segs['onsets'])
         clogger.info(f"bad segments:{bad_segs}--bad segments num:{bad_segs_num}")
         bad_seg_mask = np.full(self.meg_data.shape, False, dtype=bool)
-
 
         # bad segments mask
         for idx, onset in enumerate(bad_segs['onsets']):
@@ -290,6 +305,7 @@ if __name__ == '__main__':
 
     # opm_mag_fif = r"C:\Data\Datasets\OPM-Artifacts\S01.LP.fif"
     from opmqc.main import test_opm_fif_path
+
     opm_raw = mne.io.read_raw(test_opm_fif_path, verbose=False, preload=True)
     # opm_raw.filter(0, 45).notch_filter([50, 100], verbose=False, n_jobs=-1)
 

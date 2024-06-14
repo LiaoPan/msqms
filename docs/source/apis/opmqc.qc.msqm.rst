@@ -7,7 +7,7 @@ opmqc.qc.msqm module
 .. currentmodule:: opmqc.qc.msqm
 
 .. automodule:: opmqc.qc.msqm
-    :members: MSQM
+    :members: METRICS_COLUMNS, MSQM
     :undoc-members:
     :show-inheritance:
     :member-order: bysource

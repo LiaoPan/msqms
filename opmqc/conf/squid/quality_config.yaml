@@ -1,7 +1,15 @@
 #  MEG Quality Accessment Parameters Config
 
+bound_threshold_std_dev: 1 # Threshold values greater than * times standard deviation are defined as upper and lower bounds.
+limit_threshold_std_dev: 2 # Threshold values greater than * times standard deviation are defined as upper and lower limits.
+
 ## Time Domain
-amplitude_rejection: 2000 
+amplitude_rejection: 2000 # fT # Threshold for detecting high-magnitude outliers
+flat_wave_detection_threshold: 1e-17 # The threshold for detecting flat (std of channels).
 
 ## Frequency Domain
 
+## Normative score
+# when the number of bad segments/NaN/Flat is equal to the threshold value, the score is 0.5
+BadSegmentsRatio_threshold: 20 # the number of bad segments.
+NaN_ratio_threshold: 20 # the number of Nan values.

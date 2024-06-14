@@ -1,7 +1,7 @@
 #  MEG Quality Accessment Parameters Config
 
 bound_threshold_std_dev: 1 # Threshold values greater than * times standard deviation are defined as upper and lower bounds.
-limit_threshold_std_dev: 3 # Threshold values greater than * times standard deviation are defined as upper and lower limits.
+limit_threshold_std_dev: 2 # Threshold values greater than * times standard deviation are defined as upper and lower limits.
 
 ## Time Domain
 amplitude_rejection: 2000 # fT # Threshold for detecting high-magnitude outliers

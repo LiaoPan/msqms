@@ -1,8 +1,6 @@
 """
-重算质控指标，生成质控分数
+Obtain the range of quality metrics.
 """
-
-
 
 def obtain_quality_ranges(dataset_metrics_pd, yaml_fname="bounds.yaml", sigma=1):
     """Calculate the 1,2,3sigma rule and generate the quality reference file(yaml)

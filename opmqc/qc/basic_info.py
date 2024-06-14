@@ -9,8 +9,8 @@ from mne.io import read_raw_fif
 from mne import channel_type
 from mne.utils.misc import _pl
 from mne.utils import sizeof_fmt
-
 from mne import pick_types
+from opmqc.utils import clogger
 
 try:
     from mne.io._digitization import _dig_kind_proper, _dig_kind_rev, _dig_kind_ints
@@ -56,17 +56,21 @@ def get_header_info(raw):
         meas_date_info = meas_date.strftime('%Y-%m-%d %H:%M:%S %Z')
 
     # Participant
-    participant = defaultdict(str, info['subject_info'])
-    sex_dict = defaultdict(str, {0: 'unknown', 1: 'male', 2: 'female'})
-    if participant['birthday']:
-        birthday = '{0}-{1}-{2}'.format(participant['birthday'][0], participant['birthday'][1],
-                                        participant['birthday'][2])
-    else:
-        birthday = 'unspecified'
+    try:
+        participant = defaultdict(str, info['subject_info'])
+        sex_dict = defaultdict(str, {0: 'unknown', 1: 'male', 2: 'female'})
+        if participant['birthday']:
+            birthday = '{0}-{1}-{2}'.format(participant['birthday'][0], participant['birthday'][1],
+                                            participant['birthday'][2])
+        else:
+            birthday = 'unspecified'
 
-    participant_info = {"name": participant['first_name'] + participant['middle_name'] + participant['last_name'],
-                        "birthday": birthday,
-                        "sex": sex_dict[participant['sex']]}
+        participant_info = {"name": participant['first_name'] + participant['middle_name'] + participant['last_name'],
+                            "birthday": birthday,
+                            "sex": sex_dict[participant['sex']]}
+    except Exception as e:
+        clogger.error(e)
+        participant_info = {"name": "", "birthday": "", "sex": ""}
 
     # Digitized points
     dig = info['dig']
@@ -102,7 +106,7 @@ def get_header_info(raw):
     if len(pick_eog) > 0:
         eog = ', '.join(np.array(raw.info['ch_names'])[pick_eog])
     else:
-        eog = '0' # 'Not available'
+        eog = '0'  # 'Not available'
     pick_ecg = pick_types(raw.info, meg=False, ecg=True)
     if len(pick_ecg) > 0:
         ecg = ', '.join(np.array(raw.info['ch_names'])[pick_ecg])

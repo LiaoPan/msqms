@@ -7,7 +7,7 @@ opmqc.reports.report module
 .. currentmodule:: opmqc.reports.report
 
 .. automodule:: opmqc.reports.report
-    :members: HtmlReport, QualityReport, gen_quality_report
+    :members: HtmlReport, METRICS_COLUMNS, METRICS_MAPPING, METRICS_REPORT_MAPPING, QualityReport, gen_quality_report
     :undoc-members:
     :show-inheritance:
     :member-order: bysource

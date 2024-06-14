@@ -17,11 +17,12 @@ from mne.io import read_raw_fif
 from opmqc.qc import get_header_info
 from opmqc.utils.logging import clogger
 from opmqc.qc.msqm import MSQM
+from opmqc.constants import DATA_TYPE
 from opmqc.qc.visual_inspection import VisualInspection
 from opmqc.constants import METRICS_COLUMNS, METRICS_REPORT_MAPPING, METRICS_MAPPING
 
 
-def gen_quality_report(megfiles: [Union[str, Path]], outdir: Union[str, Path],report_fname:str="" ,ftype: str = 'html'):
+def gen_quality_report(megfiles: [Union[str, Path]], outdir: Union[str, Path],report_fname:str="", data_type: DATA_TYPE="",ftype: str = 'html'):
     """Generate HTML/JSON Report for a set of MEG Raw data.
 
     Parameters
@@ -31,6 +32,8 @@ def gen_quality_report(megfiles: [Union[str, Path]], outdir: Union[str, Path],re
         the folder where the report will be saved.
     report_fname: str
         the name of report.
+    data_type: str
+        the type of data.['opm' or 'squid']
     ftype : str
         the type of generated report file.
     Returns
@@ -55,13 +58,14 @@ def gen_quality_report(megfiles: [Union[str, Path]], outdir: Union[str, Path],re
         # "I": {"score":0.9,"value":10e-12,"lower_bound":,"upper_bound,"hints":"↓"}
 
         raw.filter(0.1, 100, n_jobs=-1, verbose=False).notch_filter([50, 100], verbose=False, n_jobs=-1)
-        msqm = MSQM(raw, 'opm', verbose=10, n_jobs=4)
+        msqm = MSQM(raw, data_type=data_type, verbose=10, n_jobs=4)
         msqm_dict = msqm.compute_msqm_score()
         msqm_score = msqm_dict['msqm_score']
         details = msqm_dict['details']
         category_scores = msqm_dict['category_scores']
 
-        vis = VisualInspection(raw=raw, output_fpath=os.path.join(outdir,'imgs'))
+        fmeg_fname = Path(raw.filenames[0]).stem
+        vis = VisualInspection(raw=raw, output_fpath=os.path.join(outdir, f'{fmeg_fname}.imgs'))
         meg_data = raw.get_data('mag')
 
         nan_mask = msqm.nan_mask
@@ -398,6 +402,7 @@ class HtmlReport(object):
             "fractal_quality_list": self.fractal_quality_list,
 
             "msqm_score_css": self.msqm_score_css,
+            "report_html_name": Path(self.info_basic["Source filename"]).stem,
             # "overview_dict": self.overview_dict,
         }
 
@@ -446,4 +451,5 @@ if __name__ == "__main__":
     from opmqc.main import test_opm_fif_path, test_squid_fif_path
 
     # gen_quality_report(["/Volumes/Touch/Code/osl_practice/anonymize_raw_tsss.fif"], outdir="./demo_report.html")
-    gen_quality_report([test_opm_fif_path], outdir=r"C:\Data\Code\opmqc\opmqc\reports", report_fname="new_demo_report",ftype='html')
+    # gen_quality_report([test_squid_fif_path], outdir=r"C:\Data\Code\opmqc\opmqc\reports",data_type='squid',report_fname="new_demo_report",ftype='html')
+    gen_quality_report([test_opm_fif_path], outdir=r"C:\Data\Code\opmqc\opmqc\reports",data_type='opm',report_fname="new_demo_report",ftype='html')

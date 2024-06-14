@@ -7,7 +7,7 @@ opmqc.constants module
 .. currentmodule:: opmqc.constants
 
 .. automodule:: opmqc.constants
-    :members: MEG_TYPE
+    :members: DATA_TYPE, MEG_TYPE, METRICS_COLUMNS, METRICS_MAPPING, METRICS_REPORT_MAPPING
     :undoc-members:
     :show-inheritance:
     :member-order: bysource
