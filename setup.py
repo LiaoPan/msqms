@@ -101,6 +101,11 @@ setup(
     #     "Forum": "",
     #     "Source Code": "",
     # },
+    package_data={
+        'opmqc': ['conf/config.yaml', 'conf/opm/quality_config.yaml', 'conf/squid/quality_config.yaml',
+                  "quality_reference/opm_quality_reference.yaml",
+                  "quality_reference/squid_quality_reference.yaml"]
+    },
     entry_points={
         "console_scripts": [
             "opmqc_report = opmqc.cli.workflow:generate_qc_report"
