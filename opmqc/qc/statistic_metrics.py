@@ -25,8 +25,9 @@ class StatsDomainMetric(Metrics):
         self.meg_type = meg_type
         self.meg_names = self._get_meg_names(self.meg_type)
         self.meg_data = self.raw.get_data(meg_type)
-        if self.data_type == 'squid':
-            self.raw.pick(self.meg_type)
+        #
+        # if self.data_type == 'squid':
+        #     self.raw.pick(self.meg_type)
 
         max_mean_offset, mean_offset, std_mean_offset, max_median_offset, median_offset, std_median_offset = self.compute_baseline_offset(
             self.meg_data)

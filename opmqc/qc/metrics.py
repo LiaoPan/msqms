@@ -22,6 +22,9 @@ class Metrics(ABC):
         self.verbose = verbose
         self.n_jobs = n_jobs
 
+        if self.data_type == 'squid':
+            self.raw.pick(self.meg_type)
+
         # configure
         config_dict = self.get_configure()
         self.config_default = config_dict['default']
