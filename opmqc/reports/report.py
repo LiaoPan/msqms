@@ -57,8 +57,8 @@ def gen_quality_report(megfiles: [Union[str, Path]], outdir: Union[str, Path],re
         # "S": {"lower_bound","upper_bound,"hints":"✔"}
         # "I": {"score":0.9,"value":10e-12,"lower_bound":,"upper_bound,"hints":"↓"}
 
-        raw.filter(0.1, 100, n_jobs=-1, verbose=False).notch_filter([50, 100], verbose=False, n_jobs=-1)
-        msqm = MSQM(raw, data_type=data_type, verbose=10, n_jobs=4)
+        raw_filter = raw.copy().filter(0.1, 100, n_jobs=-1, verbose=False).notch_filter([50, 100], verbose=False, n_jobs=-1)
+        msqm = MSQM(raw_filter, origin_raw=raw, data_type=data_type, verbose=10, n_jobs=4)
         msqm_dict = msqm.compute_msqm_score()
         msqm_score = msqm_dict['msqm_score']
         details = msqm_dict['details']

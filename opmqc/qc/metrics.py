@@ -11,9 +11,9 @@ from opmqc.utils import read_yaml
 
 
 class Metrics(ABC):
-    def __init__(self, raw: mne.io.Raw, data_type, n_jobs=-1, verbose=False):
+    def __init__(self, raw: mne.io.Raw, data_type, origin_raw: mne.io.Raw = None, n_jobs=-1, verbose=False):
         self.raw = raw
-        self.origin_raw = raw.copy()
+        self.origin_raw = origin_raw
         self.samp_freq = raw.info['sfreq']
         self.meg_names = None
         self.meg_type = 'mag'
@@ -43,7 +43,8 @@ class Metrics(ABC):
         """
         get channel names from meg type('mag','grad').
         """
-        picks = mne.pick_types(self.raw.info, meg_type, ref_meg=False)  #If True include CTF / 4D reference channels(ref_meg).
+        picks = mne.pick_types(self.raw.info, meg_type,
+                               ref_meg=False)  # If True include CTF / 4D reference channels(ref_meg).
         self.meg_names = np.array(self.raw.info['ch_names'])[picks]
         return self.meg_names
 

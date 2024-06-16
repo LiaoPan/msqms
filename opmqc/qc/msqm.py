@@ -21,17 +21,19 @@ from joblib import Parallel, delayed
 
 
 class MSQM(Metrics):
-    def __init__(self, raw: mne.io.Raw, data_type: DATA_TYPE, n_jobs=1, verbose=False):
+    def __init__(self, raw: mne.io.Raw, data_type: DATA_TYPE, origin_raw: mne.io.Raw = None, n_jobs=1, verbose=False):
         """MEG quality assessment based on MEG Signal Quality Metrics (MSQMs)
 
         Parameters
         ----------
         raw : mne.io.Raw
             the object of the MEG raw data
+        origin_raw : mne.io.Raw, optional
+            keep the original MEG raw data.
         data_type : DATA_TYPE
             the data type of the MEG data.(opm or squid)
         """
-        super().__init__(raw, data_type, n_jobs=n_jobs, verbose=verbose)
+        super().__init__(raw, data_type=data_type, origin_raw=origin_raw, n_jobs=n_jobs, verbose=verbose)
         self.data_type = data_type
         self.meg_type = 'mag'
 
@@ -104,7 +106,7 @@ class MSQM(Metrics):
         return {'default': default_config, 'data_type': config}
 
     @staticmethod
-    def _calculate_quality_metric(metric_name, raw, meg_type, n_jobs, data_type):
+    def _calculate_quality_metric(metric_name, raw, meg_type, n_jobs, data_type, origin_raw):
         cache_report = None
         if metric_name == "tfresh":
             m = TsfreshDomainMetric(raw, data_type=data_type, n_jobs=n_jobs)
@@ -119,7 +121,7 @@ class MSQM(Metrics):
             m = EntropyDomainMetric(raw, n_jobs=n_jobs, data_type=data_type)
             res = m.compute_entropy_metrics(meg_type=meg_type)
         elif metric_name == "stats_domain":
-            m = StatsDomainMetric(raw, data_type=data_type)
+            m = StatsDomainMetric(raw, data_type=data_type, origin_raw=origin_raw)
             res = m.compute_stats_metrics(meg_type)
 
             # cache for report.
@@ -201,17 +203,17 @@ class MSQM(Metrics):
         # "I": {"score":0.9,"value":10e-12,"lower_bound":,"upper_bound,"hints":"↓"}
 
         """
-        # metric_lists = self._calculate_quality_metric("entropy_domain", self.raw, self.meg_type, self.n_jobs,self.data_type) # for fast debug.
+        # metric_lists = self._calculate_quality_metric("entropy_domain", self.raw, self.meg_type, self.n_jobs,self.data_type,self.origin_raw) # for fast debug.
         # parallel.
         # bug for squid: A task has failed to un-serialize. Please ensure that the arguments of the function are all picklable.
         # metric_lists = Parallel(self.n_jobs, verbose=self.verbose)(
         #     delayed(self._calculate_quality_metric)(metric_cate_name, self.raw, self.meg_type, self.n_jobs,
-        #                                             self.data_type) for metric_cate_name in ["time_domain","freq_domain","entropy_domain","stats_domain"])
+        #                                             self.data_type, self.origin_raw) for metric_cate_name in ["time_domain","freq_domain","entropy_domain","stats_domain"])
 
         # serial.
         metric_lists = []
         for metric_cate_name in ["time_domain", "freq_domain", "entropy_domain", "stats_domain"]:
-            metric_lists.append(self._calculate_quality_metric(metric_cate_name, self.raw, self.meg_type, self.n_jobs,self.data_type))
+            metric_lists.append(self._calculate_quality_metric(metric_cate_name, self.raw, self.meg_type, self.n_jobs, self.data_type, self.origin_raw))
 
         # get metrics and cache mask for reports
         metric_list = []

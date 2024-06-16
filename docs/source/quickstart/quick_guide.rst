@@ -6,7 +6,7 @@ We can use the :doc:`gen_quality_report <../apis/opmqc.reports.report>` function
 
 .. code-block:: python
 
-    from opmqc.reports.report import gen_quality_report
+    from opmqc.reports import gen_quality_report
 
     opm_fif_path = "<your_opm_file>"
 

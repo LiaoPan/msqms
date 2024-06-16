@@ -14,8 +14,8 @@ from opmqc.utils import normative_score
 
 
 class StatsDomainMetric(Metrics):
-    def __init__(self, raw: mne.io.Raw, data_type, n_jobs=1, verbose=False):
-        super().__init__(raw, n_jobs=n_jobs, data_type=data_type, verbose=verbose)
+    def __init__(self, raw: mne.io.Raw, data_type, origin_raw: mne.io.Raw = None, n_jobs=1, verbose=False):
+        super().__init__(raw, n_jobs=n_jobs, data_type=data_type,origin_raw=origin_raw, verbose=verbose)
 
     def compute_stats_metrics(self, meg_type: MEG_TYPE):
         """
@@ -192,6 +192,7 @@ class StatsDomainMetric(Metrics):
         # mne
         annot_muscle, _ = annotate_muscle_zscore(self.origin_raw, ch_type=self.meg_type, threshold=5,
                                                  filter_freq=[110, 140])
+        clogger.info(f"bad segments by mne:{annot_muscle}")
         # merge
         osl_onsets = bad_segs_osl['onsets']
         mne_onsets = annot_muscle.onset
