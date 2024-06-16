@@ -16,7 +16,7 @@ class Metrics(ABC):
         self.origin_raw = raw.copy()
         self.samp_freq = raw.info['sfreq']
         self.meg_names = None
-        self.meg_type = None
+        self.meg_type = 'mag'
         self.meg_data = None
         self.data_type = data_type
         self.verbose = verbose

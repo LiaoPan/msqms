@@ -201,10 +201,18 @@ class MSQM(Metrics):
         # "I": {"score":0.9,"value":10e-12,"lower_bound":,"upper_bound,"hints":"↓"}
 
         """
-        # metric_lists = self._calculate_quality_metric("stats_domain", self.raw, self.meg_type, self.n_jobs,self.data_type)
-        metric_lists = Parallel(self.n_jobs, verbose=self.verbose)(
-            delayed(self._calculate_quality_metric)(metric_cate_name, self.raw, self.meg_type, self.n_jobs,
-                                                    self.data_type) for metric_cate_name in ["time_domain","freq_domain","entropy_domain","stats_domain"])
+        # metric_lists = self._calculate_quality_metric("entropy_domain", self.raw, self.meg_type, self.n_jobs,self.data_type) # for fast debug.
+        # parallel.
+        # bug for squid: A task has failed to un-serialize. Please ensure that the arguments of the function are all picklable.
+        # metric_lists = Parallel(self.n_jobs, verbose=self.verbose)(
+        #     delayed(self._calculate_quality_metric)(metric_cate_name, self.raw, self.meg_type, self.n_jobs,
+        #                                             self.data_type) for metric_cate_name in ["time_domain","freq_domain","entropy_domain","stats_domain"])
+
+        # serial.
+        metric_lists = []
+        for metric_cate_name in ["time_domain", "freq_domain", "entropy_domain", "stats_domain"]:
+            metric_lists.append(self._calculate_quality_metric(metric_cate_name, self.raw, self.meg_type, self.n_jobs,self.data_type))
+
         # get metrics and cache mask for reports
         metric_list = []
         cache_report = None
