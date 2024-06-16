@@ -76,8 +76,7 @@ class EntropyDomainMetric(Metrics):
                 hjorth_mobility, hjorth_complexity, num_of_zero_crossings]
 
     def compute_entropies(self, data: np.ndarray):
-        """## 1.计算MEG脑磁数据的8种熵有关的特征
-        计算熵的8种特征，并按通道计算熵特征的均值和标准差
+        """Calculate entropy-related features.
         """
         if self.n_jobs == 1:
             single_entropies = Parallel(self.n_jobs)(
@@ -102,12 +101,7 @@ class EntropyDomainMetric(Metrics):
     # Fractal dimension
     @staticmethod
     def _ant_1d_fractal_dimension(data: np.ndarray):
-        """
-        ## 2.计算4种分形有关的特征
-        # PFD信号的复杂度可以用分形维数来度量
-        # 卡茨分形维数（KFD）是一种有效的非线性动态度量，通过计算两个连续点之间的距离来表征时间序列的复杂性，并在许多领域得到了广泛的应用。
-        # 樋口分形维数是信号动态的定量度量，但往往需要用生物物理参数和经典谱分析来描述信号特征。
-        # 去趋势波动分析 (DFA) 是最流行的分形分析技术，用于根据赫斯特指数 H 评估经验时间序列中的长期相关性的强度。
+        """Calculate fractal-related features.
         """
         # Petrosian fractal dimension
         pfd = ant.petrosian_fd(data)
@@ -120,12 +114,10 @@ class EntropyDomainMetric(Metrics):
         return [pfd, kfd, hfd, dfa]
 
     def compute_fractal_dimension(self, data: np.ndarray):
-        """计算4种分形特征，并按通道计算均值和方差
+        """Calculate the fractal dimension.
         """
         single_fractal = Parallel(self.n_jobs)(
             delayed(self._ant_1d_fractal_dimension)(single_ch_data) for single_ch_data in data)
-        # mean_fractal = np.mean(single_fractal, axis=0)
-        # std_fractal = np.std(single_fractal, axis=0)
         fractal_df = pd.DataFrame(single_fractal,
                                   columns=["PFD", "KFD", "HFD","DFA"],
                                   index=self.meg_names)
@@ -139,11 +131,10 @@ class EntropyDomainMetric(Metrics):
         return pse
 
     def compute_psd_entropy(self, data: np.ndarray):
-        ## 3.计算功率谱熵，并按通道计算其功率谱熵的均值和方差
+        """Multichannel power spectrum entropy
+        """
         single_psd_entropy = Parallel(self.n_jobs)(
             delayed(self._power_spectral_entropy)(single_ch_data, self.samp_freq) for single_ch_data in data)
-        # mean_psd_entropy = np.mean(single_psd_entropy, axis=0)
-        # std_psd_entropy = np.std(single_psd_entropy, axis=0)
         psd_entropy_df = pd.DataFrame(single_psd_entropy,
                                       columns=["power_spectral_entropy"],
                                       index=self.meg_names
@@ -152,9 +143,7 @@ class EntropyDomainMetric(Metrics):
 
     @staticmethod
     def _sinch_energy_entropy(data: np.ndarray):
-        """
-        计算单通道的能量、能量熵
-        ##以自然指数为底
+        """Calculate the energy and energy entropy of a single channel, based on the natural index
         """
         Stot = 0  # Total Entropy
         Etot = 0  # Total Energy
@@ -169,7 +158,7 @@ class EntropyDomainMetric(Metrics):
         return [Etot, Stot, ratio]
 
     def compute_energy_entropy(self, data: np.ndarray):
-        """计算能量、能量熵，并按通道计算均值能量、能量熵，标准差能量、能量熵
+        """Calculate energy and energy entropy by channel。
         """
         single_energy_entropy = Parallel(self.n_jobs)(
             delayed(self._sinch_energy_entropy)(single_ch_data) for single_ch_data in data)
