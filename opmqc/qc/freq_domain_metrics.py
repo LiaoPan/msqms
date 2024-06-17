@@ -24,8 +24,7 @@ class FreqDomainMetrics(Metrics):
 
     @staticmethod
     def _get_fre_domain_features(signal, Fs=1000):
-        """
-        计算1d signal的频域特征
+        """The frequency domain characteristics of 1d signal are calculated
         """
         L = len(signal)
         y = abs(np.fft.fft(signal / L))[: int(L / 2)]
@@ -33,7 +32,7 @@ class FreqDomainMetrics(Metrics):
         f = np.fft.fftfreq(L, 1 / Fs)[: int(L / 2)]
         fre_line_num = len(y)
         p1 = y.mean()  # 频谱均值
-        p2 = np.sqrt(np.sum((y - p1) ** 2) / fre_line_num)  # 频谱均方根值
+        p2 = np.sqrt(np.sum((y - p1) ** 2) / fre_line_num)  # 频谱均方根值（标准差）
         p3 = np.sum((y - p1) ** 3) / (fre_line_num * p2 ** 3)
         p4 = np.sum((y - p1) ** 4) / (fre_line_num * p2 ** 4)
         p5 = np.sum(f * y) / np.sum(y)  # 频率重心
