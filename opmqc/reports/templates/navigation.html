@@ -2,7 +2,7 @@
     <a class="navbar-brand anchor" href="#top">{{ title }}</a>
     <ul class="nav report-change justify-content-end" role="tablist">
         {% for (name, anchor_id) in nav_items %}
-            {% if anchor_id == "info" %}
+            {% if anchor_id == "overview" %}
             <li class="nav-item active">
                 <a class="nav-link active" data-toggle="tab" href="#{{ anchor_id }}">{{ name }}</a>
             </li>

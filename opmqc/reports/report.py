@@ -16,7 +16,7 @@ from mne.io import read_raw_fif
 
 from opmqc.qc import get_header_info
 from opmqc.utils.logging import clogger
-from opmqc.utils import get_configure
+from opmqc.utils import get_configure,filter
 from opmqc.qc.msqm import MSQM
 from opmqc.constants import DATA_TYPE
 from opmqc.qc.visual_inspection import VisualInspection
@@ -53,17 +53,12 @@ def gen_quality_report(megfiles: [Union[str, Path]], outdir: Union[str, Path],re
         raw = read_raw_fif(fmeg, verbose=False, preload=True)
 
         # compute the msqm score and obtain the reference values & hints[↑↓✔]
-        # For examples:
-        # "msqm_score":98,
-        # "S": {"lower_bound","upper_bound,"hints":"✔"}
-        # "I": {"score":0.9,"value":10e-12,"lower_bound":,"upper_bound,"hints":"↓"}
         config_dict = get_configure(data_type=data_type)
         high_pass = config_dict["data_type"]["high_pass_freq"]
         low_pass = config_dict["data_type"]["low_pass_freq"]
         notch_freq = config_dict["data_type"]["notch_filter_freq"]
         clogger.info(f"Minimal preprocessing: high-pass:{high_pass},low-pass:{low_pass} and notch_filter:{notch_freq}")
-
-        raw_filter = raw.copy().filter(high_pass, low_pass, n_jobs=-1, verbose=False).notch_filter(notch_freq, verbose=False, n_jobs=-1)
+        raw_filter = filter(raw, high_pass=high_pass,low_pass=low_pass, notch_freq=notch_freq,data_type=data_type)
 
         msqm = MSQM(raw_filter, origin_raw=raw, data_type=data_type, verbose=10, n_jobs=4)
         msqm_dict = msqm.compute_msqm_score()
@@ -456,5 +451,5 @@ if __name__ == "__main__":
     from opmqc.main import test_opm_fif_path, test_squid_fif_path
 
     # gen_quality_report(["/Volumes/Touch/Code/osl_practice/anonymize_raw_tsss.fif"], outdir="./demo_report.html")
-    gen_quality_report([test_squid_fif_path], outdir=r"C:\Data\Code\opmqc\opmqc\reports",data_type='squid',report_fname="new_demo_report",ftype='html')
-    # gen_quality_report([test_opm_fif_path], outdir=r"C:\Data\Code\opmqc\opmqc\reports",data_type='opm',report_fname="new_demo_report",ftype='html')
+    # gen_quality_report([test_squid_fif_path], outdir=r"C:\Data\Code\opmqc\opmqc\reports",data_type='squid',report_fname="new_demo_report",ftype='html')
+    gen_quality_report([test_opm_fif_path], outdir=r"C:\Data\Code\opmqc\opmqc\reports",data_type='opm',report_fname="new_demo_report",ftype='html')

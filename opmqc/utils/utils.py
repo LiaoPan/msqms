@@ -2,6 +2,8 @@
 """Utility functions"""
 
 import datetime
+
+import mne.io
 import numpy as np
 import yaml
 from typing import Dict
@@ -102,3 +104,52 @@ def normative_score(num,thres=20):
     """normative score.
     """
     return 1 - 1/(1+(num/thres)**2)
+
+def filter(raw:mne.io.Raw,high_pass:float,low_pass:float,notch_freq:[float],data_type:DATA_TYPE,pad_length=5, n_jobs=-1, verbose=True)->mne.io.Raw:
+    """Filter in different ways for different data types
+
+    Parameters
+    ----------
+    raw : mne.io.Raw
+    data_type : Data_TYPE
+        the data type of MEG.('opm' or 'squid')
+    high_pass: float
+        the high pass frequency.
+    low_pass: float
+        the low pass frequency.
+    notch_freq: list[float]
+        the notch filter frequency.
+    pad_length: int
+        the padding of data before filtering (seconds),`reflect` fill before and after the data.
+    n_jobs: int
+        the number of jobs.
+    Returns
+    -------
+        the filtered raw
+    """
+    raw_filter = raw.copy()
+    if data_type == 'opm':
+        # Mitigate the edge effect of opm.
+        raw_filter.notch_filter(notch_freq, n_jobs=n_jobs, verbose=verbose)
+
+        data = raw_filter.get_data()
+        sfreq = raw_filter.info['sfreq']
+
+        # obtain the length of pad.
+        pad_length = int(sfreq * pad_length)
+        # reflect fill before and after the data.
+        padded_data = np.pad(data, ((0, 0), (pad_length, pad_length)), mode='reflect')
+
+        # filter
+        filtered_padded_data = mne.filter.filter_data(data=padded_data, sfreq=sfreq, l_freq=high_pass, h_freq=low_pass, verbose=verbose)
+
+        # remove padding
+        filtered_data = filtered_padded_data[:, pad_length:-pad_length]
+
+        # update raw
+        raw_filter._data = filtered_data
+
+    else:
+        raw_filter.notch_filter(notch_freq, n_jobs=n_jobs, verbose=verbose).filter(l_freq=high_pass, h_freq=low_pass,n_jobs=n_jobs,verbose=verbose)
+
+    return raw_filter
