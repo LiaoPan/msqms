@@ -36,14 +36,14 @@ class FreqDomainMetrics(Metrics):
         p3 = np.sum((y - p1) ** 3) / (fre_line_num * p2 ** 3)
         p4 = np.sum((y - p1) ** 4) / (fre_line_num * p2 ** 4)
         p5 = np.sum(f * y) / np.sum(y)  # 频率重心
-        p6 = np.sqrt(np.sum((f - p5) ** 2 * y) / fre_line_num)
+        p6 = np.sqrt(np.sum((f - p5) ** 2 * y) / fre_line_num)  # 标准差频率
         p7 = np.sqrt(np.sum(f ** 2 * y) / np.sum(y))  # 均方根频率
         p8 = np.sqrt(np.sum(f ** 4 * y) / np.sum(f ** 2 * y))
         p9 = np.sum(f ** 2 * y) / np.sqrt(np.sum(y) * np.sum(f ** 4 * y))
         p10 = p6 / p5
         p11 = np.sum((f - p5) ** 3 * y) / (p6 ** 3 * fre_line_num)
         p12 = np.sum((f - p5) ** 4 * y) / (p6 ** 4 * fre_line_num)
-        p13 = np.sum(abs(f - p5) * y) / (np.sqrt(p6) * fre_line_num)  # 标准差频率
+        p13 = np.sum(abs(f - p5) * y) / (np.sqrt(p6) * fre_line_num)
         p = [p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13]
         return p
 

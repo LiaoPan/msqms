@@ -11,9 +11,7 @@ hydra:
   run:
     dir: . 
 
-
 # MSQM Score Weights
-
 
 ## weights for each metric category
 category_weights:

@@ -16,6 +16,7 @@ from mne.io import read_raw_fif
 
 from opmqc.qc import get_header_info
 from opmqc.utils.logging import clogger
+from opmqc.utils import get_configure
 from opmqc.qc.msqm import MSQM
 from opmqc.constants import DATA_TYPE
 from opmqc.qc.visual_inspection import VisualInspection
@@ -56,8 +57,14 @@ def gen_quality_report(megfiles: [Union[str, Path]], outdir: Union[str, Path],re
         # "msqm_score":98,
         # "S": {"lower_bound","upper_bound,"hints":"✔"}
         # "I": {"score":0.9,"value":10e-12,"lower_bound":,"upper_bound,"hints":"↓"}
+        config_dict = get_configure(data_type=data_type)
+        high_pass = config_dict["data_type"]["high_pass_freq"]
+        low_pass = config_dict["data_type"]["low_pass_freq"]
+        notch_freq = config_dict["data_type"]["notch_filter_freq"]
+        clogger.info(f"Minimal preprocessing: high-pass:{high_pass},low-pass:{low_pass} and notch_filter:{notch_freq}")
 
-        raw_filter = raw.copy().filter(0.1, 100, n_jobs=-1, verbose=False).notch_filter([50, 100], verbose=False, n_jobs=-1)
+        raw_filter = raw.copy().filter(high_pass, low_pass, n_jobs=-1, verbose=False).notch_filter(notch_freq, verbose=False, n_jobs=-1)
+
         msqm = MSQM(raw_filter, origin_raw=raw, data_type=data_type, verbose=10, n_jobs=4)
         msqm_dict = msqm.compute_msqm_score()
         msqm_score = msqm_dict['msqm_score']
@@ -65,7 +72,7 @@ def gen_quality_report(megfiles: [Union[str, Path]], outdir: Union[str, Path],re
         category_scores = msqm_dict['category_scores']
 
         fmeg_fname = Path(raw.filenames[0]).stem
-        vis = VisualInspection(raw=raw, output_fpath=os.path.join(outdir, f'{fmeg_fname}.imgs'))
+        vis = VisualInspection(raw=raw_filter, output_fpath=os.path.join(outdir, f'{fmeg_fname}.imgs'))
         meg_data = raw.get_data('mag')
 
         nan_mask = msqm.nan_mask
@@ -430,8 +437,6 @@ class HtmlReport(object):
 
         html.render(self.nav_items)
         # panel: Quality Overview
-
-        # panel: Artifacts
 
         # panel: Visual Inpsection
 

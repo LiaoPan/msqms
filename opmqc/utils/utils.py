@@ -6,6 +6,7 @@ import numpy as np
 import yaml
 from typing import Dict
 from pathlib import Path
+from opmqc.constants import DATA_TYPE
 
 def fill_zeros_with_nearest_value(arr):
     """find zeros value, interpolate arr with nearest value."""
@@ -75,6 +76,28 @@ def read_yaml(yaml_file):
         content = yaml.safe_load(file)
     return content
 
+
+def get_configure(data_type: DATA_TYPE) -> Dict:
+    """get configuration parameters from configuration file[conf folder].
+
+    Parameters
+    ----------
+    data_type : DATA_TYPE
+        the data type of MEG.('opm' or 'squid')
+    Returns
+    -------
+        the dict of configuration parameters,including 'default' and 'data_type'.
+    """
+    default_config_fpath = Path(__file__).parent.parent / 'conf' / 'config.yaml'
+    if data_type == 'opm':
+        config_fpath = Path(__file__).parent.parent / 'conf' / 'opm' / 'quality_config.yaml'
+    elif data_type == 'squid':
+        config_fpath = Path(__file__).parent.parent / 'conf' / 'squid' / 'quality_config.yaml'
+    else:
+        raise ValueError(f'{data_type} is not a valid')
+    config = read_yaml(config_fpath)
+    default_config = read_yaml(default_config_fpath)
+    return {'default': default_config, 'data_type': config}
 def normative_score(num,thres=20):
     """normative score.
     """

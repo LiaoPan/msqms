@@ -7,7 +7,7 @@ import mne
 import numpy as np
 from typing import Dict
 from pathlib import Path
-from opmqc.utils import read_yaml
+from opmqc.utils import read_yaml,get_configure
 
 
 class Metrics(ABC):
@@ -51,13 +51,5 @@ class Metrics(ABC):
     def get_configure(self) -> Dict:
         """ get configuration parameters from configuration file[conf folder].
         """
-        default_config_fpath = Path(__file__).parent.parent / 'conf' / 'config.yaml'
-        if self.data_type == 'opm':
-            config_fpath = Path(__file__).parent.parent / 'conf' / 'opm' / 'quality_config.yaml'
-        elif self.data_type == 'squid':
-            config_fpath = Path(__file__).parent.parent / 'conf' / 'squid' / 'quality_config.yaml'
-        else:
-            raise ValueError(f'{self.data_type} is not a valid')
-        config = read_yaml(config_fpath)
-        default_config = read_yaml(default_config_fpath)
-        return {'default': default_config, 'data_type': config}
+        config_dict = get_configure(self.data_type)
+        return config_dict
