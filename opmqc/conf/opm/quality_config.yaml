@@ -1,7 +1,7 @@
 #  MEG Quality Assessment Parameters Config
 
 bound_threshold_std_dev: 1 # Threshold values greater than * times standard deviation are defined as upper and lower bounds.
-limit_threshold_std_dev: 2 # Threshold values greater than * times standard deviation are defined as upper and lower limits.
+limit_threshold_std_dev: 3 # Threshold values greater than * times standard deviation are defined as upper and lower limits.
 
 # Minimal Preprocessing
 high_pass_freq: 1
@@ -12,17 +12,10 @@ notch_filter_freq:
   - 150
   - 200
   - 250
+  - 300
 
 ## Time Domain
-amplitude_rejection: 2000 # fT # Threshold for detecting high-magnitude outliers
-flat_wave_detection_threshold: 1e-12 # The threshold for detecting flat (std of channels).
-
-### Max Field Change
-max_field_change_threshold: 100000 # fT
-max_field_change_chunk_length: 5 # seconds
-
-## Frequency Domain
-frequency_domain:
+flat_wave_detection_threshold: 1e-20 # The threshold for detecting flat (std of channels).
 
 ## Normative score
 # when the number of bad segments/NaN/Flat is equal to the threshold value, the score is 0.5

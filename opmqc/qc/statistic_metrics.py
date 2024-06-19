@@ -15,7 +15,7 @@ from opmqc.utils import normative_score
 
 class StatsDomainMetric(Metrics):
     def __init__(self, raw: mne.io.Raw, data_type, origin_raw: mne.io.Raw = None, n_jobs=1, verbose=False):
-        super().__init__(raw, n_jobs=n_jobs, data_type=data_type,origin_raw=origin_raw, verbose=verbose)
+        super().__init__(raw, n_jobs=n_jobs, data_type=data_type, origin_raw=origin_raw, verbose=verbose)
 
     def compute_stats_metrics(self, meg_type: MEG_TYPE):
         """
@@ -187,25 +187,36 @@ class StatsDomainMetric(Metrics):
 
     def find_bad_segments_by_osl(self):
         bad_segs_num = 0
+        annot_muscle = None
         bad_segs_osl = detect_badsegments(self.raw, picks=self.meg_type, ref_meg=False, segment_len=1000,
                                           detect_zeros=False, significance_level=0.05, annotate=False)
+
+        # clogger.info(f"bad segments by osl:{bad_segs_osl['onsets']}")
         # mne
-        annot_muscle, _ = annotate_muscle_zscore(self.origin_raw, ch_type=self.meg_type, threshold=5,
-                                                 filter_freq=[110, 140])
-        clogger.info(f"bad segments by mne:{annot_muscle}")
+        if self.origin_raw.info['lowpass'] >= 140 and self.origin_raw.info['highpass'] <= 110:
+            annot_muscle, _ = annotate_muscle_zscore(self.origin_raw, ch_type=self.meg_type, threshold=5,
+                                                     filter_freq=[110, 140])
+            # clogger.info(f"bad segments by mne:{annot_muscle.onset}")
+
         # merge
-        osl_onsets = bad_segs_osl['onsets']
-        mne_onsets = annot_muscle.onset
-        bad_segs = {"onsets": mne_onsets, "durations": annot_muscle.duration}
-        tmp_onset = []
-        tmp_dur = []
-        for idx, o in enumerate(osl_onsets):
-            if o not in mne_onsets:
-                tmp_onset.append(o)
-                tmp_dur.append(bad_segs_osl['durations'][idx])
+        if annot_muscle != None:
+            osl_onsets = bad_segs_osl['onsets']
+            mne_onsets = annot_muscle.onset
+            mne_durs = annot_muscle.duration
+
+            tmp_onset = []
+            tmp_dur = []
+            for idx, o in enumerate(osl_onsets):
+                if o not in mne_onsets:
+                    tmp_onset.append(o)
+                    tmp_dur.append(bad_segs_osl['durations'][idx])
+            bad_segs = {"onsets": np.append(mne_onsets, tmp_onset), "durations": np.append(mne_durs, tmp_dur)}
+        else:
+            bad_segs = bad_segs_osl
 
         if np.any(bad_segs):
             bad_segs_num = len(bad_segs['onsets'])
+
         clogger.info(f"bad segments:{bad_segs}--bad segments num:{bad_segs_num}")
         bad_seg_mask = np.full(self.meg_data.shape, False, dtype=bool)
 
@@ -260,7 +271,6 @@ class StatsDomainMetric(Metrics):
         flat_chan_inds = np.argwhere(std_values <= flat_thres)
         flat_chan_names = [self.raw.info['ch_names'][fc[0]] for fc in flat_chan_inds]
         flat_chan_ratio = (len(flat_chan_names) / len(self.meg_names))  # * 100  # percentage
-
         flat_chan_mask = np.full(self.meg_data.shape, False, dtype=bool)
         for fc in flat_chan_inds:
             flat_chan_mask[fc] = True

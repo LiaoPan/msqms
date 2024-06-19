@@ -58,9 +58,13 @@ def gen_quality_report(megfiles: [Union[str, Path]], outdir: Union[str, Path],re
         low_pass = config_dict["data_type"]["low_pass_freq"]
         notch_freq = config_dict["data_type"]["notch_filter_freq"]
         clogger.info(f"Minimal preprocessing: high-pass:{high_pass},low-pass:{low_pass} and notch_filter:{notch_freq}")
-        raw_filter = filter(raw, high_pass=high_pass,low_pass=low_pass, notch_freq=notch_freq,data_type=data_type)
+        raw_filter = raw.copy().filter(l_freq=high_pass, h_freq=low_pass,n_jobs=-1, verbose=True).notch_filter(notch_freq, n_jobs=-1, verbose=True)
+        # raw_filter = raw.copy().notch_filter(notch_freq, n_jobs=-1, verbose=True).filter(l_freq=high_pass, h_freq=low_pass,n_jobs=-1, verbose=True)
+
+        # raw_filter = filter(raw, high_pass=high_pass, low_pass=low_pass, notch_freq=notch_freq,data_type=data_type)
 
         msqm = MSQM(raw_filter, origin_raw=raw, data_type=data_type, verbose=10, n_jobs=4)
+        clogger.info(f"compute the msqm score...")
         msqm_dict = msqm.compute_msqm_score()
         msqm_score = msqm_dict['msqm_score']
         details = msqm_dict['details']
@@ -68,7 +72,7 @@ def gen_quality_report(megfiles: [Union[str, Path]], outdir: Union[str, Path],re
 
         fmeg_fname = Path(raw.filenames[0]).stem
         vis = VisualInspection(raw=raw_filter, output_fpath=os.path.join(outdir, f'{fmeg_fname}.imgs'))
-        meg_data = raw.get_data('mag')
+        meg_data = raw_filter.get_data('mag')
 
         nan_mask = msqm.nan_mask
         bad_chan_mask = msqm.bad_chan_mask
@@ -97,13 +101,15 @@ def gen_quality_report(megfiles: [Union[str, Path]], outdir: Union[str, Path],re
         # category_scores = {"time_domain": 0.3, 'artifacts': 0.2, 'frequency_domain': 0.2, 'entropy': 0.2,
         #                    'fractal': 0.2}
 
-        info = get_header_info(raw)
+        info = get_header_info(raw_filter)
+        # update bad channels
+        info.basic_info.Bad_channels = bad_chan_names
         qreport = QualityReport(report_data=Box(
             {"Overview": info,
              "Quality_Ref": {"msqm_score": msqm_score, "details": details, "category_scores": category_scores}}),
             minify_html=False)
 
-        report_name = os.path.join(outdir,f"{report_fname}.{ftype}")
+        report_name = os.path.join(outdir, f"{report_fname}.{ftype}")
         if ftype == "json":
             qreport.to_json(report_name)
         else:

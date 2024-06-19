@@ -15,13 +15,14 @@ from opmqc.qc.tsfresh_domain_metrics import TsfreshDomainMetric
 from opmqc.qc.time_domain_metrcis import TimeDomainMetric
 from opmqc.qc.statistic_metrics import StatsDomainMetric
 from opmqc.qc.entropy_metrics import EntropyDomainMetric
+from opmqc.utils import clogger
 
 from typing import Dict
 from joblib import Parallel, delayed
 
 
 class MSQM(Metrics):
-    def __init__(self, raw: mne.io.Raw, data_type: DATA_TYPE, origin_raw: mne.io.Raw = None, n_jobs=1, verbose=False):
+    def __init__(self, raw: mne.io.Raw, data_type: DATA_TYPE, origin_raw: mne.io.Raw = None, n_jobs=-1, verbose=False):
         """MEG quality assessment based on MEG Signal Quality Metrics (MSQMs)
 
         Parameters
@@ -212,8 +213,10 @@ class MSQM(Metrics):
 
         # serial.
         metric_lists = []
-        for metric_cate_name in ["time_domain", "freq_domain", "entropy_domain", "stats_domain"]:
-            metric_lists.append(self._calculate_quality_metric(metric_cate_name, self.raw, self.meg_type, self.n_jobs, self.data_type, self.origin_raw))
+        for metric_cate_name in ["time_domain", "freq_domain", "stats_domain", "entropy_domain"]:
+            clogger.info(f"Computing metrics for {metric_cate_name}...")
+            metric_lists.append(self._calculate_quality_metric(metric_cate_name, raw=self.raw, meg_type=self.meg_type,
+                                                               n_jobs=self.n_jobs, data_type=self.data_type, origin_raw=self.origin_raw))
 
         # get metrics and cache mask for reports
         metric_list = []

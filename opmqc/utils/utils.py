@@ -6,9 +6,13 @@ import datetime
 import mne.io
 import numpy as np
 import yaml
-from typing import Dict
+from typing import Dict, Any
 from pathlib import Path
+
+from mne.io import RawArray
+
 from opmqc.constants import DATA_TYPE
+
 
 def fill_zeros_with_nearest_value(arr):
     """find zeros value, interpolate arr with nearest value."""
@@ -100,12 +104,16 @@ def get_configure(data_type: DATA_TYPE) -> Dict:
     config = read_yaml(config_fpath)
     default_config = read_yaml(default_config_fpath)
     return {'default': default_config, 'data_type': config}
-def normative_score(num,thres=20):
+
+
+def normative_score(num, thres=20):
     """normative score.
     """
-    return 1 - 1/(1+(num/thres)**2)
+    return 1 - 1 / (1 + (num / thres) ** 2)
 
-def filter(raw:mne.io.Raw,high_pass:float,low_pass:float,notch_freq:[float],data_type:DATA_TYPE,pad_length=5, n_jobs=-1, verbose=True)->mne.io.Raw:
+
+def filter(raw: mne.io.Raw, high_pass: float, low_pass: float, notch_freq: [float], data_type: DATA_TYPE, pad_length=10,
+           n_jobs=-1, verbose=True) -> RawArray | Any:
     """Filter in different ways for different data types
 
     Parameters
@@ -129,7 +137,7 @@ def filter(raw:mne.io.Raw,high_pass:float,low_pass:float,notch_freq:[float],data
     """
     raw_filter = raw.copy()
     if data_type == 'opm':
-        # Mitigate the edge effect of opm.
+        # Mitigate the edge effect of opm.(but there will still be residue.)
         raw_filter.notch_filter(notch_freq, n_jobs=n_jobs, verbose=verbose)
 
         data = raw_filter.get_data()
@@ -141,15 +149,20 @@ def filter(raw:mne.io.Raw,high_pass:float,low_pass:float,notch_freq:[float],data
         padded_data = np.pad(data, ((0, 0), (pad_length, pad_length)), mode='reflect')
 
         # filter
-        filtered_padded_data = mne.filter.filter_data(data=padded_data, sfreq=sfreq, l_freq=high_pass, h_freq=low_pass, verbose=verbose)
+        filtered_padded_data = mne.filter.filter_data(data=padded_data, sfreq=sfreq, l_freq=high_pass, h_freq=low_pass,
+                                                      n_jobs=n_jobs, verbose=verbose)
 
         # remove padding
         filtered_data = filtered_padded_data[:, pad_length:-pad_length]
 
-        # update raw
+        # update raw & info
         raw_filter._data = filtered_data
+        raw_filter.info._unlocked = True
+        raw_filter.info['highpass'] = high_pass
+        raw_filter.info['lowpass'] = low_pass
+        raw_filter.info._unlocked = False
 
     else:
-        raw_filter.notch_filter(notch_freq, n_jobs=n_jobs, verbose=verbose).filter(l_freq=high_pass, h_freq=low_pass,n_jobs=n_jobs,verbose=verbose)
-
+        raw_filter.notch_filter(notch_freq, n_jobs=n_jobs, verbose=verbose).filter(l_freq=high_pass, h_freq=low_pass,
+                                                                                   n_jobs=n_jobs, verbose=verbose)
     return raw_filter
