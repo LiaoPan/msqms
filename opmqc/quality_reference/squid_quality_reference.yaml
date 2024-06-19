@@ -5,23 +5,23 @@ BadChanRatio:
   - 0.04
   std: 0.02
 BadSegmentsRatio:
-  mean: 0.00125
+  mean: 0.1
   range:
   - 0.0
-  - 0.0025
-  std: 0.00125
+  - 0.2
+  std: 0.1
 NaN_ratio:
-  mean: 0.00125
+  mean: 0.1
   range:
   - 0.0
-  - 0.0025
-  std: 0.00125
+  - 0.2
+  std: 0.1
 Flat_chan_ratio:
-  mean: 0.00125
+  mean: 0.02
   range:
   - 0.0
-  - 0.0025
-  std: 0.00125
+  - 0.04
+  std: 0.02
 C:
   mean: 14.25946561475017
   range:
@@ -40,12 +40,6 @@ Energy_Entropy_Ratio:
   - -7.531967678244304e-17
   - 7.910556308395993e-17
   std: 7.721261993320149e-17
-Flat_chan_ratio:
-  mean: 0.0
-  range:
-  - 0.0
-  - 0.0
-  std: 0.0
 HFD:
   mean: 1.1438540981925038
   range:
@@ -70,12 +64,6 @@ L:
   - -2.0163659031885423e-06
   - 3.492012583639678e-05
   std: 1.8468245869792662e-05
-NaN_ratio:
-  mean: 0.0
-  range:
-  - 0.0
-  - 0.0
-  std: 0.0
 PFD:
   mean: 1.0030728257255548
   range:

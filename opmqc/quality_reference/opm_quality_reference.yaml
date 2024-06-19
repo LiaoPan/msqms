@@ -5,23 +5,23 @@ BadChanRatio:
   - 0.04
   std: 0.02
 BadSegmentsRatio:
-  mean: 0.00125
+  mean: 0.1
   range:
   - 0.0
-  - 0.0025
-  std: 0.00125
+  - 0.2
+  std: 0.1
 NaN_ratio:
-  mean: 0.00125
+  mean: 0.1
   range:
   - 0.0
-  - 0.0025
-  std: 0.00125
+  - 0.2
+  std: 0.1
 Flat_chan_ratio:
-  mean: 0.00125
+  mean: 0.02
   range:
   - 0.0
-  - 0.0025
-  std: 0.00125
+  - 0.04
+  std: 0.02
 Zero_ratio:
   mean: 1.775006667367391e-06
   range:
