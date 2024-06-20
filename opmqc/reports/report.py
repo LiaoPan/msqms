@@ -12,7 +12,7 @@ from tqdm.auto import tqdm
 from typing import Union
 from pathlib import Path
 from jinja2 import Environment, PackageLoader
-from mne.io import read_raw_fif
+from mne.io import read_raw_fif,read_raw
 
 from opmqc.qc import get_header_info
 from opmqc.utils.logging import clogger
@@ -50,7 +50,7 @@ def gen_quality_report(megfiles: [Union[str, Path]], outdir: Union[str, Path],re
         # check meg file
         if not op.exists(fmeg):
             clogger.error(f"{fmeg} is not exists. Please check the path of file.")
-        raw = read_raw_fif(fmeg, verbose=False, preload=True)
+        raw = read_raw(fmeg, verbose=False, preload=True)
 
         # compute the msqm score and obtain the reference values & hints[↑↓✔]
         config_dict = get_configure(data_type=data_type)
@@ -104,9 +104,10 @@ def gen_quality_report(megfiles: [Union[str, Path]], outdir: Union[str, Path],re
         info = get_header_info(raw_filter)
         # update bad channels
         info.basic_info.Bad_channels = bad_chan_names
+        quality_ref = {"msqm_score": msqm_score, "details": details, "category_scores": category_scores}
         qreport = QualityReport(report_data=Box(
             {"Overview": info,
-             "Quality_Ref": {"msqm_score": msqm_score, "details": details, "category_scores": category_scores}}),
+             "Quality_Ref": quality_ref}),
             minify_html=False)
 
         report_name = os.path.join(outdir, f"{report_fname}.{ftype}")
@@ -115,6 +116,7 @@ def gen_quality_report(megfiles: [Union[str, Path]], outdir: Union[str, Path],re
         else:
             qreport.to_html(report_name)
 
+        return quality_ref
 
 class QualityReport(object):
     """
