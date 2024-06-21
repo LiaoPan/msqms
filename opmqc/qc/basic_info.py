@@ -37,7 +37,8 @@ def get_header_info(raw):
       basic_info: dict
       meg_info : dict
     """
-    assert isinstance(raw, mne.io.Raw)
+    print("debug---",raw)
+    assert isinstance(raw, mne.io.BaseRaw)
     basic_info = {'Experimenter': None, 'Measurement date': None, 'Participant': '', 'Digitized points': None,
                   'Good channels': None, 'Bad channels': None, 'EOG channels': None, 'ECG channels': None,
                   'Sampling frequency': None, 'Highpass': None, 'Lowpass': None,
