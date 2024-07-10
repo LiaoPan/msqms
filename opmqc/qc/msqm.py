@@ -46,8 +46,11 @@ class MSQM(Metrics):
         self.config_default = config_dict['default']
         self.data_type_specific_config = config_dict['data_type']
 
+        self.rule_method = self.data_type_specific_config['rule_method']
+
         # Get the metric type based on the configuration file.
-        self.metric_category_names = list(self.config_default['category_weights'].keys())  # ['time_domain', 'freq_domain', 'entropy', 'fractal', 'artifacts']
+        self.metric_category_names = list(self.config_default[
+                                              'category_weights'].keys())  # ['time_domain', 'freq_domain', 'entropy', 'fractal', 'artifacts']
 
     def get_quality_references(self) -> Dict:
         """ Get quality reference according to data type of MEG.(opm or squid)
@@ -60,39 +63,63 @@ class MSQM(Metrics):
 
         return quality_ref_dict
 
-    def _get_single_quality_ref_dict(self, metric_name, bound_sigma=None, limit_sigma=None) -> Dict:
+    def _get_single_quality_ref_dict(self, metric_name, bound=None, limit=None, method=None) -> Dict:
         """Get single quality reference.
 
         Parameters
         ----------
         metric_name : str
             the name of metric score
-        bound_sigma : float, optional
-            if sigma is not None, recalculating the reference range instead of
+        bound : float, optional
+            if the value is not None, recalculating the reference range instead of
             taking the upper and lower bounds in the quality_reference file(*_quality_reference.yaml).
-        limit_sigma : float, optional
-            the sigma used to calculate upper and lower limits.
+        limit: float, optional
+            the value used to calculate upper and lower limits.
+        method: str
+            IQR method ('iqr') or Sigma method ('sigma')
         Returns
         -------
             Reference range value for a single quality metric score
         """
-        mean = self.quality_ref_dict[metric_name]['mean']
-        std = self.quality_ref_dict[metric_name]['std']
-        bounds = self.quality_ref_dict[metric_name]['range']
-        if len(bounds) != 2:
-            raise ValueError("The length of the quality metric range is incorrect (not equal to 2).")
-        lower_bound, upper_bound = bounds[0], bounds[-1]
+        if method == 'sigma':
+            mean = self.quality_ref_dict[metric_name]['mean']
+            std = self.quality_ref_dict[metric_name]['std']
+            bounds = self.quality_ref_dict[metric_name]['sigma_range']
+            if len(bounds) != 2:
+                raise ValueError("The length of the quality metric range is incorrect (not equal to 2).")
+            lower_bound, upper_bound = bounds[0], bounds[-1]
 
-        maximum_k = mean + limit_sigma * std
-        minimum_l = mean - limit_sigma * std
+            maximum_k = mean + limit * std
+            minimum_l = mean - limit * std
 
-        if bound_sigma is not None:
-            lower_bound = mean - bound_sigma * std
-            upper_bound = mean + bound_sigma * std
+            if bound is not None:
+                lower_bound = mean - bound * std
+                upper_bound = mean + bound * std
 
-        return {"lower_bound": lower_bound, "upper_bound": upper_bound,
-                "mean:": mean, "std:": std,
-                "maximum_k": maximum_k, "minimum_l": minimum_l}
+            return {"lower_bound": lower_bound, "upper_bound": upper_bound,
+                    "mean:": mean, "std:": std,
+                    "maximum_k": maximum_k, "minimum_l": minimum_l}
+
+        elif method == 'iqr':
+            median = self.quality_ref_dict[metric_name]['median']
+            q1 = self.quality_ref_dict[metric_name]['q1']
+            q3 = self.quality_ref_dict[metric_name]['q3']
+            bounds = self.quality_ref_dict[metric_name]['iqr_range']
+            if len(bounds) != 2:
+                raise ValueError("The length of the quality metric range is incorrect (not equal to 2).")
+            lower_bound, upper_bound = bounds[0], bounds[-1]
+            maximum_k = q3 + limit * (q3 - q1)
+            minimum_l = q1 - limit * (q3 - q1)
+
+            if bound is not None:
+                lower_bound = q1 - bound * (q3 - q1)
+                upper_bound = q3 + bound * (q3 - q1)
+
+            return {"lower_bound": lower_bound, "upper_bound": upper_bound,
+                    "median:": median, "q1:": q1, "q3": q3,
+                    "maximum_k": maximum_k, "minimum_l": minimum_l}
+        else:
+            return {}
 
     def get_configure(self) -> Dict:
         """ get configuration parameters from configuration file[conf folder].
@@ -140,13 +167,26 @@ class MSQM(Metrics):
 
         return [res, cache_report]
 
-    def compute_single_metric(self, metric_score, metric_name):
+    def compute_single_metric(self, metric_score, metric_name, method):
         """single quality metric score is calculated based on the range of quality metric.
+
+        Parameters
+        ----------
+        method : str
+            IQR method ('iqr') or Sigma method ('sigma')
         """
-        bound_sigma = self.data_type_specific_config['bound_threshold_std_dev']
-        limit_sigma = self.data_type_specific_config['limit_threshold_std_dev']
-        single_quality_ref = self._get_single_quality_ref_dict(metric_name, bound_sigma=bound_sigma,
-                                                               limit_sigma=limit_sigma)
+        if method == 'sigma':
+            bound = self.data_type_specific_config['bound_threshold_std_dev']
+            limit= self.data_type_specific_config['limit_threshold_std_dev']
+        elif method == 'iqr':
+            bound = self.data_type_specific_config['bound_threshold_iqr']
+            limit = self.data_type_specific_config['limit_threshold_iqr']
+        else:
+            bound = None
+            limit = None
+
+        single_quality_ref = self._get_single_quality_ref_dict(metric_name, bound=bound,
+                                                               limit=limit, method=method)
         lower_bound, upper_bound = single_quality_ref['lower_bound'], single_quality_ref['upper_bound']
         maximum_k, minimum_l = single_quality_ref['maximum_k'], single_quality_ref['minimum_l']
 
@@ -175,7 +215,7 @@ class MSQM(Metrics):
                 "minimum_l": minimum_l,
                 "hint": hint}
 
-    def calculate_category_score(self, metrics_df):
+    def calculate_category_score(self, metrics_df, method):
         """average metrics in one category """
         categories_score = {}
         details = {}
@@ -185,7 +225,7 @@ class MSQM(Metrics):
             weights = np.array([1] * len(metrics))
             metrics_score = []
             for idx, metric_name in enumerate(metric_column_names):
-                score = self.compute_single_metric(metrics[idx], metric_name)
+                score = self.compute_single_metric(metrics[idx], metric_name, method)
                 quality_score = score["quality_score"]
                 metrics_score.append(quality_score)
                 details[metric_name] = score
@@ -216,7 +256,8 @@ class MSQM(Metrics):
         for metric_cate_name in ["time_domain", "freq_domain", "stats_domain", "entropy_domain"]:
             clogger.info(f"Computing metrics for {metric_cate_name}...")
             metric_lists.append(self._calculate_quality_metric(metric_cate_name, raw=self.raw, meg_type=self.meg_type,
-                                                               n_jobs=self.n_jobs, data_type=self.data_type, origin_raw=self.origin_raw))
+                                                               n_jobs=self.n_jobs, data_type=self.data_type,
+                                                               origin_raw=self.origin_raw))
 
         # get metrics and cache mask for reports
         metric_list = []
@@ -236,7 +277,7 @@ class MSQM(Metrics):
 
         metrics_df = pd.concat(metric_list, axis=1)
 
-        category_scores_res = self.calculate_category_score(metrics_df)
+        category_scores_res = self.calculate_category_score(metrics_df, method=self.rule_method)
         category_scores_dict = category_scores_res['categories_score']
         category_weights_dict = self.config_default['category_weights']
 
