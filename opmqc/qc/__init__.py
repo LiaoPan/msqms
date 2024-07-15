@@ -1,15 +1,3 @@
 # -*- coding: utf-8 -*-
-"""
--------------------------------------------------
-   Description :
-   Author :       LiaoPan
-   date：          2023/10/16 21:21
--------------------------------------------------
-   Change Activity:
-                   2023/10/16:
--------------------------------------------------
-"""
-__author__ = 'LiaoPan'
-
 from opmqc.qc.basic_info import get_header_info
 from opmqc.qc.metrics import Metrics

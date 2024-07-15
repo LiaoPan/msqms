@@ -2,12 +2,11 @@
 """
 Abstract class for metrics
 """
-from abc import ABC, abstractmethod
+from abc import ABC
 import mne
 import numpy as np
 from typing import Dict
-from pathlib import Path
-from opmqc.utils import read_yaml,get_configure
+from opmqc.utils import get_configure
 
 
 class Metrics(ABC):

@@ -232,10 +232,16 @@ class StatsDomainMetric(Metrics):
     def find_zero_values(self, data: np.ndarray):
         """
         Detect zero values.
+        Parameters
+        ----------
+        data :
+
         Returns
         -------
-            - zero_mask
-            - zero_ratio
+        zero_mask: np.ndarray
+            the mask of zero values.
+        zero_ratio: float
+            the ratio of zero values.
         """
         zero_mask_positions = np.argwhere(data == 0)
         zero_mask = np.full(data.shape, False, dtype=bool)
@@ -249,7 +255,11 @@ class StatsDomainMetric(Metrics):
 
     def find_NaN_values(self, data: np.ndarray):
         """
-            Detect NaN values.
+        Detect NaN values
+        Parameters
+        ----------
+        data :
+
         Returns
         -------
             - NaN mask matrix

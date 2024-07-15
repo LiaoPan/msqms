@@ -2,7 +2,9 @@
 """Obtain Basic Info of MEG Data."""
 
 import numpy as np
+from box import Box
 import os.path as op
+from collections import Counter, defaultdict
 
 import mne
 from mne.io import read_raw_fif
@@ -10,7 +12,6 @@ from mne import channel_type
 from mne.utils.misc import _pl
 from mne.utils import sizeof_fmt
 from mne import pick_types
-from opmqc.utils import clogger
 
 try:
     from mne.io._digitization import _dig_kind_proper, _dig_kind_rev, _dig_kind_ints
@@ -18,19 +19,16 @@ except ImportError:
     # for mne==1.6.0
     from mne._fiff._digitization import _dig_kind_proper, _dig_kind_rev, _dig_kind_ints
 
-from collections import Counter, defaultdict
-from box import Box
-
-from opmqc.io import read_raw_mag
+from opmqc.utils import clogger
 from opmqc.utils import format_timedelta
 
 
-def get_header_info(raw):
-    """
-    get basic info from MNE.Raw object.
+def get_header_info(raw: mne.io.BaseRaw):
+    """get basic info from MNE.Raw object.
     Parameters
     ----------
-    raw
+    raw:mne.io.BaseRaw
+        the object of MEG data.
 
     Returns
     -------
@@ -38,11 +36,6 @@ def get_header_info(raw):
       meg_info : dict
     """
     assert isinstance(raw, mne.io.BaseRaw)
-    basic_info = {'Experimenter': None, 'Measurement date': None, 'Participant': '', 'Digitized points': None,
-                  'Good channels': None, 'Bad channels': None, 'EOG channels': None, 'ECG channels': None,
-                  'Sampling frequency': None, 'Highpass': None, 'Lowpass': None,
-                  "Duration": None, "Source filename": None, 'Data Size': None}
-
     info = raw.info
 
     # Experimenter
@@ -144,13 +137,3 @@ def get_header_info(raw):
                 'n_dig': n_dig}
 
     return Box({"basic_info": basic_info, "meg_info": meg_info})
-
-
-if __name__ == "__main__":
-    from opmqc.main import test_opm_fif_path, test_squid_fif_path
-
-    # raw = read_raw_fif(test_opm_fif_path,verbose=False)
-    raw = read_raw_fif(test_squid_fif_path, verbose=False)
-    print(raw.info)
-    info = get_header_info(raw)
-    print(info)

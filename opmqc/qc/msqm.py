@@ -4,9 +4,11 @@ MEG quality assessment based on MEG Signal Quality Metrics(MSQMs)
 """
 import mne
 import numpy as np
-import matplotlib.pyplot as plt
 import pandas as pd
 from pathlib import Path
+from typing import Dict
+from joblib import Parallel, delayed
+
 from opmqc.qc.metrics import Metrics
 from opmqc.constants import DATA_TYPE, METRICS_COLUMNS
 from opmqc.utils import read_yaml
@@ -16,10 +18,6 @@ from opmqc.qc.time_domain_metrcis import TimeDomainMetric
 from opmqc.qc.statistic_metrics import StatsDomainMetric
 from opmqc.qc.entropy_metrics import EntropyDomainMetric
 from opmqc.utils import clogger
-
-from typing import Dict
-from joblib import Parallel, delayed
-
 
 class MSQM(Metrics):
     def __init__(self, raw: mne.io.Raw, data_type: DATA_TYPE, origin_raw: mne.io.Raw = None, n_jobs=-1, verbose=False):
@@ -172,6 +170,10 @@ class MSQM(Metrics):
 
         Parameters
         ----------
+        metric_score : float
+            the score of quality metric.
+        metric_name : str
+            the name of the metric.
         method : str
             IQR method ('iqr') or Sigma method ('sigma')
         """
@@ -237,21 +239,19 @@ class MSQM(Metrics):
 
     def compute_msqm_score(self):
         """
-
         # compute the msqm score and obtain the reference values & hints[↑↓✔]
         # "msqm_score":98,
         # "S": {"lower_bound","upper_bound,"hint":"✔"}
         # "I": {"score":0.9,"value":10e-12,"lower_bound":,"upper_bound,"hints":"↓"}
-
         """
         # metric_lists = self._calculate_quality_metric("entropy_domain", self.raw, self.meg_type, self.n_jobs,self.data_type,self.origin_raw) # for fast debug.
-        # parallel.
+        # parallel version.
         # bug for squid: A task has failed to un-serialize. Please ensure that the arguments of the function are all picklable.
         # metric_lists = Parallel(self.n_jobs, verbose=self.verbose)(
         #     delayed(self._calculate_quality_metric)(metric_cate_name, self.raw, self.meg_type, self.n_jobs,
         #                                             self.data_type, self.origin_raw) for metric_cate_name in ["time_domain","freq_domain","entropy_domain","stats_domain"])
 
-        # serial.
+        # serial version.
         metric_lists = []
         for metric_cate_name in ["time_domain", "freq_domain", "stats_domain", "entropy_domain"]:
             clogger.info(f"Computing metrics for {metric_cate_name}...")
@@ -288,21 +288,3 @@ class MSQM(Metrics):
         msqm_score = np.sum(category_weights * category_scores) / np.sum(category_weights)
 
         return {"msqm_score": msqm_score, "details": details, "category_scores": category_scores_dict}
-
-
-if __name__ == '__main__':
-    # opm_mag_fif = r"C:\Data\Datasets\OPM-Artifacts\S01.LP.fif" # 0.63
-    # opm_mag_fif = r"C:\Data\Datasets\OPM-COG.v1\sub-01\ses-opm\meg\sub-01_ses-opm_task-aef_run-01_meg.fif" # 0.746
-    # opm_mag_fif = r"C:\Data\Datasets\OPM-FACE.v2\sub-01\ses-01\meg\sub-01_ses-01_task-face_run-01_meg.fif" # 0.811
-    # opm_mag_fif = r"C:\Data\Code\opmqc_noise_simulation\4.step\OPM\noisy_raw\high_amplitude.noisy_ch0.2.fif" # 0.464
-    # opm_mag_fif = r"C:\Data\Code\opmqc_noise_simulation\4.step\OPM\noisy_raw\high_amplitude.noisy_ch0.8.fif" #0.507
-    opm_mag_fif = r"C:\Data\Code\opmqc_noise_simulation\4.step\OPM\noisy_raw\high_amplitude.noisy_ch1.0.fif"  # 0.449
-
-    opm_raw = mne.io.read_raw(opm_mag_fif, verbose=False, preload=True)
-    opm_raw.filter(0.1, 100, n_jobs=-1, verbose=False).notch_filter([50, 100], verbose=False, n_jobs=-1)
-    msqm = MSQM(opm_raw, 'opm', verbose=10, n_jobs=4)
-    msqm = msqm.compute_msqm_score()
-    msqm_score = msqm['msqm_score']
-    details = msqm['details']
-    print("details:", details)
-    print("msqm_score:", msqm_score)
