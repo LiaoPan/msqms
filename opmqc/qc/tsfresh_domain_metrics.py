@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 """Tsfresh quality control metric."""
 import mne
-from tsfresh import extract_features
 import pandas as pd
 import numpy as np
-from typing import Literal
+from tqdm.std import tqdm
+from tsfresh import extract_features
 from opmqc.constants import MEG_TYPE
 from opmqc.qc import Metrics
-from tqdm.std import tqdm
+
 
 SELECT_PARAMETERS = {'sum_values': None,
                      'abs_energy': None,
@@ -146,34 +146,3 @@ class TsfreshDomainMetric(Metrics):
         return tsfresh_df
 
 
-if __name__ == '__main__':
-    from pathlib import Path
-
-    opm_mag_fif = r"C:\Data\Datasets\OPM-Artifacts\S01.LP.fif"
-    opm_raw = mne.io.read_raw(opm_mag_fif, verbose=False, preload=True)
-    opm_raw.filter(0.1, 100,n_jobs=8).notch_filter([50, 100], verbose=False, n_jobs=8)
-
-    squid_fif = Path(r"C:\Data\Datasets\MEG_Lab\02_liaopan\231123\run1_tsss.fif")
-    squid_raw = mne.io.read_raw_fif(squid_fif, preload=True, verbose=False)
-    squid_raw.resample(200, n_jobs=8)
-    print(squid_raw)
-    # squid_raw.filter(0, 45).notch_filter([50, 100], verbose=False, n_jobs=8)
-
-    import time
-
-    st = time.time()
-
-    import os
-    import multiprocessing
-
-    # 获取系统的CPU核心数
-    num_cores = multiprocessing.cpu_count()
-    print("本系统的最大核心数为:", num_cores)
-
-    tfdm_opm = TsfreshDomainMetric(opm_raw.copy(),8)
-    # print("Debug info：",opm_raw.copy().crop(0,0.5))
-    # tfdm_squid = TsfreshDomainMetric(squid_raw.copy(), n_jobs=-1)
-    print("opm_data:", tfdm_opm.compute_tsfresh_metrics('mag'))
-    # print("squid_data:", tfdm_squid.compute_tsfresh_metrics('grad'))
-    et = time.time()
-    print("cost time:", et - st)

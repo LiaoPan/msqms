@@ -1,16 +1,12 @@
 # -*- coding: utf-8 -*-
 """Utility functions"""
-
-import datetime
-
-import mne.io
-import numpy as np
 import yaml
+import mne.io
+import datetime
+import numpy as np
 from typing import Dict, Any
 from pathlib import Path
-
 from mne.io import RawArray
-
 from opmqc.constants import DATA_TYPE
 
 

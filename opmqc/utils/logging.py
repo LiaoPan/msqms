@@ -18,12 +18,3 @@ clogger = logger
 slog = lambda key, value, verbose=True: print("{}:{}".format(key, value)) if verbose else None
 
 
-if __name__ == '__main__':
-    # print log
-    slog("Key", "Value")
-    # not print
-    slog("Key", "Value", verbose=False)
-    clogger.info("Test")
-    clogger.warning("Warning Test!!")
-
-

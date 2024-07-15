@@ -1,15 +1,2 @@
 # -*- coding: utf-8 -*-
-"""
--------------------------------------------------
-   Description :
-   Author :       LiaoPan
-   date：          2023/8/30 16:36
--------------------------------------------------
-   Change Activity:
-                   2023/8/30:
--------------------------------------------------
-"""
-__author__ = 'LiaoPan'
-
 from ._version import __version__
-# from main import *

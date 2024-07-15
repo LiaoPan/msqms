@@ -1,22 +1,17 @@
 # -*- coding: utf-8 -*-
 """Time Domain quality control metric."""
 import mne
-import hydra
 import numpy as np
 import pandas as pd
-from omegaconf import DictConfig, OmegaConf
-from scipy.stats import skew, kurtosis
+
 from opmqc.qc import Metrics
 from opmqc.constants import MEG_TYPE
-from opmqc.utils import clogger
-from opmqc.libs.pyprep.find_noisy_channels import NoisyChannels
 
 
 class TimeDomainMetric(Metrics):
     def __init__(self, raw: mne.io.Raw,data_type, n_jobs=1, verbose=False):
         super().__init__(raw, n_jobs=n_jobs,data_type=data_type,verbose=verbose)
 
-    # @hydra.main(config_path="conf",config_name="config")
     def compute_time_metrics(self, meg_type: MEG_TYPE):
         """
         calculate time domain quality metrics.
@@ -79,8 +74,7 @@ class TimeDomainMetric(Metrics):
         return stats_df
 
     def compute_ptp(self, data: np.ndarray):
-        """
-        # 3.最大峰峰值PTP | 如果使用mne的peak_finder,peak_finder算法应该会存在不稳定的地方；
+        """Maximum Peak-to-peak | Note that there should be instability in mne's peak_finder algorithm;
         """
         from mne.preprocessing import peak_finder
         peak_loc, peak_mag = peak_finder(data, verbose=False)
@@ -89,17 +83,14 @@ class TimeDomainMetric(Metrics):
         return max_ptp
 
     def compute_max_min_range(self, data: np.ndarray):
-        """
-        # 4.计算磁场最大与最小值的范围. range of values(maximum-minium) along an axis.
-        按通道计算最大值和最小值的范围，并计算均值和方差。
+        """Calculate the range of maximum and minimum values by channel.
         """
         mmr = np.ptp(data, axis=1)
         return mmr
 
     def compute_max_field_change(self, data: np.ndarray):
-        """
-        # 5.计算Max Field Change,记录磁场变化程度
-        按通道计算磁场变化的最大值,及其磁场变化平均值和方差
+        """Calculate the Max Field Change, which measures the extent of magnetic field fluctuations.
+            Calculate the maximum value of the magnetic field change, and the mean value and variance of the magnetic field change by channel.
         """
         diff_field = np.abs(np.diff(data, axis=1))
 
@@ -110,51 +101,25 @@ class TimeDomainMetric(Metrics):
 
 
     def compute_rms(self, data: np.ndarray):
-        """
-        # 7.均方根
+        """root-mean-square
         """
         return np.sqrt(np.mean(np.square(data), axis=1))
 
     def compute_1d_arv(self, data: np.ndarray):
-        """ 8. 计算整流平均值
-          绝对值的平均值
+        """ Average rectified value
         """
         return np.mean(np.abs(data), axis=1)
 
     def compute_1d_factors(self, data):
-        """# 单通道
-        # 9,10,11,12.计算波形因子(Form factor)、峰值因子、脉冲因子、裕度因子
-        # ref: https://zhuanlan.zhihu.com/p/621622520
+        """factors calculation。
         """
-        signal_rms = np.sqrt(np.mean(np.square(data)))  # 均方根
-        signal_arv = np.mean(np.abs(data))  # 整流平均值,Average rectified value
-        signal_pk = np.max(data) - np.min(data)  # 峰峰值
+        signal_rms = np.sqrt(np.mean(np.square(data)))  # root-mean-square
+        signal_arv = np.mean(np.abs(data))  # Average rectified value
+        signal_pk = np.max(data) - np.min(data) #peak-to-peak
         signal_xr = np.mean(np.sqrt(np.abs(data)))
 
-        S = signal_rms / signal_arv  # 波形因子
-        C = signal_pk / signal_rms  # 峰值因子
-        I = signal_pk / signal_arv  # 脉冲因子
-        L = signal_pk / signal_xr  # 裕度因子
+        S = signal_rms / signal_arv  # form factor
+        C = signal_pk / signal_rms  # peak factor
+        I = signal_pk / signal_arv  # pulse factor
+        L = signal_pk / signal_xr  # margin factor
         return S, C, I, L
-
-
-if __name__ == '__main__':
-    from pathlib import Path
-
-    opm_mag_fif = r"C:\Data\Datasets\OPM-Artifacts\S01.LP.fif"
-    opm_raw = mne.io.read_raw(opm_mag_fif, verbose=False, preload=True)
-    # opm_raw.filter(0, 45).notch_filter([50, 100], verbose=False, n_jobs=-1)
-
-    squid_fif = Path(r"C:\Data\Datasets\MEG_Lab\02_liaopan\231123\run1_tsss.fif")
-    squid_raw = mne.io.read_raw_fif(squid_fif, preload=True, verbose=False)
-    # squid_raw.filter(0, 45).notch_filter([50, 100], verbose=False, n_jobs=-1)
-
-    import time
-
-    st = time.time()
-    tdm_opm = TimeDomainMetric(opm_raw.crop(0, 0.5), n_jobs=1)
-    tdm_squid = TimeDomainMetric(squid_raw.crop(0, 0.5), n_jobs=1)
-    print("opm_data:", tdm_opm.compute_time_metrics('mag'))
-    print("squid_data:", tdm_squid.compute_time_metrics('grad'))
-    et = time.time()
-    print("cost time:", et - st)

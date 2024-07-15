@@ -58,23 +58,4 @@ def update_config_yaml(conf:DictConfig,conf_path:str):
     print("saving f.name:",conf_path)
 
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    # main()
-    import mne
-    # update_config_yaml(OmegaConf.create({"opm":123,"squid":123}),"./conf/temp2.yaml")
-    from opmqc.qc.freq_domain_metrics import FreqDomainMetrics
-    from opmqc.qc.tsfresh_domain_metrics import TsfreshDomainMetric
-    from opmqc.qc.time_domain_metrcis import TimeDomainMetric
-    from opmqc.qc.statistic_metrics import StatsDomainMetric
-    from opmqc.qc.entropy_metrics import EntropyDomainMetric
-
-    opm_mag_fif = r"C:\Data\Datasets\OPM-Artifacts\S01.LP.fif"
-    opm_raw = mne.io.read_raw(opm_mag_fif, verbose=False, preload=True)
-    import time
-    st = time.time()
-    fdm_opm = FreqDomainMetrics(opm_raw.crop(0, 10))
-    print("opm_data freq:", fdm_opm.compute_freq_metrics(meg_type='mag'))
-    et = time.time()
-    print("cost time:", et - st)
 

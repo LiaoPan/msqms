@@ -1,15 +1,14 @@
 # -*- coding: utf-8 -*-
 """Visual Inspection"""
+
 import mne
-import seaborn
-import plotly
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
+import seaborn as sns
 from pathlib import Path
 import plotly.graph_objs as go
 import plotly.offline as pyo
-from opmqc.utils import clogger
+import matplotlib.pyplot as plt
 from deprecated import deprecated
 
 
@@ -515,8 +514,6 @@ class VisualInspection(object):
         raise NotImplementedError
 
 
-
-
     @deprecated(reason="This version of the implementation is based on matplotlib and has no interactive effects.")
     def _visualize_heatmap(self, data, bad_mask, sfreq=1000, label='NaN', adaptive=True, downsample_dim=1000):
         """
@@ -568,42 +565,5 @@ class VisualInspection(object):
 
         # Show the plot
         plt.show()
-
-
-if __name__ == '__main__':
-    import mne
-    import numpy as np
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-    from pathlib import Path
-
-    opm_mag_fif = r"C:\Data\Datasets\OPM-Artifacts\S01.LP.fif"
-    opm_raw = mne.io.read_raw(opm_mag_fif, verbose=False)
-    opm_raw.first_samp
-
-    # squid_fif = Path(r"C:\Data\Datasets\MEG_Lab\02_liaopan\231123\run1_tsss.fif")
-    # squid_raw = mne.io.read_raw_fif(squid_fif)
-    # print(squid_raw.first_samp)
-    # print(squid_raw.first_time)
-    # squid_raw.time_as_index(7000)
-    # squid_data = squid_raw.get_data('mag', start=0, stop=6000)
-    # print("squid_data shape:", squid_data.shape)
-
-    opm_data = opm_raw.get_data('mag')
-
-    # opm_mag_visual = r"C:\Data\Datasets\全记录数据\opm_visual.fif"
-    # opm_raw_visual = mne.io.read_raw(opm_mag_visual, verbose=False)
-    # opm_data_visual = opm_raw_visual.get_data('mag', start=0, stop=200)
-    # opm_data_visual_2 = opm_data_visual.get_data('mag')
-    output_fpath = r"C:\Data\Code\opmqc\opmqc\reports\imgs"
-    vis = VisualInspection(raw=opm_raw, output_fpath=output_fpath)
-    vis.visual_psd()
-    vis.visualize_heatmap(data=opm_data, bad_mask=np.zeros((opm_data.shape)), filename="Heatmap_zerovalue.html",label='ZeroValue')
-    vis.visualize_heatmap(data=opm_data, bad_mask=np.zeros((opm_data.shape)), filename="Heatmap_NaN.html",label='NaN')
-    vis.visualize_heatmap(data=opm_data, bad_mask=np.zeros((opm_data.shape)), filename="Heatmap_nosignal.html",label='NoSignal')
-    vis.visualize_heatmap(data=opm_data, bad_mask=np.zeros((opm_data.shape)), filename="Heatmap_bad_channels.html",label='BadChannel')
-    vis.visualize_heatmap(data=opm_data, bad_mask=np.zeros((opm_data.shape)), filename="Heatmap_bad_segments.html",label='BadSegments')
-    vis.visualize_heatmap(data=opm_data, bad_mask=np.zeros((opm_data.shape)), filename="Heatmap_flat_channels.html", label='Flat')
-    vis.visual_bad_channel_topomap(bad_channels=['I1','CP5'], filename="Bad_channels_distribution.png",show_names=True)
 
 

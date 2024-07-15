@@ -1,15 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
--------------------------------------------------
-   Description :
-   Author :       LiaoPan
--------------------------------------------------
-   Change Activity:
-                   2023/10/16:
--------------------------------------------------
-"""
-__author__ = 'LiaoPan'
-
 import click
 from pathlib import Path
 from opmqc.reports.report import gen_quality_report
