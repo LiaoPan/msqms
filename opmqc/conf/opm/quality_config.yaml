@@ -3,12 +3,12 @@
 rule_method: 'iqr' # sigma or iqr
 
 ## sigma rule
-bound_threshold_std_dev: 1 # Threshold values greater than * times standard deviation are defined as upper and lower bounds.
-limit_threshold_std_dev: 3 # Threshold values greater than * times standard deviation are defined as upper and lower limits.
+bound_threshold_std_dev: 3 # Threshold values greater than * times standard deviation are defined as upper and lower bounds.
+limit_threshold_std_dev: 9 # Threshold values greater than * times standard deviation are defined as upper and lower limits.
 
 ## IQR rule
-bound_threshold_iqr: 0.5
-limit_threshold_iqr: 1.5
+bound_threshold_iqr: 1.5
+limit_threshold_iqr: 4.5
 
 # Minimal Preprocessing
 high_pass_freq: 1
