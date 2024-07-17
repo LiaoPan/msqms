@@ -1,15 +1,17 @@
 BadChanRatio:
-  mean: 0.02
+  mean: 0.0
   sigma_range:
   - 0.0
-  - 0.04
-  std: 0.02
+  - 0.0
+  std: 0.0
   iqr_range:
     - 0.0
-    - 0.04
-  median: 0.02
-  q1: 0.01
-  q3: 0.03
+    - 0.0
+  median: 0.0
+  q1: 0.0
+  q3: 0.0
+  minimum_l: 0
+  maximum_k: 0.1
 BadSegmentsRatio:
   mean: 0.1
   sigma_range:
@@ -35,17 +37,19 @@ NaN_ratio:
   q1: 0.05
   q3: 0.15
 Flat_chan_ratio:
-  mean: 0.02
+  mean: 0.0
   sigma_range:
   - 0.0
-  - 0.04
-  std: 0.02
+  - 0.0
+  std: 0.0
   iqr_range:
     - 0.0
-    - 0.04
-  median: 0.02
-  q1: 0.01
-  q3: 0.03
+    - 0.0
+  median: 0.0
+  q1: 0.0
+  q3: 0.0
+  minimum_l: 0
+  maximum_k: 0.1
 C:
   iqr_range:
   - 10.467538637034979

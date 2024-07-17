@@ -217,7 +217,7 @@ class StatsDomainMetric(Metrics):
         if np.any(bad_segs):
             bad_segs_num = len(bad_segs['onsets'])
 
-        clogger.info(f"bad segments:{bad_segs}--bad segments num:{bad_segs_num}")
+        clogger.info(f"bad segments num:{bad_segs_num}")
         bad_seg_mask = np.full(self.meg_data.shape, False, dtype=bool)
 
         # bad segments mask

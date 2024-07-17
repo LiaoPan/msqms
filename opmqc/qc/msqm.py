@@ -94,6 +94,11 @@ class MSQM(Metrics):
                 lower_bound = mean - bound * std
                 upper_bound = mean + bound * std
 
+            # customize limits of artifacts.
+            if metric_name in ['BadChanRatio', 'Flat_chan_ratio']:
+                maximum_k = self.quality_ref_dict[metric_name]['maximum_k']
+                minimum_l = self.quality_ref_dict[metric_name]['minimum_l']
+
             return {"lower_bound": lower_bound, "upper_bound": upper_bound,
                     "mean:": mean, "std:": std,
                     "maximum_k": maximum_k, "minimum_l": minimum_l}
@@ -112,6 +117,11 @@ class MSQM(Metrics):
             if bound is not None:
                 lower_bound = q1 - bound * (q3 - q1)
                 upper_bound = q3 + bound * (q3 - q1)
+
+            # customize limits of artifacts.
+            if metric_name in ['BadChanRatio', 'Flat_chan_ratio']:
+                maximum_k = self.quality_ref_dict[metric_name]['maximum_k']  # the bad channel limit.
+                minimum_l = self.quality_ref_dict[metric_name]['minimum_l']
 
             return {"lower_bound": lower_bound, "upper_bound": upper_bound,
                     "median:": median, "q1:": q1, "q3": q3,
@@ -194,10 +204,7 @@ class MSQM(Metrics):
 
         quality_score = None
         hint = None
-        if minimum_l < metric_score < lower_bound:
-            quality_score = 1 - (lower_bound - metric_score) / (lower_bound - minimum_l)
-            hint = "↓"
-        elif lower_bound <= metric_score <= upper_bound:
+        if lower_bound <= metric_score <= upper_bound:
             quality_score = 1
             hint = "✔"
         elif upper_bound < metric_score < maximum_k:
@@ -206,6 +213,10 @@ class MSQM(Metrics):
         elif metric_score <= minimum_l or metric_score >= maximum_k:
             quality_score = 0
             hint = "✘"
+        elif minimum_l < metric_score < lower_bound:
+            quality_score = 1 - (lower_bound - metric_score) / (lower_bound - minimum_l)
+            hint = "↓"
+
         # check
         if quality_score > 1 or quality_score < 0:
             raise ValueError(f"normative quality score {quality_score} is wrong! Please check your input.")
