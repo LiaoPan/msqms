@@ -7,19 +7,28 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 from typing import Dict
-from joblib import Parallel, delayed
 
-from opmqc.qc.metrics import Metrics
-from opmqc.constants import DATA_TYPE, METRICS_COLUMNS
+from opmqc.constants import DATA_TYPE, METRICS_COLUMNS, METRICS_DOMAIN,METRICS_CLASS_MAPPING
 from opmqc.utils import read_yaml
-from opmqc.qc.freq_domain_metrics import FreqDomainMetrics
-from opmqc.qc.tsfresh_domain_metrics import TsfreshDomainMetric
+from opmqc.qc.freq_domain_metrics import FreqDomainMetric
 from opmqc.qc.time_domain_metrcis import TimeDomainMetric
 from opmqc.qc.statistic_metrics import StatsDomainMetric
 from opmqc.qc.entropy_metrics import EntropyDomainMetric
+from opmqc.qc.metrics_factory import MetricsFactory
 from opmqc.utils import clogger
 
-class MSQM(Metrics):
+# Register metrics classes
+# ["time_domain", "freq_domain", "stats_domain", "entropy_domain", "custom_domain"]
+for md in METRICS_DOMAIN:
+    class_maps = {
+        "time_domain": TimeDomainMetric,
+        "freq_domain": FreqDomainMetric,
+        "stats_domain": StatsDomainMetric,
+        "entropy_domain": EntropyDomainMetric}
+    MetricsFactory.register_metric(md, class_maps[md])
+
+
+class MSQM:
     def __init__(self, raw: mne.io.Raw, data_type: DATA_TYPE, origin_raw: mne.io.Raw = None, n_jobs=-1, verbose=False):
         """MEG quality assessment based on MEG Signal Quality Metrics (MSQMs)
 
@@ -32,7 +41,10 @@ class MSQM(Metrics):
         data_type : DATA_TYPE
             the data type of the MEG data.(opm or squid)
         """
-        super().__init__(raw, data_type=data_type, origin_raw=origin_raw, n_jobs=n_jobs, verbose=verbose)
+        self.raw = raw
+        self.origin_raw = origin_raw
+        self.n_jobs = n_jobs
+        self.verbose = verbose
         self.data_type = data_type
         self.meg_type = 'mag'
 
@@ -49,6 +61,14 @@ class MSQM(Metrics):
         # Get the metric type based on the configuration file.
         self.metric_category_names = list(self.config_default[
                                               'category_weights'].keys())  # ['time_domain', 'freq_domain', 'entropy', 'fractal', 'artifacts']
+        # cache variances for report
+        self.zero_mask = None
+        self.nan_mask = None
+        self.bad_chan_mask = None
+        self.bad_seg_mask = None
+        self.flat_mask = None
+        self.bad_chan_names = None
+        self.bad_chan_index = None
 
     def get_quality_references(self) -> Dict:
         """ Get quality reference according to data type of MEG.(opm or squid)
@@ -60,6 +80,18 @@ class MSQM(Metrics):
         quality_ref_dict = read_yaml(quality_ref_fpath)
 
         return quality_ref_dict
+
+    def get_configure(self) -> Dict:
+        """ get configuration parameters from configuration file[conf folder].
+        """
+        default_config_fpath = Path(__file__).parent.parent / 'conf' / 'config.yaml'
+        if self.data_type == 'opm':
+            config_fpath = Path(__file__).parent.parent / 'conf' / 'opm' / 'quality_config.yaml'
+        else:
+            config_fpath = Path(__file__).parent.parent / 'conf' / 'squid' / 'quality_config.yaml'
+        config = read_yaml(config_fpath)
+        default_config = read_yaml(default_config_fpath)
+        return {'default': default_config, 'data_type': config}
 
     def _get_single_quality_ref_dict(self, metric_name, bound=None, limit=None, method=None) -> Dict:
         """Get single quality reference.
@@ -129,51 +161,46 @@ class MSQM(Metrics):
         else:
             return {}
 
-    def get_configure(self) -> Dict:
-        """ get configuration parameters from configuration file[conf folder].
-        """
-        default_config_fpath = Path(__file__).parent.parent / 'conf' / 'config.yaml'
-        if self.data_type == 'opm':
-            config_fpath = Path(__file__).parent.parent / 'conf' / 'opm' / 'quality_config.yaml'
-        else:
-            config_fpath = Path(__file__).parent.parent / 'conf' / 'squid' / 'quality_config.yaml'
-        config = read_yaml(config_fpath)
-        default_config = read_yaml(default_config_fpath)
-        return {'default': default_config, 'data_type': config}
-
     @staticmethod
     def _calculate_quality_metric(metric_name, raw, meg_type, n_jobs, data_type, origin_raw):
         cache_report = None
-        if metric_name == "tfresh":
-            m = TsfreshDomainMetric(raw, data_type=data_type, n_jobs=n_jobs)
-            res = m.compute_tsfresh_metrics(meg_type)
-        if metric_name == "time_domain":
-            m = TimeDomainMetric(raw, data_type=data_type)
-            res = m.compute_time_metrics(meg_type)
-        elif metric_name == "freq_domain":
-            m = FreqDomainMetrics(raw, data_type=data_type)
-            res = m.compute_freq_metrics(meg_type=meg_type)
-        elif metric_name == "entropy_domain":
-            m = EntropyDomainMetric(raw, n_jobs=n_jobs, data_type=data_type)
-            res = m.compute_entropy_metrics(meg_type=meg_type)
-        elif metric_name == "stats_domain":
-            m = StatsDomainMetric(raw, data_type=data_type, origin_raw=origin_raw)
-            res = m.compute_stats_metrics(meg_type)
+        class_name = None
+        try:
+            m = MetricsFactory.create_metric(metric_name, raw=raw, data_type=data_type, n_jobs=n_jobs,
+                                             origin_raw=origin_raw)
+            res = m.compute_metrics(meg_type)
+            class_name = m.__class__.__name__
+            # if metric_name == "tfresh":
+            #     m = TsfreshDomainMetric(raw, data_type=data_type, n_jobs=n_jobs)
+            #     res = m.compute_tsfresh_metrics(meg_type)
+            # if metric_name == "time_domain":
+            #     m = TimeDomainMetric(raw, data_type=data_type)
+            #     res = m.compute_metrics(meg_type)
+            # elif metric_name == "freq_domain":
+            #     m = FreqDomainMetric(raw, data_type=data_type)
+            #     res = m.compute_metrics(meg_type=meg_type)
+            # elif metric_name == "entropy_domain":
+            #     m = EntropyDomainMetric(raw, n_jobs=n_jobs, data_type=data_type)
+            #     res = m.compute_metrics(meg_type=meg_type)
+            # elif metric_name == "stats_domain":
+            #     m = StatsDomainMetric(raw, data_type=data_type, origin_raw=origin_raw)
+            #     res = m.compute_metrics(meg_type=meg_type)
 
             # cache for report.
-            cache_report = {
-                "zero_mask": m.zero_mask,
-                "nan_mask": m.nan_mask,
-                "bad_chan_mask": m.bad_chan_mask,
-                "bad_seg_mask": m.bad_seg_mask,
-                "flat_mask": m.flat_mask,
-                "bad_chan_names": m.bad_chan_names,
-            }
+            if metric_name == "stats_domain":
+                cache_report = {
+                    "zero_mask": m.zero_mask,
+                    "nan_mask": m.nan_mask,
+                    "bad_chan_mask": m.bad_chan_mask,
+                    "bad_seg_mask": m.bad_seg_mask,
+                    "flat_mask": m.flat_mask,
+                    "bad_chan_names": m.bad_chan_names,
+                }
 
-        else:
-            res = [None, None]
+        except ValueError as e:
+            res = [None, None, None]
 
-        return [res, cache_report]
+        return [res, cache_report, class_name]
 
     def compute_single_metric(self, metric_score, metric_name, method):
         """single quality metric score is calculated based on the range of quality metric.
@@ -189,7 +216,7 @@ class MSQM(Metrics):
         """
         if method == 'sigma':
             bound = self.data_type_specific_config['bound_threshold_std_dev']
-            limit= self.data_type_specific_config['limit_threshold_std_dev']
+            limit = self.data_type_specific_config['limit_threshold_std_dev']
         elif method == 'iqr':
             bound = self.data_type_specific_config['bound_threshold_iqr']
             limit = self.data_type_specific_config['limit_threshold_iqr']
@@ -237,6 +264,11 @@ class MSQM(Metrics):
             metrics = metrics_df[metric_column_names].loc['avg_mag'].tolist()
             weights = np.array([1] * len(metrics))
             metrics_score = []
+            print(metrics_df[metric_column_names].shape)
+            print(metrics_df[metric_column_names].keys())
+            print("metric_column_names:",metric_column_names,len(metric_column_names))
+            print("metrics:",metrics,len(metrics))
+
             for idx, metric_name in enumerate(metric_column_names):
                 score = self.compute_single_metric(metrics[idx], metric_name, method)
                 quality_score = score["quality_score"]
@@ -264,7 +296,7 @@ class MSQM(Metrics):
 
         # serial version.
         metric_lists = []
-        for metric_cate_name in ["time_domain", "freq_domain", "stats_domain", "entropy_domain"]:
+        for metric_cate_name in METRICS_DOMAIN:
             clogger.info(f"Computing metrics for {metric_cate_name}...")
             metric_lists.append(self._calculate_quality_metric(metric_cate_name, raw=self.raw, meg_type=self.meg_type,
                                                                n_jobs=self.n_jobs, data_type=self.data_type,
@@ -285,6 +317,7 @@ class MSQM(Metrics):
             self.bad_seg_mask = cache_report['bad_seg_mask']
             self.flat_mask = cache_report['flat_mask']
             self.bad_chan_names = cache_report['bad_chan_names']
+
 
         metrics_df = pd.concat(metric_list, axis=1)
 

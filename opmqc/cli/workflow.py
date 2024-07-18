@@ -6,7 +6,6 @@ from opmqc.reports.report import gen_quality_report
 # config click
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
-
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option('--file', '-f', type=str, required=True, help='the fif file required for quality assessment.')
 @click.option('--outdir', '-o', type=str, required=True, default='.', show_default=True, help='the output path of quality report.')
@@ -30,8 +29,3 @@ def generate_qc_report(file, outdir, data_type):
     filename = Path(file).stem+'.report'
     gen_quality_report([file], outdir=outdir, report_fname=filename, data_type=data_type, ftype='html')
 
-def build_qc_workflow(config_file):
-    """
-    Create the Nipype workflow.
-    """
-    raise NotImplementedError

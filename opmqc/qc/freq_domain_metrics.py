@@ -9,11 +9,12 @@ from opmqc.utils import clogger
 from opmqc.constants import MEG_TYPE
 from opmqc.qc import Metrics
 
-class FreqDomainMetrics(Metrics):
+
+class FreqDomainMetric(Metrics):
     """frequency domian quality control"""
 
-    def __init__(self, raw: mne.io.Raw,data_type, n_jobs=1, verbose=False):
-        super().__init__(raw, n_jobs=n_jobs,data_type=data_type,verbose=verbose)
+    def __init__(self, raw: mne.io.Raw, data_type, origin_raw, n_jobs=1, verbose=False):
+        super().__init__(raw, n_jobs=n_jobs, data_type=data_type, origin_raw=origin_raw, verbose=verbose)
 
     @staticmethod
     def _get_fre_domain_features(signal, Fs=1000):
@@ -40,7 +41,7 @@ class FreqDomainMetrics(Metrics):
         p = [p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13]
         return p
 
-    def compute_freq_metrics(self, meg_type: MEG_TYPE):  # hell: Multiple cores cause the BrokenProcessPool problem.
+    def compute_metrics(self, meg_type: MEG_TYPE):  # hell: Multiple cores cause the BrokenProcessPool problem.
         """ Parallel version of compute_freq_metrics """
         if self.n_jobs == 1:
             self.meg_type = meg_type
@@ -66,9 +67,13 @@ class FreqDomainMetrics(Metrics):
             self.meg_names = self._get_meg_names(meg_type)
             clogger.info("Parallel cores: {}".format(self.n_jobs))
 
-            freq_list = Parallel(self.n_jobs, verbose=10)(delayed(self._get_fre_domain_features)(single_ch_data, self.samp_freq) for single_ch_data in self.meg_data)
+            freq_list = Parallel(self.n_jobs, verbose=10)(
+                delayed(self._get_fre_domain_features)(single_ch_data, self.samp_freq) for single_ch_data in
+                self.meg_data)
 
-            freq_feat_df = pd.DataFrame(freq_list, columns=["p1", "p2", "p3", "p4", "p5", "p6", "p7","p8", "p9", "p10", "p11", "p12", "p13"],
+            freq_feat_df = pd.DataFrame(freq_list,
+                                        columns=["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9", "p10", "p11",
+                                                 "p12", "p13"],
                                         index=self.meg_names)
 
             avg_freq_feat = freq_feat_df.mean(axis=0)

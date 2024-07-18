@@ -9,10 +9,10 @@ from opmqc.constants import MEG_TYPE
 
 
 class TimeDomainMetric(Metrics):
-    def __init__(self, raw: mne.io.Raw,data_type, n_jobs=1, verbose=False):
-        super().__init__(raw, n_jobs=n_jobs,data_type=data_type,verbose=verbose)
+    def __init__(self, raw: mne.io.Raw, data_type, origin_raw, n_jobs=1, verbose=False):
+        super().__init__(raw, n_jobs=n_jobs, data_type=data_type, origin_raw=origin_raw, verbose=verbose)
 
-    def compute_time_metrics(self, meg_type: MEG_TYPE):
+    def compute_metrics(self, meg_type: MEG_TYPE):
         """
         calculate time domain quality metrics.
         """
@@ -99,7 +99,6 @@ class TimeDomainMetric(Metrics):
         std_field_change = np.std(diff_field, axis=1)
         return max_field_change, mean_field_change, std_field_change
 
-
     def compute_rms(self, data: np.ndarray):
         """root-mean-square
         """
@@ -115,7 +114,7 @@ class TimeDomainMetric(Metrics):
         """
         signal_rms = np.sqrt(np.mean(np.square(data)))  # root-mean-square
         signal_arv = np.mean(np.abs(data))  # Average rectified value
-        signal_pk = np.max(data) - np.min(data) #peak-to-peak
+        signal_pk = np.max(data) - np.min(data)  # peak-to-peak
         signal_xr = np.mean(np.sqrt(np.abs(data)))
 
         S = signal_rms / signal_arv  # form factor

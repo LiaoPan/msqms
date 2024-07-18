@@ -13,12 +13,13 @@ from opmqc.qc import Metrics
 from opmqc.constants import MEG_TYPE
 from opmqc.utils import segment_raw_data
 
-class EntropyDomainMetric(Metrics):
-    def __init__(self, raw: mne.io.Raw,data_type,n_jobs=-1, verbose=False):
-        super().__init__(raw, n_jobs=n_jobs,data_type=data_type,verbose=verbose)
 
-    def compute_entropy_metrics(self, meg_type: MEG_TYPE, seg_length=100):
-        raw_list,_ = segment_raw_data(self.raw, seg_length)
+class EntropyDomainMetric(Metrics):
+    def __init__(self, raw: mne.io.Raw, data_type, origin_raw, n_jobs=-1, verbose=False):
+        super().__init__(raw, n_jobs=n_jobs, data_type=data_type, origin_raw=origin_raw, verbose=verbose)
+
+    def compute_metrics(self, meg_type: MEG_TYPE, seg_length=100):
+        raw_list, _ = segment_raw_data(self.raw, seg_length)
         meg_metrics_list = []
         for raw_i in raw_list:
             mdf = self._compute_entropy_metrics(raw_i, meg_type)
@@ -31,7 +32,7 @@ class EntropyDomainMetric(Metrics):
         meg_metrics_df = mml / len(meg_metrics_list)
         return meg_metrics_df
 
-    def _compute_entropy_metrics(self, raw:mne.io.Raw, meg_type: MEG_TYPE):
+    def _compute_entropy_metrics(self, raw: mne.io.Raw, meg_type: MEG_TYPE):
         """
         compute all entropy metrics
         """
@@ -39,13 +40,10 @@ class EntropyDomainMetric(Metrics):
         self.meg_names = self._get_meg_names(self.meg_type)
         self.meg_data = raw.get_data(meg_type)
         entropy_metrics = self.compute_entropies(self.meg_data)
-        # print("entropy_metrics: ", entropy_metrics)
 
         fractal_metrics = self.compute_fractal_dimension(self.meg_data)
-        # print("fractal dimension", fractal_metrics)
 
         psd_entropy_metric = self.compute_psd_entropy(self.meg_data)
-        # print("psd entropy:", psd_entropy_metric)
 
         energy_entropy_metric = self.compute_energy_entropy(self.meg_data)
         meg_metrics_df = pd.concat([entropy_metrics, fractal_metrics,
@@ -119,7 +117,7 @@ class EntropyDomainMetric(Metrics):
         single_fractal = Parallel(self.n_jobs)(
             delayed(self._ant_1d_fractal_dimension)(single_ch_data) for single_ch_data in data)
         fractal_df = pd.DataFrame(single_fractal,
-                                  columns=["PFD", "KFD", "HFD","DFA"],
+                                  columns=["PFD", "KFD", "HFD", "DFA"],
                                   index=self.meg_names)
         return fractal_df
 
@@ -185,11 +183,11 @@ if __name__ == '__main__':
     import time
 
     st = time.time()
-    print("opm_raw：",opm_raw)
+    print("opm_raw：", opm_raw)
     edm_opm = EntropyDomainMetric(opm_raw, n_jobs=8)
     # edm_squid = EntropyDomainMetric(squid_raw.crop(0,0.5),n_jobs=1)
     opm = edm_opm.compute_entropy_metrics('mag')
-    print("opm_data:",opm.head(3))
+    print("opm_data:", opm.head(3))
     # suqid = edm_squid.compute_entropy_metrics('grad')
     # print("squid_data:", suqid.head(3))
     et = time.time()

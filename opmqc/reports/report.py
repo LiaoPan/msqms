@@ -460,4 +460,9 @@ if __name__ == "__main__":
     # gen_quality_report(["/Volumes/Touch/Code/osl_practice/anonymize_raw_tsss.fif"], outdir="./demo_report.html")
     # gen_quality_report([test_squid_fif_path], outdir=r"C:\Data\Code\opmqc\opmqc\reports",data_type='squid',report_fname="new_demo_report",ftype='html')
     # gen_quality_report([r"C:\Data\Datasets\SQUID-TEST-MASC\sub-01_ses-0_task-0_meg.con"], outdir=r"C:\Data\Code\opmqc\opmqc\reports",data_type='squid',report_fname="new_demo_report",ftype='html')
-    gen_quality_report([test_opm_fif_path], outdir=r"C:\Data\Code\opmqc\opmqc\reports",data_type='opm',report_fname="new_demo_report",ftype='html')
+    import time
+    st = time.time()
+    short_demo = r"C:\Data\Code\opmqc\demo.fif"
+    gen_quality_report([short_demo], outdir=r"C:\Data\Code\opmqc\opmqc\reports",data_type='opm',report_fname="new_demo_report",ftype='html')
+    et = time.time()
+    print(f"cost time:{(et-st)/60}min.")

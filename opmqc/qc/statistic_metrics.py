@@ -17,7 +17,7 @@ class StatsDomainMetric(Metrics):
     def __init__(self, raw: mne.io.Raw, data_type, origin_raw: mne.io.Raw = None, n_jobs=1, verbose=False):
         super().__init__(raw, n_jobs=n_jobs, data_type=data_type, origin_raw=origin_raw, verbose=verbose)
 
-    def compute_stats_metrics(self, meg_type: MEG_TYPE):
+    def compute_metrics(self, meg_type: MEG_TYPE):
         """
         calculate total meg_data(all_channels * all_timepoints) quality metrics.
         """
@@ -25,9 +25,6 @@ class StatsDomainMetric(Metrics):
         self.meg_type = meg_type
         self.meg_names = self._get_meg_names(self.meg_type)
         self.meg_data = self.raw.get_data(meg_type)
-        #
-        # if self.data_type == 'squid':
-        #     self.raw.pick(self.meg_type)
 
         max_mean_offset, mean_offset, std_mean_offset, max_median_offset, median_offset, std_median_offset = self.compute_baseline_offset(
             self.meg_data)

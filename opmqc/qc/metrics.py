@@ -2,15 +2,16 @@
 """
 Abstract class for metrics
 """
-from abc import ABC
+from abc import ABC, abstractmethod
 import mne
 import numpy as np
 from typing import Dict
 from opmqc.utils import get_configure
+from opmqc.constants import MEG_TYPE
 
 
 class Metrics(ABC):
-    def __init__(self, raw: mne.io.Raw, data_type, origin_raw: mne.io.Raw = None, n_jobs=-1, verbose=False):
+    def __init__(self, raw: mne.io.BaseRaw, data_type, origin_raw: mne.io.Raw = None, n_jobs=-1, verbose=False):
         self.raw = raw
         self.origin_raw = origin_raw
         self.samp_freq = raw.info['sfreq']
@@ -38,7 +39,7 @@ class Metrics(ABC):
         self.bad_chan_names = None
         self.bad_chan_index = None
 
-    def _get_meg_names(self, meg_type: str):
+    def _get_meg_names(self, meg_type: MEG_TYPE):
         """
         get channel names from meg type('mag','grad').
         """
@@ -52,3 +53,9 @@ class Metrics(ABC):
         """
         config_dict = get_configure(self.data_type)
         return config_dict
+
+    @abstractmethod
+    def compute_metrics(self, meg_type: MEG_TYPE):
+        pass
+
+
