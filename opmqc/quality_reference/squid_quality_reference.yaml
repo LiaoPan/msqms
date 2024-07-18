@@ -10,6 +10,8 @@ BadChanRatio:
   median: 0.0
   q1: 0.0
   q3: 0.0
+  minimum_l: 0
+  maximum_k: 0.1
 BadSegmentsRatio:
   mean: 0.1
   sigma_range:
@@ -46,6 +48,8 @@ Flat_chan_ratio:
   median: 0.0
   q1: 0.0
   q3: 0.0
+  minimum_l: 0
+  maximum_k: 0.1
 C:
   iqr_range:
   - 11.451922384921698
