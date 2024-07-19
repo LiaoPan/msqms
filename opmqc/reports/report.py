@@ -463,6 +463,6 @@ if __name__ == "__main__":
     import time
     st = time.time()
     short_demo = r"C:\Data\Code\opmqc\demo.fif"
-    gen_quality_report([short_demo], outdir=r"C:\Data\Code\opmqc\opmqc\reports",data_type='opm',report_fname="new_demo_report",ftype='html')
+    gen_quality_report([test_opm_fif_path], outdir=r"C:\Data\Code\opmqc\opmqc\reports",data_type='opm',report_fname="new_demo_report",ftype='html')
     et = time.time()
     print(f"cost time:{(et-st)/60}min.")

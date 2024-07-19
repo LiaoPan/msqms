@@ -264,10 +264,6 @@ class MSQM:
             metrics = metrics_df[metric_column_names].loc['avg_mag'].tolist()
             weights = np.array([1] * len(metrics))
             metrics_score = []
-            print(metrics_df[metric_column_names].shape)
-            print(metrics_df[metric_column_names].keys())
-            print("metric_column_names:",metric_column_names,len(metric_column_names))
-            print("metrics:",metrics,len(metrics))
 
             for idx, metric_name in enumerate(metric_column_names):
                 score = self.compute_single_metric(metrics[idx], metric_name, method)

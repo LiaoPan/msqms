@@ -43,11 +43,10 @@ class EntropyDomainMetric(Metrics):
 
         fractal_metrics = self.compute_fractal_dimension(self.meg_data)
 
-        psd_entropy_metric = self.compute_psd_entropy(self.meg_data)
+        # psd_entropy_metric = self.compute_psd_entropy(self.meg_data)
 
         energy_entropy_metric = self.compute_energy_entropy(self.meg_data)
-        meg_metrics_df = pd.concat([entropy_metrics, fractal_metrics,
-                                    psd_entropy_metric, energy_entropy_metric], axis=1)
+        meg_metrics_df = pd.concat([entropy_metrics, fractal_metrics, energy_entropy_metric], axis=1)
 
         meg_metrics_df.loc[f"avg_{meg_type}"] = meg_metrics_df.mean(axis=0)
         meg_metrics_df.loc[f"std_{meg_type}"] = meg_metrics_df.std(axis=0)
@@ -62,16 +61,14 @@ class EntropyDomainMetric(Metrics):
         spectral_entropy = ant.spectral_entropy(data, sf=samp_freq, method='welch', normalize=True)
         # Singular value decomposition entropy
         svd_entropy = ant.svd_entropy(data, normalize=True)
-        # Approximate entropy
-        approximate_entropy = ant.app_entropy(data)
-        # Sample entropy
-        sample_entropy = ant.sample_entropy(data)
+        # Approximate entropy | slow
+        # approximate_entropy = ant.app_entropy(data)
+        # Sample entropy | slow
+        # sample_entropy = ant.sample_entropy(data)
         # Hjorth mobility and complexity
         hjorth_mobility, hjorth_complexity = ant.hjorth_params(data)
-        # Number of zero-crossings
-        num_of_zero_crossings = ant.num_zerocross(data, normalize=True)
-        return [permutation_entropy, spectral_entropy, svd_entropy, approximate_entropy, sample_entropy,
-                hjorth_mobility, hjorth_complexity, num_of_zero_crossings]
+        return [permutation_entropy, spectral_entropy, svd_entropy,
+                hjorth_mobility, hjorth_complexity]
 
     def compute_entropies(self, data: np.ndarray):
         """Calculate entropy-related features.
@@ -82,8 +79,8 @@ class EntropyDomainMetric(Metrics):
 
             entropy_df = pd.DataFrame(single_entropies,
                                       columns=["permutation_entropy", "spectral_entropy",
-                                               "svd_entropy", "approximate_entropy", "sample_entropy",
-                                               "hjorth_mobility", "hjorth_complexity", "num_of_zero_crossings"],
+                                               "svd_entropy",
+                                               "hjorth_mobility", "hjorth_complexity"],
                                       index=self.meg_names)
         else:
             single_entropies = Parallel(self.n_jobs)(
@@ -91,8 +88,8 @@ class EntropyDomainMetric(Metrics):
 
             entropy_df = pd.DataFrame(single_entropies,
                                       columns=["permutation_entropy", "spectral_entropy",
-                                               "svd_entropy", "approximate_entropy", "sample_entropy",
-                                               "hjorth_mobility", "hjorth_complexity", "num_of_zero_crossings"],
+                                               "svd_entropy",
+                                               "hjorth_mobility", "hjorth_complexity"],
                                       index=self.meg_names)
         return entropy_df
 

@@ -14,7 +14,7 @@ from opmqc.utils import normative_score
 
 
 class StatsDomainMetric(Metrics):
-    def __init__(self, raw: mne.io.Raw, data_type, origin_raw: mne.io.Raw = None, n_jobs=1, verbose=False):
+    def __init__(self, raw: mne.io.Raw, data_type, origin_raw: mne.io.Raw = None, n_jobs=-1, verbose=False):
         super().__init__(raw, n_jobs=n_jobs, data_type=data_type, origin_raw=origin_raw, verbose=verbose)
 
     def compute_metrics(self, meg_type: MEG_TYPE):
