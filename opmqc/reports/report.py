@@ -12,18 +12,19 @@ from tqdm.auto import tqdm
 from typing import Union
 from pathlib import Path
 from jinja2 import Environment, PackageLoader
-from mne.io import read_raw_fif,read_raw
+from mne.io import read_raw_fif, read_raw
 
 from opmqc.qc import get_header_info
 from opmqc.utils.logging import clogger
-from opmqc.utils import get_configure,filter
+from opmqc.utils import get_configure, filter
 from opmqc.qc.msqm import MSQM
 from opmqc.constants import DATA_TYPE
 from opmqc.qc.visual_inspection import VisualInspection
 from opmqc.constants import METRICS_COLUMNS, METRICS_REPORT_MAPPING, METRICS_MAPPING
 
 
-def gen_quality_report(megfiles: [Union[str, Path]], outdir: Union[str, Path],report_fname:str="", data_type: DATA_TYPE="",ftype: str = 'html'):
+def gen_quality_report(megfiles: [Union[str, Path]], outdir: Union[str, Path], report_fname: str = "",
+                       data_type: DATA_TYPE = "", ftype: str = 'html'):
     """Generate HTML/JSON Report for a set of MEG Raw data.
 
     Parameters
@@ -58,7 +59,8 @@ def gen_quality_report(megfiles: [Union[str, Path]], outdir: Union[str, Path],re
         low_pass = config_dict["data_type"]["low_pass_freq"]
         notch_freq = config_dict["data_type"]["notch_filter_freq"]
         clogger.info(f"Minimal preprocessing: high-pass:{high_pass},low-pass:{low_pass} and notch_filter:{notch_freq}")
-        raw_filter = raw.copy().filter(l_freq=high_pass, h_freq=low_pass,n_jobs=-1, verbose=True).notch_filter(notch_freq, n_jobs=-1, verbose=True)
+        raw_filter = raw.copy().filter(l_freq=high_pass, h_freq=low_pass, n_jobs=-1, verbose=True).notch_filter(
+            notch_freq, n_jobs=-1, verbose=True)
         # raw_filter = raw.copy().notch_filter(notch_freq, n_jobs=-1, verbose=True).filter(l_freq=high_pass, h_freq=low_pass,n_jobs=-1, verbose=True)
         # raw_filter = filter(raw, high_pass=high_pass, low_pass=low_pass, notch_freq=notch_freq,data_type=data_type)
 
@@ -117,6 +119,7 @@ def gen_quality_report(megfiles: [Union[str, Path]], outdir: Union[str, Path],re
             qreport.to_html(report_name)
 
         return quality_ref
+
 
 class QualityReport(object):
     """
@@ -230,7 +233,7 @@ class HtmlReport(object):
         # msqm score
         self.msqm_score = self._format_msqm_score(self.report_data.Quality_Ref.msqm_score)
         clogger.info("MSQM score: {}".format(self.msqm_score))
-        #format css for msqm score
+        # format css for msqm score
         self.msqm_score_css = self._css_style_for_msqm_score()
 
         # overview of category metrics
@@ -439,17 +442,10 @@ class HtmlReport(object):
                           ("ICA", "ica")]
 
         html.render(self.nav_items)
-        # panel: Quality Overview
-
-        # panel: Visual Inpsection
-
-        # panel: ICA(optional)
-
         return html
 
     def render_html(self):
         html_page = self.gen_html_report()
-        # print(html_page)
         return html_page
 
 
@@ -461,8 +457,10 @@ if __name__ == "__main__":
     # gen_quality_report([test_squid_fif_path], outdir=r"C:\Data\Code\opmqc\opmqc\reports",data_type='squid',report_fname="new_demo_report",ftype='html')
     # gen_quality_report([r"C:\Data\Datasets\SQUID-TEST-MASC\sub-01_ses-0_task-0_meg.con"], outdir=r"C:\Data\Code\opmqc\opmqc\reports",data_type='squid',report_fname="new_demo_report",ftype='html')
     import time
+
     st = time.time()
     short_demo = r"C:\Data\Code\opmqc\demo.fif"
-    gen_quality_report([test_opm_fif_path], outdir=r"C:\Data\Code\opmqc\opmqc\reports",data_type='opm',report_fname="new_demo_report",ftype='html')
+    gen_quality_report([test_opm_fif_path], outdir=r"C:\Data\Code\opmqc\opmqc\reports", data_type='opm',
+                       report_fname="new_demo_report", ftype='html')
     et = time.time()
-    print(f"cost time:{(et-st)/60}min.")
+    print(f"cost time:{(et - st) / 60}min.")
