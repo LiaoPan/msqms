@@ -157,35 +157,8 @@ class EntropyDomainMetric(Metrics):
         """
         single_energy_entropy = Parallel(self.n_jobs)(
             delayed(self._sinch_energy_entropy)(single_ch_data) for single_ch_data in data)
-        # mean_energy_entropy = np.mean(single_energy_entropy, axis=0)
-        # std_energy_entropy = np.std(single_energy_entropy, axis=0)
         energy_entropy_df = pd.DataFrame(single_energy_entropy,
                                          columns=["Total_Energy", "Total_Entropy", "Energy_Entropy_Ratio"],
                                          index=self.meg_names)
 
         return energy_entropy_df
-
-
-if __name__ == '__main__':
-    from pathlib import Path
-
-    opm_mag_fif = r"C:\Data\Datasets\OPM-Artifacts\S01.LP.fif"
-    opm_raw = mne.io.read_raw(opm_mag_fif, verbose=False, preload=True)
-    opm_raw.filter(0, 45).notch_filter([50, 100], verbose=False, n_jobs=-1)
-
-    # squid_fif = Path(r"C:\Data\Datasets\MEG_Lab\02_liaopan\231123\run1_tsss.fif")
-    # squid_raw = mne.io.read_raw_fif(squid_fif, preload=True, verbose=False)
-    # squid_raw.filter(0, 45).notch_filter([50, 100], verbose=False, n_jobs=-1)
-
-    import time
-
-    st = time.time()
-    print("opm_raw：", opm_raw)
-    edm_opm = EntropyDomainMetric(opm_raw, n_jobs=8)
-    # edm_squid = EntropyDomainMetric(squid_raw.crop(0,0.5),n_jobs=1)
-    opm = edm_opm.compute_entropy_metrics('mag')
-    print("opm_data:", opm.head(3))
-    # suqid = edm_squid.compute_entropy_metrics('grad')
-    # print("squid_data:", suqid.head(3))
-    et = time.time()
-    print("cost time:", et - st)

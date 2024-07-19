@@ -318,26 +318,3 @@ class StatsDomainMetric(Metrics):
 
         return max_mean_offset, mean_offset, std_mean_offset, max_median_offset, median_offset, std_median_offset
 
-
-if __name__ == '__main__':
-    from pathlib import Path
-
-    # opm_mag_fif = r"C:\Data\Datasets\OPM-Artifacts\S01.LP.fif"
-    from opmqc.main import test_opm_fif_path
-
-    opm_raw = mne.io.read_raw(test_opm_fif_path, verbose=False, preload=True)
-    # opm_raw.filter(0, 45).notch_filter([50, 100], verbose=False, n_jobs=-1)
-
-    # squid_fif = Path(r"C:\Data\Datasets\MEG_Lab\02_liaopan\231123\run1_tsss.fif")
-    # squid_raw = mne.io.read_raw_fif(squid_fif, preload=True, verbose=False)
-    # squid_raw.filter(0, 45).notch_filter([50, 100], verbose=False, n_jobs=-1)
-
-    import time
-
-    st = time.time()
-    sdm_opm = StatsDomainMetric(opm_raw.crop(0, 0.5), n_jobs=1, data_type='opm')
-    # sdm_squid = StatsDomainMetric(squid_raw.crop(0, 0.5), n_jobs=1, data_type='squid')
-    print("opm_data:", sdm_opm.compute_stats_metrics('mag'))
-    # print("squid_data:", sdm_squid.compute_stats_metrics('mag'))
-    et = time.time()
-    print("cost time:", et - st)
