@@ -2,12 +2,9 @@
 """
 Used to add user-defined metrics.
 """
-import mne
 import pandas as pd
 from opmqc.qc import MetricsFactory
 from opmqc.constants import MEG_TYPE
-from opmqc.qc.msqm import MSQM
-from opmqc.main import test_opm_fif_path
 import numpy as np
 from opmqc.reports import gen_quality_report
 

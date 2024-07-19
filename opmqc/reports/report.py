@@ -2,7 +2,6 @@
 """Generate MEG Pipeline HTML Report"""
 import os.path
 
-import mne
 import json
 import jinja2
 import os.path as op
@@ -12,11 +11,11 @@ from tqdm.auto import tqdm
 from typing import Union
 from pathlib import Path
 from jinja2 import Environment, PackageLoader
-from mne.io import read_raw_fif, read_raw
+from mne.io import read_raw
 
 from opmqc.qc import get_header_info
 from opmqc.utils.logging import clogger
-from opmqc.utils import get_configure, filter
+from opmqc.utils import get_configure
 from opmqc.qc.msqm import MSQM
 from opmqc.constants import DATA_TYPE
 from opmqc.qc.visual_inspection import VisualInspection
@@ -452,7 +451,7 @@ class HtmlReport(object):
 if __name__ == "__main__":
     navigation_title = "MEG Quality Report"
     navigation_links = ["Quality Overview", "Artifacts", "Quality Visual Inspection", "ICA"]
-    from opmqc.main import test_opm_fif_path, test_squid_fif_path
+    from opmqc.tests.main import test_opm_fif_path
     # gen_quality_report(["/Volumes/Touch/Code/osl_practice/anonymize_raw_tsss.fif"], outdir="./demo_report.html")
     # gen_quality_report([test_squid_fif_path], outdir=r"C:\Data\Code\opmqc\opmqc\reports",data_type='squid',report_fname="new_demo_report",ftype='html')
     # gen_quality_report([r"C:\Data\Datasets\SQUID-TEST-MASC\sub-01_ses-0_task-0_meg.con"], outdir=r"C:\Data\Code\opmqc\opmqc\reports",data_type='squid',report_fname="new_demo_report",ftype='html')
