@@ -8,7 +8,7 @@ import pandas as pd
 from pathlib import Path
 from typing import Dict
 
-from opmqc.constants import DATA_TYPE, METRICS_COLUMNS, METRICS_DOMAIN,METRICS_CLASS_MAPPING
+from opmqc.constants import DATA_TYPE, METRICS_COLUMNS, METRICS_DOMAIN, METRICS_CLASS_MAPPING
 from opmqc.utils import read_yaml
 from opmqc.qc.freq_domain_metrics import FreqDomainMetric
 from opmqc.qc.time_domain_metrcis import TimeDomainMetric
@@ -151,7 +151,7 @@ class MSQM:
                 upper_bound = q3 + bound * (q3 - q1)
 
             # customize limits of artifacts.
-            if metric_name in ['BadChanRatio', 'Flat_chan_ratio']:
+            if metric_name in ['BadChanRatio', 'Flat_chan_ratio', 'BadSegmentsRatio', 'NaN_ratio']:
                 maximum_k = self.quality_ref_dict[metric_name]['maximum_k']  # the bad channel limit.
                 minimum_l = self.quality_ref_dict[metric_name]['minimum_l']
 
@@ -313,7 +313,6 @@ class MSQM:
             self.bad_seg_mask = cache_report['bad_seg_mask']
             self.flat_mask = cache_report['flat_mask']
             self.bad_chan_names = cache_report['bad_chan_names']
-
 
         metrics_df = pd.concat(metric_list, axis=1)
 

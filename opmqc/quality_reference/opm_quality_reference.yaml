@@ -12,7 +12,6 @@ Custom_Metric:
   q3: 0.0
   minimum_l: 0
   maximum_k: 0.1
-
 BadChanRatio:
   mean: 0.0
   sigma_range:
@@ -28,29 +27,33 @@ BadChanRatio:
   minimum_l: 0
   maximum_k: 0.1
 BadSegmentsRatio:
-  mean: 0.1
+  mean: 0.0
   sigma_range:
   - 0.0
-  - 0.2
-  std: 0.1
+  - 0.0
+  std: 0.0
   iqr_range:
     - 0.0
-    - 0.2
-  median: 0.1
-  q1: 0.05
-  q3: 0.15
+    - 0.0
+  median: 0.0
+  q1: 0.0
+  q3: 0.0
+  minimum_l: 0
+  maximum_k: 0.5
 NaN_ratio:
-  mean: 0.1
+  mean: 0.0
   sigma_range:
   - 0.0
-  - 0.2
-  std: 0.1
+  - 0.1
+  std: 0.0
   iqr_range:
     - 0.0
-    - 0.2
-  median: 0.1
-  q1: 0.05
-  q3: 0.15
+    - 0.0
+  median: 0.0
+  q1: 0.0
+  q3: 0.0
+  minimum_l: 0
+  maximum_k: 0.5
 Flat_chan_ratio:
   mean: 0.0
   sigma_range:
