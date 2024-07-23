@@ -136,7 +136,6 @@ class MSQM:
                     "maximum_k": maximum_k, "minimum_l": minimum_l}
 
         elif method == 'iqr':
-            median = self.quality_ref_dict[metric_name]['median']
             q1 = self.quality_ref_dict[metric_name]['q1']
             q3 = self.quality_ref_dict[metric_name]['q3']
             bounds = self.quality_ref_dict[metric_name]['iqr_range']
@@ -145,18 +144,22 @@ class MSQM:
             lower_bound, upper_bound = bounds[0], bounds[-1]
             maximum_k = q3 + limit * (q3 - q1)
             minimum_l = q1 - limit * (q3 - q1)
+            if 'maximum_k' in self.quality_ref_dict[metric_name]:
+                maximum_k = self.quality_ref_dict[metric_name]['maximum_k']
+            if 'minimum_l' in self.quality_ref_dict[metric_name]:
+                minimum_l = self.quality_ref_dict[metric_name]['minimum_l']
 
             if bound is not None:
                 lower_bound = q1 - bound * (q3 - q1)
                 upper_bound = q3 + bound * (q3 - q1)
 
             # customize limits of artifacts.
-            if metric_name in ['BadChanRatio', 'Flat_chan_ratio', 'BadSegmentsRatio', 'NaN_ratio']:
-                maximum_k = self.quality_ref_dict[metric_name]['maximum_k']  # the bad channel limit.
-                minimum_l = self.quality_ref_dict[metric_name]['minimum_l']
+            # if metric_name in ['BadChanRatio', 'Flat_chan_ratio', 'BadSegmentsRatio', 'NaN_ratio']:
+            #     maximum_k = self.quality_ref_dict[metric_name]['maximum_k']  # the bad channel limit.
+            #     minimum_l = self.quality_ref_dict[metric_name]['minimum_l']
 
             return {"lower_bound": lower_bound, "upper_bound": upper_bound,
-                    "median:": median, "q1:": q1, "q3": q3,
+                    "q1:": q1, "q3": q3,
                     "maximum_k": maximum_k, "minimum_l": minimum_l}
         else:
             return {}
