@@ -7,7 +7,7 @@ opmqc.utils.utils module
 .. currentmodule:: opmqc.utils.utils
 
 .. automodule:: opmqc.utils.utils
-    :members: fill_zeros_with_nearest_value, format_timedelta, normative_score, read_yaml, segment_raw_data
+    :members: check_if_directory, fill_zeros_with_nearest_value, filter, format_timedelta, get_configure, normative_score, read_yaml, segment_raw_data
     :undoc-members:
     :show-inheritance:
     :member-order: bysource
@@ -21,8 +21,11 @@ opmqc.utils.utils module
     .. autosummary::
         :nosignatures:
 
+        check_if_directory
         fill_zeros_with_nearest_value
+        filter
         format_timedelta
+        get_configure
         normative_score
         read_yaml
         segment_raw_data

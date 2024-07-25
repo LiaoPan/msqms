@@ -14,8 +14,7 @@ opmqc.tests package
     .. toctree::
        :maxdepth: 1
 
-       opmqc.tests.test_artifacts_simulation
-       opmqc.tests.test_io
+       opmqc.tests.test_data_path
 
 
 

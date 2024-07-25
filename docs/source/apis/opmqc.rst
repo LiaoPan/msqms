@@ -15,7 +15,6 @@ opmqc package
        :maxdepth: 1
 
        opmqc.constants
-       opmqc.main
     Subpackages
     -------------
 
@@ -23,12 +22,10 @@ opmqc package
        :maxdepth: 1
 
        opmqc.cli
-       opmqc.datasets
        opmqc.io
        opmqc.libs
        opmqc.qc
        opmqc.reports
-       opmqc.simulation
        opmqc.tests
        opmqc.utils
        opmqc.workflows

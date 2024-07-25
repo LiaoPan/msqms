@@ -7,7 +7,7 @@ opmqc.qc.freq_domain_metrics module
 .. currentmodule:: opmqc.qc.freq_domain_metrics
 
 .. automodule:: opmqc.qc.freq_domain_metrics
-    :members: FreqDomainMetrics
+    :members: FreqDomainMetric
     :undoc-members:
     :show-inheritance:
     :member-order: bysource
@@ -21,7 +21,7 @@ opmqc.qc.freq_domain_metrics module
     .. autosummary::
         :nosignatures:
 
-        FreqDomainMetrics
+        FreqDomainMetric
 
 
 

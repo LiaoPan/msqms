@@ -5,8 +5,9 @@
 
 Welcome to opmqc's documentation!
 =================================
-`OPMQC <https://github.com/LiaoPan/opmqc>`_ is a fully automated quality control tool for OPM-MEG.
+`OPMQC <https://github.com/LiaoPan/opmqc>`_ is a fully automated quality control tool for OPM-MEG and SQUID-MEG.
 
+.. image:: /_static/report.png
 
 Features
 ---------
@@ -24,7 +25,7 @@ Features
          .. div:: sd-font-normal
 
             OPMQC can achieve a more reliable and consistent data quality distribution based on large MEG datasets.
-            This results in quantitative signal quality indicators that are more stable and better suited for extensive MEG research.
+            This results in quantitative signal quality metrics that are more stable and better suited for extensive MEG research.
 
    .. grid-item::
       :columns: 12 12 12 6
@@ -36,7 +37,7 @@ Features
 
          .. div:: sd-font-normal
 
-            OPMQC is implemented modularly and provides command-line tools for generating quality reports, as well as functional interfaces for easy integration into third-party software.
+            OPMQC is implemented in modular fashion and provides command-line tools for generating quality reports, as well as functional interfaces for easy integration into third-party software.
 
    .. grid-item::
       :columns: 12 12 12 6
@@ -60,7 +61,7 @@ Features
 
          .. div:: sd-font-normal
 
-            OPMQC provides each quality control indicator along with its reference range,
+            OPMQC provides each quality metric along with its reference range,
             offering researchers better interpretability and relatively objective standards.
 
 
@@ -83,23 +84,9 @@ Features
    .. grid-item::
       :columns: 6 6 6 4
 
-      .. card:: :material-regular:`library_books;2em` Core Concepts
+      .. card:: :material-regular:`library_books;2em` Concepts
          :class-card: sd-text-black sd-bg-light
          :link: tutorial/core_concepts.html
-
-   .. grid-item::
-      :columns: 6 6 6 4
-
-      .. card:: :material-regular:`menu_book;2em` Tutorials for OPM
-         :class-card: sd-text-black sd-bg-light
-         :link: tutorial/example_opm.html
-
-   .. grid-item::
-      :columns: 6 6 6 4
-
-      .. card:: :material-regular:`token;2em` Tutorials for SQUID
-         :class-card: sd-text-black sd-bg-light
-         :link: tutorial/example_squid.html
 
    .. grid-item::
       :columns: 6 6 6 4
@@ -138,7 +125,7 @@ Features
    :maxdepth: 2
    :caption: Tutorials
 
-   tutorial/core_concepts.rst
+   tutorial/concepts.rst
    apis/opmqc.rst
 ..   tutorial/example_opm.rst
 ..   tutorial/example_squid.rst
