@@ -86,7 +86,7 @@ Features
 
       .. card:: :material-regular:`library_books;2em` Concepts
          :class-card: sd-text-black sd-bg-light
-         :link: tutorial/core_concepts.html
+         :link: tutorial/concepts.html
 
    .. grid-item::
       :columns: 6 6 6 4
@@ -103,10 +103,10 @@ Features
          :class-card: sd-text-black sd-bg-light
          :link: apis/opmqc.html
 
-   .. grid-item::
+..   .. grid-item::
       :columns: 6 6 6 4
 
-      .. card:: :material-regular:`settings;2em` Quality Reference
+..      .. card:: :material-regular:`settings;2em` Quality Reference
          :class-card: sd-text-black sd-bg-light
          :link: quality_reference.html
 

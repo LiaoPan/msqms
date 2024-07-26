@@ -7,13 +7,21 @@ opmqc.cli.workflow module
 .. currentmodule:: opmqc.cli.workflow
 
 .. automodule:: opmqc.cli.workflow
-    :members: CONTEXT_SETTINGS
+    :members: CONTEXT_SETTINGS, generate_qc_report
     :undoc-members:
     :show-inheritance:
     :member-order: bysource
 
     Summary
     -------
+
+    Functions:
+    ************
+
+    .. autosummary::
+        :nosignatures:
+
+        generate_qc_report
 
 
 
