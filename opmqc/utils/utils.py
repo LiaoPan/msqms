@@ -108,6 +108,14 @@ def normative_score(num, thres=20):
     return 1 - 1 / (1 + (num / thres) ** 2)
 
 
+def check_if_directory(path: Path):
+    if not isinstance(path, Path):
+        path = Path(path)
+    if not path.is_dir():
+        raise NotADirectoryError(f"The path '{path}' is not a directory.")
+    else:
+        print(f"The path '{path}' is a valid directory.")
+
 def filter(raw: mne.io.Raw, high_pass: float, low_pass: float, notch_freq: [float], data_type: DATA_TYPE, pad_length=10,
            n_jobs=-1, verbose=True) -> RawArray | Any:
     """Filter in different ways for different data types

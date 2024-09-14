@@ -77,8 +77,8 @@ class MSQM:
             quality_ref_fpath = Path(__file__).parent.parent / 'quality_reference' / 'opm_quality_reference.yaml'
         else:
             quality_ref_fpath = Path(__file__).parent.parent / 'quality_reference' / 'squid_quality_reference.yaml'
-        quality_ref_dict = read_yaml(quality_ref_fpath)
 
+        quality_ref_dict = read_yaml(quality_ref_fpath)
         return quality_ref_dict
 
     def get_configure(self) -> Dict:
@@ -89,6 +89,7 @@ class MSQM:
             config_fpath = Path(__file__).parent.parent / 'conf' / 'opm' / 'quality_config.yaml'
         else:
             config_fpath = Path(__file__).parent.parent / 'conf' / 'squid' / 'quality_config.yaml'
+
         config = read_yaml(config_fpath)
         default_config = read_yaml(default_config_fpath)
         return {'default': default_config, 'data_type': config}
@@ -153,11 +154,6 @@ class MSQM:
                 lower_bound = q1 - bound * (q3 - q1)
                 upper_bound = q3 + bound * (q3 - q1)
 
-            # customize limits of artifacts.
-            # if metric_name in ['BadChanRatio', 'Flat_chan_ratio', 'BadSegmentsRatio', 'NaN_ratio']:
-            #     maximum_k = self.quality_ref_dict[metric_name]['maximum_k']  # the bad channel limit.
-            #     minimum_l = self.quality_ref_dict[metric_name]['minimum_l']
-
             return {"lower_bound": lower_bound, "upper_bound": upper_bound,
                     "q1:": q1, "q3": q3,
                     "maximum_k": maximum_k, "minimum_l": minimum_l}
@@ -173,21 +169,6 @@ class MSQM:
                                              origin_raw=origin_raw)
             res = m.compute_metrics(meg_type)
             class_name = m.__class__.__name__
-            # if metric_name == "tfresh":
-            #     m = TsfreshDomainMetric(raw, data_type=data_type, n_jobs=n_jobs)
-            #     res = m.compute_tsfresh_metrics(meg_type)
-            # if metric_name == "time_domain":
-            #     m = TimeDomainMetric(raw, data_type=data_type)
-            #     res = m.compute_metrics(meg_type)
-            # elif metric_name == "freq_domain":
-            #     m = FreqDomainMetric(raw, data_type=data_type)
-            #     res = m.compute_metrics(meg_type=meg_type)
-            # elif metric_name == "entropy_domain":
-            #     m = EntropyDomainMetric(raw, n_jobs=n_jobs, data_type=data_type)
-            #     res = m.compute_metrics(meg_type=meg_type)
-            # elif metric_name == "stats_domain":
-            #     m = StatsDomainMetric(raw, data_type=data_type, origin_raw=origin_raw)
-            #     res = m.compute_metrics(meg_type=meg_type)
 
             # cache for report.
             if metric_name == "stats_domain":

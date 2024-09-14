@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """Generate MEG Pipeline HTML Report"""
-import os.path
 
 import json
 import jinja2
@@ -15,7 +14,7 @@ from mne.io import read_raw
 
 from opmqc.qc import get_header_info
 from opmqc.utils.logging import clogger
-from opmqc.utils import get_configure
+from opmqc.utils import get_configure, check_if_directory
 from opmqc.qc.msqm import MSQM
 from opmqc.constants import DATA_TYPE
 from opmqc.qc.visual_inspection import VisualInspection
@@ -29,6 +28,7 @@ def gen_quality_report(megfiles: [Union[str, Path]], outdir: Union[str, Path], r
     Parameters
     ----------
     megfiles : [Union[str, Path]]
+        the path of MEG files to generate quality reports.
     outdir : Union[str, Path]
         the folder where the report will be saved.
     report_fname: str
@@ -39,10 +39,15 @@ def gen_quality_report(megfiles: [Union[str, Path]], outdir: Union[str, Path], r
         the type of generated report file.
     Returns
     -------
+        the dict of quality assessment.
+        {"msqm_score": msqm_score, "details": details, "category_scores": category_scores}
     """
     # validate meg files.
+    if isinstance(megfiles, str):
+        megfiles = [megfiles]
 
     # validate outdir
+    check_if_directory(outdir)
 
     for fmeg in megfiles:
         clogger.info(f"Generating report for {fmeg}")
@@ -51,7 +56,8 @@ def gen_quality_report(megfiles: [Union[str, Path]], outdir: Union[str, Path], r
         if not op.exists(fmeg):
             clogger.error(f"{fmeg} is not exists. Please check the path of file.")
         raw = read_raw(fmeg, verbose=False, preload=True)
-
+        if raw.info["sfreq"] != 1000:
+            raw = raw.resample(1000)
         # compute the msqm score and obtain the reference values & hints[↑↓✔]
         config_dict = get_configure(data_type=data_type)
         high_pass = config_dict["data_type"]["high_pass_freq"]
@@ -60,9 +66,6 @@ def gen_quality_report(megfiles: [Union[str, Path]], outdir: Union[str, Path], r
         clogger.info(f"Minimal preprocessing: high-pass:{high_pass},low-pass:{low_pass} and notch_filter:{notch_freq}")
         raw_filter = raw.copy().filter(l_freq=high_pass, h_freq=low_pass, n_jobs=-1, verbose=True).notch_filter(
             notch_freq, n_jobs=-1, verbose=True)
-        # raw_filter = raw.copy().notch_filter(notch_freq, n_jobs=-1, verbose=True).filter(l_freq=high_pass, h_freq=low_pass,n_jobs=-1, verbose=True)
-        # raw_filter = filter(raw, high_pass=high_pass, low_pass=low_pass, notch_freq=notch_freq,data_type=data_type)
-
         msqm = MSQM(raw_filter, origin_raw=raw, data_type=data_type, verbose=10, n_jobs=4)
         clogger.info(f"compute the msqm score...")
         msqm_dict = msqm.compute_msqm_score()
@@ -71,7 +74,7 @@ def gen_quality_report(megfiles: [Union[str, Path]], outdir: Union[str, Path], r
         category_scores = msqm_dict['category_scores']
 
         fmeg_fname = Path(raw.filenames[0]).stem
-        vis = VisualInspection(raw=raw_filter, output_fpath=os.path.join(outdir, f'{fmeg_fname}.imgs'))
+        vis = VisualInspection(raw=raw_filter, output_fpath=op.join(outdir, f'{fmeg_fname}.imgs'))
         meg_data = raw_filter.get_data('mag')
 
         nan_mask = msqm.nan_mask
@@ -111,7 +114,7 @@ def gen_quality_report(megfiles: [Union[str, Path]], outdir: Union[str, Path], r
              "Quality_Ref": quality_ref}),
             minify_html=False)
 
-        report_name = os.path.join(outdir, f"{report_fname}.{ftype}")
+        report_name = op.join(outdir, f"{report_fname}.{ftype}")
         if ftype == "json":
             qreport.to_json(report_name)
         else:
@@ -451,7 +454,7 @@ class HtmlReport(object):
 if __name__ == "__main__":
     navigation_title = "MEG Quality Report"
     navigation_links = ["Quality Overview", "Artifacts", "Quality Visual Inspection", "ICA"]
-    from opmqc.tests.test_data_path import test_opm_fif_path,test_squid_fif_path
+    from opmqc.tests.test_data_path import test_opm_fif_path, test_squid_fif_path
     # gen_quality_report(["/Volumes/Touch/Code/osl_practice/anonymize_raw_tsss.fif"], outdir="./demo_report.html")
     # gen_quality_report([test_squid_fif_path], outdir=r"C:\Data\Code\opmqc\opmqc\reports",data_type='squid',report_fname="new_demo_report",ftype='html')
     # gen_quality_report([r"C:\Data\Datasets\SQUID-TEST-MASC\sub-01_ses-0_task-0_meg.con"], outdir=r"C:\Data\Code\opmqc\opmqc\reports",data_type='squid',report_fname="new_demo_report",ftype='html')
@@ -466,7 +469,10 @@ if __name__ == "__main__":
 
     st = time.time()
     short_demo = r"C:\Data\Code\opmqc\demo.fif"
-    gen_quality_report([test_opm_fif_path], outdir=r"C:\Data\Code\opmqc\opmqc\reports", data_type='opm',
-                       report_fname="new_demo_report", ftype='html')
+    quality = gen_quality_report(test_opm_fif_path, outdir=r"C:\Data\Code\opmqc\opmqc\reports", data_type='opm',
+                                 report_fname="new_demo_report", ftype='html')
+    quality2 = gen_quality_report(test_opm_fif_path, outdir=r"C:\Data\Code\opmqc\opmqc\reports", data_type='opm',
+                                  report_fname="new_demo_report", ftype='json')
+    print("quality", quality)
     et = time.time()
     print(f"cost time:{(et - st) / 60}min.")

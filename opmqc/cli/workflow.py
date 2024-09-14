@@ -12,7 +12,7 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 @click.option('--data_type', '-t', type=str, required=True, default='opm', show_default=True, help="the type of MEG data['opm' or 'squid'].")
 def generate_qc_report(file, outdir, data_type):
     """
-    Generate Quality Control Report of OPM-MEG.
+    Generate Quality Control Report of MEG.
 
     Parameters
     ----------
