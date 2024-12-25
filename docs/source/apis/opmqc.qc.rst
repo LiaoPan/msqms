@@ -16,13 +16,13 @@ opmqc.qc package
 
        opmqc.qc.basic_info
        opmqc.qc.entropy_metrics
+       opmqc.qc.fractal_metrics
        opmqc.qc.freq_domain_metrics
        opmqc.qc.metrics
        opmqc.qc.metrics_factory
        opmqc.qc.msqm
        opmqc.qc.statistic_metrics
        opmqc.qc.time_domain_metrcis
-       opmqc.qc.tsfresh_domain_metrics
        opmqc.qc.visual_inspection
 
 

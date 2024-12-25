@@ -62,6 +62,28 @@ def segment_raw_data(raw, seg_length: float):
     return raw_list, segment_times
 
 
+def save_yaml(data, fname_path):
+    """
+    Save a dictionary as a YAML file.
+
+    Parameters
+    ----------
+    data : dict
+        The data to be saved in YAML format.
+    fname_path : str or Path
+        The path where the YAML file will be saved.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    This function will overwrite the file if it already exists.
+    """
+    with open(fname_path, 'w') as file:
+        yaml.safe_dump(data, file, default_flow_style=False)
+
 def read_yaml(yaml_file):
     """Read yaml file
 

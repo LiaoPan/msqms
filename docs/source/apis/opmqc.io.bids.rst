@@ -7,7 +7,7 @@ opmqc.io.bids module
 .. currentmodule:: opmqc.io.bids
 
 .. automodule:: opmqc.io.bids
-    :members: read_raw_bids_dataset
+    :members: get_info_from_bids, get_subjects_from_bids, read_raw_bids_dataset
     :undoc-members:
     :show-inheritance:
     :member-order: bysource
@@ -21,6 +21,8 @@ opmqc.io.bids module
     .. autosummary::
         :nosignatures:
 
+        get_info_from_bids
+        get_subjects_from_bids
         read_raw_bids_dataset
 
 

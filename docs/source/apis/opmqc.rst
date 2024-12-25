@@ -25,6 +25,7 @@ opmqc package
        opmqc.io
        opmqc.libs
        opmqc.qc
+       opmqc.quality_reference
        opmqc.reports
        opmqc.tests
        opmqc.utils

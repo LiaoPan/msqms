@@ -1,4 +1,3 @@
 # -*- coding: utf-8 -*-
-"""IO module for read OPM raw data."""
-
-from .quanmag import read_raw_mag
+from opmqc.io.raw_dataset import read_raw_dataset
+from opmqc.io.bids_dataset import read_raw_bids_dataset

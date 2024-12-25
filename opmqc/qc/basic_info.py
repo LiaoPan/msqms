@@ -16,124 +16,126 @@ from mne import pick_types
 try:
     from mne.io._digitization import _dig_kind_proper, _dig_kind_rev, _dig_kind_ints
 except ImportError:
-    # for mne==1.6.0
+    # Compatibility for mne==1.6.0
     from mne._fiff._digitization import _dig_kind_proper, _dig_kind_rev, _dig_kind_ints
 
 from opmqc.utils import clogger
 from opmqc.utils import format_timedelta
 
 
-def get_header_info(raw: mne.io.BaseRaw):
-    """get basic info from MNE.Raw object.
+def get_header_info(raw: mne.io.BaseRaw) -> Box:
+    """
+    Extract basic information from an MNE Raw object.
+
+    This function processes an MNE Raw object to obtain essential metadata
+    about MEG recordings, including participant information,
+    channel types, and recording details.
+
     Parameters
     ----------
-    raw:mne.io.BaseRaw
-        the object of MEG data.
+    raw : mne.io.BaseRaw
+        The MNE Raw object containing MEG/EEG data.
 
     Returns
     -------
-      basic_info: dict
-      meg_info : dict
+    info_box : Box
+        A dictionary-like object containing:
+        - "basic_info": dict
+            General recording metadata, including experimenter, participant,
+            digitized points, and file details.
+        - "meg_info": dict
+            Summary of MEG-specific information such as the number of
+            magnetometers, gradiometers, EEG channels, and digitized points.
     """
     assert isinstance(raw, mne.io.BaseRaw)
     info = raw.info
 
     # Experimenter
-    experimenter_info = info['experimenter']
+    experimenter_info = info.get('experimenter', 'unspecified')
 
     # Measurement date
-    meas_date = info['meas_date']
-    if meas_date is None:
-        meas_date_info = 'unspecified'
-    else:
-        meas_date_info = meas_date.strftime('%Y-%m-%d %H:%M:%S %Z')
+    meas_date = info.get('meas_date')
+    meas_date_info = meas_date.strftime('%Y-%m-%d %H:%M:%S %Z') if meas_date else 'unspecified'
 
-    # Participant
+    # Participant information
     try:
-        participant = defaultdict(str, info['subject_info'])
-        sex_dict = defaultdict(str, {0: 'unknown', 1: 'male', 2: 'female'})
-        if participant['birthday']:
-            birthday = '{0}-{1}-{2}'.format(participant['birthday'][0], participant['birthday'][1],
-                                            participant['birthday'][2])
-        else:
-            birthday = 'unspecified'
-
-        participant_info = {"name": participant['first_name'] + participant['middle_name'] + participant['last_name'],
-                            "birthday": birthday,
-                            "sex": sex_dict[participant['sex']]}
+        participant = defaultdict(str, info.get('subject_info', {}))
+        sex_dict = {0: 'unknown', 1: 'male', 2: 'female'}
+        birthday = '-'.join(map(str, participant.get('birthday', ('unspecified', 'unspecified', 'unspecified'))))
+        participant_info = {
+            "name": f"{participant['first_name']} {participant['middle_name']} {participant['last_name']}".strip(),
+            "birthday": birthday,
+            "sex": sex_dict.get(participant['sex'], 'unspecified')
+        }
     except Exception as e:
         clogger.error(e)
-        participant_info = {"name": "", "birthday": "", "sex": ""}
+        participant_info = {"name": "unspecified", "birthday": "unspecified", "sex": "unspecified"}
 
     # Digitized points
-    dig = info['dig']
-    if dig is not None:
+    dig = info.get('dig', [])
+    if dig:
         counts = Counter(d['kind'] for d in dig)
-        counts = ['%d %s' % (counts[ii],
-                             _dig_kind_proper[_dig_kind_rev[ii]])
-                  for ii in _dig_kind_ints if ii in counts]
-        counts = (' (%s)' % (', '.join(counts))) if len(counts) else ''
-        dig_info = '%d item%s%s' % (len(dig), _pl(len(dig)), counts)
-
-        # simple ver.
-        n_dig = len(info['dig'])
-        # dig_info = f"{n_dig} points"
+        counts = [f"{counts[ii]} {_dig_kind_proper[_dig_kind_rev[ii]]}" for ii in _dig_kind_ints if ii in counts]
+        dig_info = f"{len(dig)} item{_pl(len(dig))} ({', '.join(counts)})"
+        n_dig = len(dig)
     else:
         dig_info = 'Not available'
         n_dig = 0
 
-    # Good channels
-    n_eeg = len(pick_types(raw.info, meg=False, eeg=True))
-    n_grad = len(pick_types(raw.info, meg='grad'))
-    n_mag = len(pick_types(raw.info, meg='mag'))
-    n_stim = len(pick_types(raw.info, stim=True))
-    good_ch_info = f'{n_mag} magnetometer, {n_grad} gradiometer, and {n_eeg} EEG channels'
-
+    # Channel information
+    n_eeg = len(pick_types(info, meg=False, eeg=True))
+    n_grad = len(pick_types(info, meg='grad'))
+    n_mag = len(pick_types(info, meg='mag'))
+    n_stim = len(pick_types(info, stim=True))
     ch_types = [channel_type(info, idx) for idx in range(len(info['chs']))]
     ch_counts = Counter(ch_types)
-    chs_info = "%s" % ', '.join("%d %s" % (count, ch_type.upper())
-                                for ch_type, count in ch_counts.items())
+    chs_info = ', '.join(f"{count} {ch_type.upper()}" for ch_type, count in ch_counts.items())
 
-    # ECG & EOG
-    pick_eog = pick_types(raw.info, meg=False, eog=True)
-    if len(pick_eog) > 0:
-        eog = ', '.join(np.array(raw.info['ch_names'])[pick_eog])
-    else:
-        eog = '0'  # 'Not available'
-    pick_ecg = pick_types(raw.info, meg=False, ecg=True)
-    if len(pick_ecg) > 0:
-        ecg = ', '.join(np.array(raw.info['ch_names'])[pick_ecg])
-    else:
-        ecg = '0'
+    # EOG and ECG channels
+    eog = ', '.join(np.array(info['ch_names'])[pick_types(info, meg=False, eog=True)]) or '0'
+    ecg = ', '.join(np.array(info['ch_names'])[pick_types(info, meg=False, ecg=True)]) or '0'
 
     # Bad channels
-    if info['bads'] is not None:
-        bad_info = ', '.join(info['bads'])
-    else:
-        bad_info = 'unspecified'
+    bad_info = ', '.join(info.get('bads', [])) or 'unspecified'
 
-    # Sampling frequency & LowPass & HighPass
-    sfreq_info = '{:.1f} Hz'.format(info['sfreq'])
-    lowpass_info = '{:.1f} Hz'.format(info['lowpass'])
-    highpass_info = '{:.1f} Hz'.format(info['highpass'])
+    # Sampling frequency, lowpass, highpass
+    sfreq_info = f"{info['sfreq']:.1f} Hz"
+    lowpass_info = f"{info['lowpass']:.1f} Hz"
+    highpass_info = f"{info['highpass']:.1f} Hz"
 
     # Duration
-    duration_info = format_timedelta(raw.times[-1]) + ' (HH:MM:SS.SSS)'
+    duration_info = format_timedelta(raw.times[-1]) + " (HH:MM:SS.SSS)"
 
-    # Source filename
-    source_filename = raw.filenames[0]
+    # Source filename and size
+    source_filename = raw.filenames[0] if raw.filenames else 'unspecified'
+    file_size = sizeof_fmt(op.getsize(source_filename)) if source_filename != 'unspecified' else 'unspecified'
 
-    # Data size
-    file_size = sizeof_fmt(op.getsize(source_filename))
+    # Prepare output
+    basic_info = {
+        'Experimenter': experimenter_info,
+        'Measurement date': meas_date_info,
+        'Participant': participant_info,
+        'Digitized points': dig_info,
+        'Good channels': chs_info,
+        'Bad channels': bad_info,
+        'EOG channels': eog,
+        'ECG channels': ecg,
+        'Sampling frequency': sfreq_info,
+        'Highpass': highpass_info,
+        'Lowpass': lowpass_info,
+        "Duration": duration_info,
+        "Source filename": source_filename,
+        'Data size': file_size
+    }
 
-    basic_info = {'Experimenter': experimenter_info, 'Measurement date': meas_date_info,
-                  'Participant': participant_info,
-                  'Digitized points': dig_info,
-                  'Good channels': chs_info, 'Bad channels': bad_info, 'EOG channels': eog, 'ECG channels': ecg,
-                  'Sampling frequency': sfreq_info, 'Highpass': highpass_info, 'Lowpass': lowpass_info,
-                  "Duration": duration_info, "Source filename": source_filename, 'Data size': file_size}
-
-    meg_info = {'n_mag': n_mag, 'n_grad': n_grad, 'n_stim': n_stim, 'n_eeg': n_eeg, 'n_ecg': ecg, 'n_eog': eog,
-                'n_dig': n_dig}
+    meg_info = {
+        'n_mag': n_mag,
+        'n_grad': n_grad,
+        'n_stim': n_stim,
+        'n_eeg': n_eeg,
+        'n_ecg': ecg,
+        'n_eog': eog,
+        'n_dig': n_dig
+    }
 
     return Box({"basic_info": basic_info, "meg_info": meg_info})

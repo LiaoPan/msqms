@@ -28,19 +28,24 @@ def gen_quality_report(megfiles: [Union[str, Path]], outdir: Union[str, Path], r
     Parameters
     ----------
     megfiles : [Union[str, Path]]
-        the path of MEG files to generate quality reports.
+        Paths to the MEG files for which the quality reports will be generated.
     outdir : Union[str, Path]
-        the folder where the report will be saved.
+        The directory where the generated report will be saved.
     report_fname: str
-        the name of report.
-    data_type: str
-        the type of data.['opm' or 'squid']
+        The name of the generated report file. Default is an empty string.
+    data_type: DATA_TYPE, optional
+        The type of data. Either 'opm' or 'squid'. Default is an empty string.
     ftype : str
-        the type of generated report file.
+        The format of the report file to be generated. Either 'html' or 'json'. Default is 'html'.
     Returns
     -------
-        the dict of quality assessment.
-        {"msqm_score": msqm_score, "details": details, "category_scores": category_scores}
+    dict
+        A dictionary containing the quality assessment data:
+        {
+            "msqm_score": msqm_score,
+            "details": details,
+            "category_scores": category_scores
+        }
     """
     # validate meg files.
     if isinstance(megfiles, str):
@@ -132,12 +137,26 @@ class QualityReport(object):
                  report_data,
                  minify_html,
                  ):
+        """
+        Parameters
+        ----------
+        report_data : dict
+            The report data to be included in the report.
+
+        minify_html : bool
+            Whether to minify the HTML report.
+        """
         self.report_data = report_data
         self.minify_html = minify_html
 
     def to_json(self, out_json_path: Union[str, Path]) -> None:
         """
-        write the report to json file
+        Write the report to a JSON file.
+
+        Parameters
+        ----------
+        out_json_path : str or Path
+            The path where the JSON report will be saved.
         """
         with tqdm(total=1, desc="Render JSON") as pbar:
             report_data = json.dumps(self.report_data, indent=4)
@@ -146,7 +165,12 @@ class QualityReport(object):
 
     def to_html(self, out_html_path: Union[str, Path]) -> None:
         """
-        write the report to html file
+        Write the report to an HTML file.
+
+        Parameters
+        ----------
+        out_html_path : str or Path
+            The path where the HTML report will be saved.
         """
         with tqdm(total=1, desc="Render Html") as pbar:
             html = HtmlReport(self.report_data).render_html()
@@ -163,7 +187,15 @@ class QualityReport(object):
 
     def _to_file(self, report_data: str, output_file: Union[str, Path]) -> None:
         """
-        Write the report to a file.
+        Write the report data to a file.
+
+        Parameters
+        ----------
+        report_data : str
+            The report data to be written to the file.
+
+        output_file : str or Path
+            The path to the file where the report will be saved.
         """
         if not isinstance(output_file, Path):
             output_file = Path(str(output_file))
@@ -183,7 +215,19 @@ class QualityReport(object):
 
 
 class HtmlReport(object):
+    """
+    Generate an HTML report for MEG quality metrics.
+    """
+
     def __init__(self, report_data):
+        """
+        Initialize the HTML report generator.
+
+        Parameters
+        ----------
+        report_data : dict
+            The data to be included in the HTML report.
+        """
         # Init Jinja
         package_loader = PackageLoader(package_name="opmqc", package_path="reports/templates")
         self.jinja2_env = Environment(loader=package_loader)
@@ -302,6 +346,19 @@ class HtmlReport(object):
 
     @staticmethod
     def _format_msqm_score(score):
+        """
+        Format the MSQM score into a string representation.
+
+        Parameters
+        ----------
+        score : float
+            The MSQM score to be formatted.
+
+        Returns
+        -------
+        str
+            The formatted MSQM score with a corresponding label (e.g., 'Bad', 'Good', etc.).
+        """
         score = score * 100
         if score < 40:
             return f"{score:.2f}/Bad"
@@ -316,6 +373,19 @@ class HtmlReport(object):
 
     @staticmethod
     def _get_hint(score):
+        """
+        Provide a hint based on the quality score value.
+
+        Parameters
+        ----------
+        score : float
+            The score for which the hint is generated.
+
+        Returns
+        -------
+        str
+            The corresponding hint ("Low", "Medium", or "High").
+        """
         if score < 0.6:
             return "Low"
         elif score >= 0.6 and score < 0.8:
@@ -341,7 +411,7 @@ class HtmlReport(object):
         Returns
         -------
         str
-            The formatted string.
+            The formatted number as a string.
         """
         if abs(value) >= threshold or abs(value) < 1 / threshold:
             return f"{value:.2e}"  # Use scientific notation
@@ -349,7 +419,13 @@ class HtmlReport(object):
             return f"{value:.3f}"  # Keep three decimal places
 
     def _css_style_for_msqm_score(self):
-        """Change the css style depending on the msqm score.
+        """
+        Generate a CSS style string based on the MSQM score.
+
+        Returns
+        -------
+        str
+            The CSS style string to be used in the HTML template.
         """
         color = None
         excellent_color = '#4fb332'
@@ -378,12 +454,41 @@ class HtmlReport(object):
         return style
 
     def get_template(self, template_name: str) -> jinja2.Template:
+        """
+        Load and return the Jinja2 template by name.
+
+        Parameters
+        ----------
+        template_name : str
+            The name of the template to load.
+
+        Returns
+        -------
+        jinja2.Template
+            The loaded template.
+        """
         return self.jinja2_env.get_template(template_name)
 
     def gen_base_template(self):
+        """
+        Generate the base HTML template.
+
+        Returns
+        -------
+        jinja2.Template
+            The base template for the HTML report.
+        """
         return self.get_template('base.html')
 
     def gen_html_report(self):
+        """
+        Generate the full HTML report.
+
+        Returns
+        -------
+        str
+            The generated HTML report content.
+        """
         # navigation settings.
         self.nav_items = [("INFO", "info"),
                           ("Quality Overview", "overview"),
@@ -425,6 +530,14 @@ class HtmlReport(object):
         return html
 
     def gen_nav_html(self):
+        """
+        Generate the navigation HTML component.
+
+        Returns
+        -------
+        str
+            The generated navigation HTML content.
+        """
         html = self.get_template("navigation.html")
         # multi panels
         self.nav_items = [("Quality Overview", "overview"),
@@ -436,6 +549,14 @@ class HtmlReport(object):
         return html
 
     def gen_body_html(self):
+        """
+         Generate the body HTML component.
+
+         Returns
+         -------
+         str
+             The generated body HTML content.
+         """
         html = self.get_template("navigation.html")
         # multi panels
         self.nav_items = [("Quality Overview", "overview"),
@@ -447,32 +568,13 @@ class HtmlReport(object):
         return html
 
     def render_html(self):
+        """
+         Render the complete HTML page.
+
+         Returns
+         -------
+         str
+             The final rendered HTML content.
+         """
         html_page = self.gen_html_report()
         return html_page
-
-
-if __name__ == "__main__":
-    navigation_title = "MEG Quality Report"
-    navigation_links = ["Quality Overview", "Artifacts", "Quality Visual Inspection", "ICA"]
-    from opmqc.tests.test_data_path import test_opm_fif_path, test_squid_fif_path
-    # gen_quality_report(["/Volumes/Touch/Code/osl_practice/anonymize_raw_tsss.fif"], outdir="./demo_report.html")
-    # gen_quality_report([test_squid_fif_path], outdir=r"C:\Data\Code\opmqc\opmqc\reports",data_type='squid',report_fname="new_demo_report",ftype='html')
-    # gen_quality_report([r"C:\Data\Datasets\SQUID-TEST-MASC\sub-01_ses-0_task-0_meg.con"], outdir=r"C:\Data\Code\opmqc\opmqc\reports",data_type='squid',report_fname="new_demo_report",ftype='html')
-    import time
-
-    # st = time.time()
-    # short_demo = r"C:\Data\Code\opmqc\demo.fif"
-    # gen_quality_report([test_squid_fif_path], outdir=r"C:\Data\Code\opmqc\opmqc\reports", data_type='squid',
-    #                    report_fname="new_demo_report", ftype='html')
-    # et = time.time()
-    # print(f"cost time:{(et - st) / 60}min.")
-
-    st = time.time()
-    short_demo = r"C:\Data\Code\opmqc\demo.fif"
-    quality = gen_quality_report(test_opm_fif_path, outdir=r"C:\Data\Code\opmqc\opmqc\reports", data_type='opm',
-                                 report_fname="new_demo_report", ftype='html')
-    quality2 = gen_quality_report(test_opm_fif_path, outdir=r"C:\Data\Code\opmqc\opmqc\reports", data_type='opm',
-                                  report_fname="new_demo_report", ftype='json')
-    print("quality", quality)
-    et = time.time()
-    print(f"cost time:{(et - st) / 60}min.")

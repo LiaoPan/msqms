@@ -109,7 +109,10 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "opmqc_report = opmqc.cli.workflow:generate_qc_report"
+            "opmqc_report = opmqc.cli.workflow:generate_qc_report",
+            "opmqc_quality_ref_cal = opmqc.cli.workflow:compute_and_update_quality_reference",
+            "opmqc_quality_ref_update = opmqc.cli.workflow:update_quality_reference",
+            "opmqc_quality_ref_list = opmqc.cli.workflow:list_quality_references"
         ]
     },
     # 表明当前模块依赖哪些包，若环境中没有，则会从pypi中自动下载安装！！！

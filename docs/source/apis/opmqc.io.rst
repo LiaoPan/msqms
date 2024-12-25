@@ -14,14 +14,8 @@ opmqc.io package
     .. toctree::
        :maxdepth: 1
 
-       opmqc.io.bids
-    Subpackages
-    -------------
-
-    .. toctree::
-       :maxdepth: 1
-
-       opmqc.io.quanmag
+       opmqc.io.bids_dataset
+       opmqc.io.raw_dataset
 
 
 

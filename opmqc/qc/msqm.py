@@ -8,38 +8,52 @@ import pandas as pd
 from pathlib import Path
 from typing import Dict
 
-from opmqc.constants import DATA_TYPE, METRICS_COLUMNS, METRICS_DOMAIN, METRICS_CLASS_MAPPING
-from opmqc.utils import read_yaml
-from opmqc.qc.freq_domain_metrics import FreqDomainMetric
 from opmqc.qc.time_domain_metrcis import TimeDomainMetric
+from opmqc.qc.freq_domain_metrics import FreqDomainMetric
 from opmqc.qc.statistic_metrics import StatsDomainMetric
 from opmqc.qc.entropy_metrics import EntropyDomainMetric
+from opmqc.qc.fractal_metrics import FractalDomainMetric
+from opmqc.utils import read_yaml, clogger
 from opmqc.qc.metrics_factory import MetricsFactory
-from opmqc.utils import clogger
+from opmqc.constants import DATA_TYPE, METRICS_COLUMNS, METRICS_DOMAIN
 
-# Register metrics classes
+# Register metrics classes based on METRICS_DOMAIN
 # ["time_domain", "freq_domain", "stats_domain", "entropy_domain", "custom_domain"]
-for md in METRICS_DOMAIN:
-    class_maps = {
+for domain in METRICS_DOMAIN:
+    METRICS_CLASS_MAPPING = {
         "time_domain": TimeDomainMetric,
         "freq_domain": FreqDomainMetric,
         "stats_domain": StatsDomainMetric,
-        "entropy_domain": EntropyDomainMetric}
-    MetricsFactory.register_metric(md, class_maps[md])
+        "entropy_domain": EntropyDomainMetric,
+        "fractal_domain": FractalDomainMetric
+    }
+
+    metric_class = METRICS_CLASS_MAPPING.get(domain)
+    if metric_class:
+        MetricsFactory.register_metric(domain, metric_class)
 
 
 class MSQM:
+    """
+    MEG Signal Quality Metrics (MSQMs) for assessing the quality of MEG signals.
+    """
+
     def __init__(self, raw: mne.io.Raw, data_type: DATA_TYPE, origin_raw: mne.io.Raw = None, n_jobs=-1, verbose=False):
-        """MEG quality assessment based on MEG Signal Quality Metrics (MSQMs)
+        """
+        Initialize MSQM instance.
 
         Parameters
         ----------
         raw : mne.io.Raw
-            the object of the MEG raw data
-        origin_raw : mne.io.Raw, optional
-            keep the original MEG raw data.
+            The MEG raw data object.
         data_type : DATA_TYPE
-            the data type of the MEG data.(opm or squid)
+            The type of MEG data ('opm' or 'squid').
+        origin_raw : mne.io.Raw, optional
+            The original MEG raw data for comparison, by default None.
+        n_jobs : int, optional
+            Number of parallel jobs for computation, by default -1 (all available cores).
+        verbose : bool, optional
+            Whether to enable verbose logging, by default False.
         """
         self.raw = raw
         self.origin_raw = origin_raw
@@ -71,7 +85,13 @@ class MSQM:
         self.bad_chan_index = None
 
     def get_quality_references(self) -> Dict:
-        """ Get quality reference according to data type of MEG.(opm or squid)
+        """
+        Load quality reference values based on the MEG data type.
+
+        Returns
+        -------
+        dict
+            A dictionary containing the quality reference values.
         """
         if self.data_type == 'opm':
             quality_ref_fpath = Path(__file__).parent.parent / 'quality_reference' / 'opm_quality_reference.yaml'
@@ -82,17 +102,18 @@ class MSQM:
         return quality_ref_dict
 
     def get_configure(self) -> Dict:
-        """ get configuration parameters from configuration file[conf folder].
         """
-        default_config_fpath = Path(__file__).parent.parent / 'conf' / 'config.yaml'
-        if self.data_type == 'opm':
-            config_fpath = Path(__file__).parent.parent / 'conf' / 'opm' / 'quality_config.yaml'
-        else:
-            config_fpath = Path(__file__).parent.parent / 'conf' / 'squid' / 'quality_config.yaml'
+        Load configuration parameters from configuration file[conf folder].
 
-        config = read_yaml(config_fpath)
-        default_config = read_yaml(default_config_fpath)
-        return {'default': default_config, 'data_type': config}
+        Returns
+        -------
+        dict
+            A dictionary containing the configuration parameters.
+        """
+        conf_path = Path(__file__).parent.parent / "conf"
+        default_config = read_yaml(conf_path / "config.yaml")
+        specific_config = read_yaml(conf_path / self.data_type / "quality_config.yaml")
+        return {"default": default_config, "data_type": specific_config}
 
     def _get_single_quality_ref_dict(self, metric_name, bound=None, limit=None, method=None) -> Dict:
         """Get single quality reference.
@@ -110,7 +131,8 @@ class MSQM:
             IQR method ('iqr') or Sigma method ('sigma')
         Returns
         -------
-            Reference range value for a single quality metric score
+        dict
+            A dictionary containing the reference range values for a single quality metric.
         """
         if method == 'sigma':
             mean = self.quality_ref_dict[metric_name]['mean']
@@ -154,49 +176,73 @@ class MSQM:
                 lower_bound = q1 - bound * (q3 - q1)
                 upper_bound = q3 + bound * (q3 - q1)
 
-            return {"lower_bound": lower_bound, "upper_bound": upper_bound,
+            return {"lower_bound": lower_bound,
+                    "upper_bound": upper_bound,
                     "q1:": q1, "q3": q3,
-                    "maximum_k": maximum_k, "minimum_l": minimum_l}
+                    "maximum_k": maximum_k,
+                    "minimum_l": minimum_l}
         else:
             return {}
 
     @staticmethod
     def _calculate_quality_metric(metric_name, raw, meg_type, n_jobs, data_type, origin_raw):
-        cache_report = None
-        class_name = None
+        """
+        Calculate quality metrics for a specific domain.
+
+        Parameters
+        ----------
+        metric_name : str
+            Name of the metric domain.
+        raw : mne.io.Raw
+            The MEG raw data.
+        meg_type : MEG_TYPE
+            Type of MEG channels ('mag' or 'grad').
+        n_jobs : int
+            Number of parallel jobs for computation.
+        data_type : DATA_TYPE
+            Type of MEG data ('opm' or 'squid').
+        origin_raw : mne.io.Raw or None
+            The original MEG raw data for comparison.
+
+        Returns
+        -------
+        list
+            A list containing the metric DataFrame, cached report, and metric class name.
+        """
         try:
-            m = MetricsFactory.create_metric(metric_name, raw=raw, data_type=data_type, n_jobs=n_jobs,
-                                             origin_raw=origin_raw)
-            res = m.compute_metrics(meg_type)
-            class_name = m.__class__.__name__
-
-            # cache for report.
-            if metric_name == "stats_domain":
-                cache_report = {
-                    "zero_mask": m.zero_mask,
-                    "nan_mask": m.nan_mask,
-                    "bad_chan_mask": m.bad_chan_mask,
-                    "bad_seg_mask": m.bad_seg_mask,
-                    "flat_mask": m.flat_mask,
-                    "bad_chan_names": m.bad_chan_names,
-                }
-
-        except ValueError as e:
-            res = [None, None, None]
-
-        return [res, cache_report, class_name]
+            metric_instance = MetricsFactory.create_metric(metric_name, raw=raw, data_type=data_type, n_jobs=n_jobs,
+                                                           origin_raw=origin_raw)
+            res = metric_instance.compute_metrics(meg_type)
+            cache_report = {
+                "zero_mask": metric_instance.zero_mask,
+                "nan_mask": metric_instance.nan_mask,
+                "bad_chan_mask": metric_instance.bad_chan_mask,
+                "bad_seg_mask": metric_instance.bad_seg_mask,
+                "flat_mask": metric_instance.flat_mask,
+                "bad_chan_names": metric_instance.bad_chan_names,
+            } if metric_name == "stats_domain" else None
+            return [res, cache_report, metric_instance.__class__.__name__]
+        except Exception as e:
+            clogger.error(f"Error calculating {metric_name}: {e}")
+            return [None, None, None]
 
     def compute_single_metric(self, metric_score, metric_name, method):
-        """single quality metric score is calculated based on the range of quality metric.
+        """
+        Calculate a single quality metric score based on the reference range.
 
         Parameters
         ----------
         metric_score : float
-            the score of quality metric.
+            The score of the quality metric.
         metric_name : str
-            the name of the metric.
+            The name of the metric.
         method : str
-            IQR method ('iqr') or Sigma method ('sigma')
+            Method for range calculation ('iqr' or 'sigma').
+
+        Returns
+        -------
+        dict
+            A dictionary containing the calculated quality score and related metadata.
         """
         if method == 'sigma':
             bound = self.data_type_specific_config['bound_threshold_std_dev']
@@ -240,7 +286,21 @@ class MSQM:
                 "hint": hint}
 
     def calculate_category_score(self, metrics_df, method):
-        """average metrics in one category """
+        """
+        Calculate average scores for each metric category.
+
+        Parameters
+        ----------
+        metrics_df : pd.DataFrame
+            DataFrame containing metrics.
+        method : str
+            Method for score calculation ('iqr' or 'sigma').
+
+        Returns
+        -------
+        dict
+            A dictionary with category scores and detailed metric scores.
+        """
         categories_score = {}
         details = {}
         for metric_cate_name in self.metric_category_names:
@@ -262,6 +322,14 @@ class MSQM:
 
     def compute_msqm_score(self):
         """
+        Compute the MSQM score based on metric categories.
+
+        Returns
+        -------
+        dict
+            The computed MSQM score and detailed scores for each category.
+
+        # For example,
         # compute the msqm score and obtain the reference values & hints[↑↓✔]
         # "msqm_score":98,
         # "S": {"lower_bound","upper_bound,"hint":"✔"}

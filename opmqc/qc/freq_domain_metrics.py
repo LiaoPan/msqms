@@ -1,84 +1,137 @@
 # -*- coding: utf-8 -*-
-"""frequency domian quality control metric."""
+"""Frequency Domain Metric for MEG Data.
+"""
+
 import mne
 import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
-
 from opmqc.utils import clogger
 from opmqc.constants import MEG_TYPE
 from opmqc.qc import Metrics
 
 
 class FreqDomainMetric(Metrics):
-    """frequency domian quality control"""
+    """
+    Class to calculate frequency domain metrics for MEG data.
 
+    This class processes MEG data and computes frequency domain features
+    for all MEG channels, with support for both sequential and parallel computation.
+
+    Parameters
+    ----------
+    raw : mne.io.Raw
+        The raw MEG data.
+    data_type : str
+        The type of MEG data (e.g., 'opm' or 'squid').
+    origin_raw : mne.io.Raw
+        The original raw MEG data for comparison.
+    n_jobs : int, optional
+        Number of parallel jobs to use for computation. Default is 1 (no parallelization).
+    verbose : bool, optional
+        If True, enables verbose output. Default is False.
+    """
     def __init__(self, raw: mne.io.Raw, data_type, origin_raw, n_jobs=1, verbose=False):
         super().__init__(raw, n_jobs=n_jobs, data_type=data_type, origin_raw=origin_raw, verbose=verbose)
 
     @staticmethod
-    def _get_fre_domain_features(signal, Fs=1000):
-        """The frequency domain characteristics of 1d signal are calculated
+    def _get_fre_domain_features(signal: np.ndarray, Fs=1000) -> dict:
+        """
+        Compute frequency domain features for a single channel.
+
+        Parameters
+        ----------
+        signal : np.ndarray
+            Time series data for a single channel.
+        Fs : float, optional
+            Sampling frequency of the data. Default is 1000 Hz.
+
+        Returns
+        -------
+        features : dict
+            A dictionary of computed frequency domain features:
+            - mean_amplitude
+            - std_amplitude
+            - skewness_amplitude
+            - kurtosis_amplitude
+            - mean_frequency
+            - std_frequency
+            - rms_frequency
+            - fourth_moment_frequency
+            - normalized_second_moment
+            - frequency_dispersion
+            - frequency_skewness
+            - frequency_kurtosis
+            - mean_absolute_deviation
         """
         L = len(signal)
         y = abs(np.fft.fft(signal / L))[: int(L / 2)]
-        y[0] = 0
+        y[0] = 0  # Remove DC component
         f = np.fft.fftfreq(L, 1 / Fs)[: int(L / 2)]
         fre_line_num = len(y)
-        p1 = y.mean()
-        p2 = np.sqrt(np.sum((y - p1) ** 2) / fre_line_num)
-        p3 = np.sum((y - p1) ** 3) / (fre_line_num * p2 ** 3)
-        p4 = np.sum((y - p1) ** 4) / (fre_line_num * p2 ** 4)
-        p5 = np.sum(f * y) / np.sum(y)
-        p6 = np.sqrt(np.sum((f - p5) ** 2 * y) / fre_line_num)
-        p7 = np.sqrt(np.sum(f ** 2 * y) / np.sum(y))
-        p8 = np.sqrt(np.sum(f ** 4 * y) / np.sum(f ** 2 * y))
-        p9 = np.sum(f ** 2 * y) / np.sqrt(np.sum(y) * np.sum(f ** 4 * y))
-        p10 = p6 / p5
-        p11 = np.sum((f - p5) ** 3 * y) / (p6 ** 3 * fre_line_num)
-        p12 = np.sum((f - p5) ** 4 * y) / (p6 ** 4 * fre_line_num)
-        p13 = np.sum(abs(f - p5) * y) / (np.sqrt(p6) * fre_line_num)
-        p = [p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13]
-        return p
 
-    def compute_metrics(self, meg_type: MEG_TYPE):  # hell: Multiple cores cause the BrokenProcessPool problem.
-        """ Parallel version of compute_freq_metrics """
+        features = {
+            "mean_amplitude": y.mean(),
+            "std_amplitude": np.sqrt(np.sum((y - y.mean()) ** 2) / fre_line_num),
+            "skewness_amplitude": np.sum((y - y.mean()) ** 3) / (fre_line_num * np.sqrt(np.var(y)) ** 3),
+            "kurtosis_amplitude": np.sum((y - y.mean()) ** 4) / (fre_line_num * np.sqrt(np.var(y)) ** 4),
+            "mean_frequency": np.sum(f * y) / np.sum(y),
+            "std_frequency": np.sqrt(np.sum((f - np.sum(f * y) / np.sum(y)) ** 2 * y) / fre_line_num),
+            "rms_frequency": np.sqrt(np.sum(f ** 2 * y) / np.sum(y)),
+            "fourth_moment_frequency": np.sqrt(np.sum(f ** 4 * y) / np.sum(f ** 2 * y)),
+            "normalized_second_moment": np.sum(f ** 2 * y) / np.sqrt(np.sum(y) * np.sum(f ** 4 * y)),
+            "frequency_dispersion": (np.sqrt(np.sum((f - np.sum(f * y) / np.sum(y)) ** 2 * y) / fre_line_num)) / (
+                np.sum(f * y) / np.sum(y)),
+            "frequency_skewness": np.sum((f - np.sum(f * y) / np.sum(y)) ** 3 * y)
+            / (np.sqrt(np.sum((f - np.sum(f * y) / np.sum(y)) ** 2 * y)) ** 3 * fre_line_num),
+            "frequency_kurtosis": np.sum((f - np.sum(f * y) / np.sum(y)) ** 4 * y)
+            / (np.sqrt(np.sum((f - np.sum(f * y) / np.sum(y)) ** 2 * y)) ** 4 * fre_line_num),
+            "mean_absolute_deviation": np.sum(abs(f - np.sum(f * y) / np.sum(y)) * y)
+            / (np.sqrt(np.sqrt(np.sum((f - np.sum(f * y) / np.sum(y)) ** 2 * y))) * fre_line_num),
+        }
+
+        return features
+
+    def compute_metrics(self, meg_type: MEG_TYPE) -> pd.DataFrame:
+        """
+        Compute frequency domain metrics for MEG data.
+
+        Parameters
+        ----------
+        meg_type : MEG_TYPE
+            Type of MEG channels to process (e.g., 'mag', 'grad').
+
+        Returns
+        -------
+        freq_feat_df : pd.DataFrame
+            DataFrame containing frequency domain metrics for all channels,
+            including their average and standard deviation.
+        """
+        self.meg_type = meg_type
+        self.meg_data = self.raw.get_data(meg_type)
+        self.meg_names = self._get_meg_names(meg_type)
+
         if self.n_jobs == 1:
-            self.meg_type = meg_type
-            self.meg_data = self.raw.get_data(meg_type)
-            self.meg_names = self._get_meg_names(meg_type)
-
+            # Sequential computation
             freq_list = []
             for i in range(self.meg_data.shape[0]):
-                p = self._get_fre_domain_features(self.meg_data[i, :])
-
-                freq_list.append(pd.DataFrame([{"p1": p[0], "p2": p[1], "p3": p[2], "p4": p[3], "p5": p[4],
-                                                "p6": p[5], "p7": p[6], "p8": p[7], "p9": p[8], "p10": p[9],
-                                                "p11": p[10], "p12": p[11], "p13": p[12]}], index=[self.meg_names[i]]))
+                features = self._get_fre_domain_features(self.meg_data[i, :])
+                freq_list.append(pd.DataFrame([features], index=[self.meg_names[i]]))
 
             freq_feat_df = pd.concat(freq_list)
-            avg_freq_feat = freq_feat_df.mean(axis=0)
-            std_freq_feat = freq_feat_df.std(axis=0)
-            freq_feat_df.loc[f'avg_{meg_type}'] = avg_freq_feat
-            freq_feat_df.loc[f'std_{meg_type}'] = std_freq_feat
         else:
-            self.meg_type = meg_type
-            self.meg_data = self.raw.get_data(meg_type)
-            self.meg_names = self._get_meg_names(meg_type)
-            clogger.info("Parallel cores: {}".format(self.n_jobs))
-
+            # Parallel computation
+            clogger.info(f"Using {self.n_jobs} parallel cores.")
             freq_list = Parallel(self.n_jobs, verbose=10)(
-                delayed(self._get_fre_domain_features)(single_ch_data, self.samp_freq) for single_ch_data in
-                self.meg_data)
+                delayed(self._get_fre_domain_features)(single_ch_data, self.samp_freq)
+                for single_ch_data in self.meg_data
+            )
+            freq_feat_df = pd.DataFrame(freq_list, index=self.meg_names)
 
-            freq_feat_df = pd.DataFrame(freq_list,
-                                        columns=["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9", "p10", "p11",
-                                                 "p12", "p13"],
-                                        index=self.meg_names)
-
-            avg_freq_feat = freq_feat_df.mean(axis=0)
-            std_freq_feat = freq_feat_df.std(axis=0)
-            freq_feat_df.loc[f'avg_{meg_type}'] = avg_freq_feat
-            freq_feat_df.loc[f'std_{meg_type}'] = std_freq_feat
+        # Compute average and standard deviation
+        avg_freq_feat = freq_feat_df.mean(axis=0)
+        std_freq_feat = freq_feat_df.std(axis=0)
+        freq_feat_df.loc[f'avg_{meg_type}'] = avg_freq_feat
+        freq_feat_df.loc[f'std_{meg_type}'] = std_freq_feat
 
         return freq_feat_df

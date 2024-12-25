@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Time Domain quality control metric."""
+"""Statistics Domain quality control metric."""
 import mne
 import numpy as np
 import pandas as pd
@@ -14,14 +14,50 @@ from opmqc.utils import normative_score
 
 
 class StatsDomainMetric(Metrics):
+    """
+    Compute statistical domain quality metrics for MEG data.
+
+    Includes baseline offset, skewness, kurtosis, and identification
+    of bad channels, segments, and flat signals.
+    """
+
     def __init__(self, raw: mne.io.Raw, data_type, origin_raw: mne.io.Raw = None, n_jobs=-1, verbose=False):
+        """
+        Initialize the statistical domain metric computation.
+
+        Parameters
+        ----------
+        raw : mne.io.Raw
+            The MEG raw data.
+        data_type : str
+            Data type of the MEG ('opm' or 'squid').
+        origin_raw : mne.io.Raw, optional
+            Original raw data for muscle annotation, by default None.
+        n_jobs : int, optional
+            Number of parallel jobs, by default -1.
+        verbose : bool, optional
+            Enable verbose logging, by default False.
+        """
         super().__init__(raw, n_jobs=n_jobs, data_type=data_type, origin_raw=origin_raw, verbose=verbose)
 
     def compute_metrics(self, meg_type: MEG_TYPE):
         """
-        calculate total meg_data(all_channels * all_timepoints) quality metrics.
+        Compute statistical quality metrics for MEG data(all_channels * all_timepoints).
+
+        Parameters
+        ----------
+        meg_type : MEG_TYPE
+            The MEG channel type ('mag', 'grad', or 'eeg').
+
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame containing average and standard deviation of the metrics.
         """
         meg_metrics = dict()
+        self.all_meg_names = self._get_meg_names(True)
+        self.all_meg_data = self.raw.get_data('meg')
+
         self.meg_type = meg_type
         self.meg_names = self._get_meg_names(self.meg_type)
         self.meg_data = self.raw.get_data(meg_type)
@@ -36,25 +72,11 @@ class StatsDomainMetric(Metrics):
         meg_metrics['median_offset'] = median_offset
         meg_metrics['std_median_offset'] = std_median_offset
 
-        # bad channels detection
-        bad_ch_ratio_by_pyprep, bad_chan_names_prep = self.find_bad_channels_by_prep()
-        bad_ch_ratio_by_psd, bad_chan_names_psd = self.find_bad_channels_by_psd()
-        bad_ch_ratio_by_osl, bad_chan_names_osl = self.find_bad_channels_by_osl()
+        # Bad channels
+        bad_channels_ratio, self.bad_chan_names, self.bad_chan_index, self.bad_chan_mask = self.identify_bad_channels()
 
-        bad_chan_names = []
-        bad_chan_names.extend(bad_chan_names_psd)
-        bad_chan_names.extend(bad_chan_names_osl)
-        bad_chan_names.extend(bad_chan_names_prep)
-
-        self.bad_chan_names = [i for i in list(set(bad_chan_names))]  # deduplicate
-        self.bad_chan_index = self._get_channel_index(self.bad_chan_names)
-        self.bad_chan_mask = np.full(self.meg_data.shape, False, dtype=bool)
-        self.bad_chan_mask[self.bad_chan_index] = True
-
-        # bad_ch_ratio_by_osl = bad_ch_ratio_by_psd  # just for debug.(fast)
-        # Average the ratio of bad channels to reduce false detection errors.
-        # meg_metrics['BadChanRatio'] = (bad_ch_ratio_by_osl + bad_ch_ratio_by_psd + bad_ch_ratio_by_pyprep) / 3  # average
-        meg_metrics['BadChanRatio'] = len(self.bad_chan_names) / len(self.meg_names)
+        meg_metrics["BadChanRatio"] = bad_channels_ratio
+        clogger.info(f"Bad channels: {self.bad_chan_names} (ratio: {bad_channels_ratio})")
         clogger.info(f"Get all bad channel:{self.bad_chan_names}--BadChanRatio:{meg_metrics['BadChanRatio']}")
 
         # bad segments detection
@@ -64,11 +86,12 @@ class StatsDomainMetric(Metrics):
         meg_metrics['BadSegmentsRatio'] = bad_segs_ratio
         clogger.info(f"BadSegmentsRatio is {bad_segs_ratio}")
 
-        self.zero_mask, zero_ratio = self.find_zero_values(self.meg_data)
-        self.nan_mask, nan_ratio = self.find_NaN_values(self.meg_data)
+        # Zero and NaN values
+        self.zero_mask, zero_ratio = self.find_zero_values(self.all_meg_data)
+        self.nan_mask, nan_ratio = self.find_NaN_values(self.all_meg_data)
 
+        # Flat channels
         flat_thres_det = self.data_type_specific_config['flat_wave_detection_threshold']
-
         flat_info = self.find_flat(flat_thres_det)
         flat_ratio = flat_info['flat_chan_ratio']
         self.flat_mask = flat_info['flat_chan_mask']
@@ -79,11 +102,47 @@ class StatsDomainMetric(Metrics):
 
         # average
         meg_metrics_df = pd.DataFrame([meg_metrics], index=[f'avg_{meg_type}'])
-
-        # meg_metrics_df.loc[f'avg_{meg_type}'] = meg_metrics_df.mean()
         meg_metrics_df.loc[f'std_{meg_type}'] = [0] * len(meg_metrics_df.columns)  # meg_metrics_df.std()
 
         return meg_metrics_df
+
+    def identify_bad_channels(self):
+        """
+        Identify bad channels using multiple methods and create a mask.
+
+        Returns
+        -------
+        float
+            Ratio of bad channels.
+        list
+            List of bad channel names.
+        np.ndarray
+            Mask indicating bad channels.
+        """
+        bad_channels = set()
+
+        # Pyprep
+        prep_ratio, prep_bad = self.find_bad_channels_by_prep()
+        bad_channels.update(prep_bad)
+
+        # PSD
+        psd_ratio, psd_bad = self.find_bad_channels_by_psd()
+        bad_channels.update(psd_bad)
+
+        # OSL
+        osl_ratio, osl_bad = self.find_bad_channels_by_osl()
+        bad_channels.update(osl_bad)
+
+        # Create bad channel mask
+        bad_chan_names = list(bad_channels)
+        bad_chan_index = self._get_channel_index(bad_chan_names)
+        bad_chan_mask = np.full(self.all_meg_data.shape, False, dtype=bool)
+        bad_chan_mask[bad_chan_index] = True
+        print("bad_chan_index:", bad_chan_index, "bad_chan_mask:", bad_chan_mask.shape)
+
+        # Final ratio and list
+        ratio = len(bad_channels) / len(self.all_meg_names)
+        return ratio, bad_chan_names, bad_chan_index, bad_chan_mask
 
     def _get_channel_index(self, channel_name_list):
         """Returns the channel index based on the channel name
@@ -155,7 +214,7 @@ class StatsDomainMetric(Metrics):
 
         bad_channels = noisy_data.get_bads()
         clogger.info(f"Get All Bad Channels:{bad_channels}")
-        bad_channels_ratio = len(bad_channels) / len(self.meg_names)
+        bad_channels_ratio = len(bad_channels) / len(self.all_meg_names)
         return bad_channels_ratio, bad_channels
 
     def find_bad_channels_by_psd(self):
@@ -170,16 +229,22 @@ class StatsDomainMetric(Metrics):
         total_std = np.std(ch_mean_psd)
         ids = np.where((ch_mean_psd > total_mean + 3 * total_std))
         bad_channel = ch_names[ids[0]]
-        bad_channels_ratio = len(bad_channel) / len(self.meg_names)
+        bad_channels_ratio = len(bad_channel) / len(self.all_meg_names)
         clogger.info(f"Detect BadChannels by PSD: {bad_channel}")
         return bad_channels_ratio, bad_channel
 
     def find_bad_channels_by_osl(self):
         """Find the bad channels by OSL Library.
         """
-        bad_channel = detect_badchannels(self.raw, picks=self.meg_type, ref_meg=False)
-        bad_channels_ratio = len(bad_channel) / len(self.meg_names)
-        clogger.info(f"Bad channel name:{bad_channel}--Bad channels ratio:{bad_channels_ratio}")
+        bad_channel_mag = detect_badchannels(self.raw, picks='mag', ref_meg=False)
+        try:
+            bad_channel_grad = detect_badchannels(self.raw, picks='grad')
+        except ValueError:
+            bad_channel_grad = []
+        bad_channel = bad_channel_mag + bad_channel_grad
+        bad_channels_ratio = len(bad_channel) / len(self.all_meg_names)
+        clogger.info(
+            f"Bad channel name:{bad_channel}--Bad channels ratio:{bad_channels_ratio}--all channels:{len(self.all_meg_names)}")
         return bad_channels_ratio, bad_channel
 
     def find_bad_segments_by_osl(self):
@@ -274,11 +339,11 @@ class StatsDomainMetric(Metrics):
         """detect flat channels or constant channels."""
         if isinstance(flat_thres, str):
             flat_thres = float(flat_thres)
-        std_values = np.nanstd(self.meg_data, axis=1)
+        std_values = np.nanstd(self.all_meg_data, axis=1)
         flat_chan_inds = np.argwhere(std_values <= flat_thres)
         flat_chan_names = [self.raw.info['ch_names'][fc[0]] for fc in flat_chan_inds]
         flat_chan_ratio = (len(flat_chan_names) / len(self.meg_names))  # * 100  # percentage
-        flat_chan_mask = np.full(self.meg_data.shape, False, dtype=bool)
+        flat_chan_mask = np.full(self.all_meg_data.shape, False, dtype=bool)
         for fc in flat_chan_inds:
             flat_chan_mask[fc] = True
 
@@ -317,4 +382,3 @@ class StatsDomainMetric(Metrics):
         max_median_offset = np.max(med_offset_abs)
 
         return max_mean_offset, mean_offset, std_mean_offset, max_median_offset, median_offset, std_median_offset
-

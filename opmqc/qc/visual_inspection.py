@@ -14,12 +14,15 @@ from deprecated import deprecated
 
 class VisualInspection(object):
     def __init__(self, raw, output_fpath="imgs"):
-        """ The object of
+        """
+        Visual Inspection for MEG data: Generate heatmaps, PSD, bad segment visualizations, and more.
+
         Parameters
         ----------
         raw : mne.io.Raw
+            The raw MEG data.
         output_fpath : str
-            the folder to save the images of visual inspection.(absolute path)
+            Path to save the visualizations (default: "imgs").
         """
         self.raw = raw
         self.output_fpath = Path(output_fpath)
@@ -27,6 +30,14 @@ class VisualInspection(object):
 
     @staticmethod
     def _mkdir(fpath: Path):
+        """
+        Create the directory if it doesn't exist.
+
+        Parameters
+        ----------
+        fpath : Path
+            Directory path to create.
+        """
         absolute_fpath = fpath.resolve()
         fpath.mkdir(parents=True, exist_ok=True)
         return absolute_fpath
@@ -44,7 +55,11 @@ class VisualInspection(object):
             A boolean mask with the same shape as the data.[bool]
         downsample_dim : int
             The dimension value to which mask is reduced.
+
         Returns
+        -------
+        numpy.ndarray
+            The downsampled mask.
         -------
 
         """
@@ -133,7 +148,14 @@ class VisualInspection(object):
 
     def visual_psd(self, width=700, height=500):
         """
-        Visualize the PSD based on plotly and mne.
+        Visualize the Power Spectral Density (PSD) of the MEG data using Plotly.
+
+        Parameters
+        ----------
+        width : int
+            Width of the output plot.
+        height : int
+            Height of the output plot.
         """
         from mne.viz._mpl_figure import _line_figure, _split_picks_by_type
         from mne.defaults import _handle_default
@@ -193,6 +215,22 @@ class VisualInspection(object):
             pyo.plot(fig, filename=str(filename), auto_open=False)
 
     def visual_heatmap_grid(self, data, bad_mask, adaptive=True, downsample_dim=1000, filename=''):
+        """
+         Visualize the bad segments in a grid heatmap using seaborn.
+
+         Parameters
+         ----------
+         data : numpy.ndarray
+             The multi-channel brain data matrix.
+         bad_mask : numpy.ndarray
+             A binary mask indicating the positions of bad values.
+         adaptive : bool
+             Whether to downsample the mask for long data series.
+         downsample_dim : int
+             The target dimension for downsampling.
+         filename : str
+             The name of the saved heatmap image.
+         """
         sns.set_theme(style="white")
         # Calculate bad percentage
         total_samples = data.shape[0] * data.shape[1]
@@ -402,21 +440,20 @@ class VisualInspection(object):
 
     def visual_bad_channel_topomap(self, bad_channels: list, show_names: bool = True,filename:str="Bad_channels_distribution.png"):
         """
-        Plot the topomap of bad channels.
+        Plot the topomap of bad channels on the MEG sensor array.
 
         Parameters
         ----------
-        raw : mne.io.Raw
-            MNE raw object.
         bad_channels : list
-            The names of bad channels.
-        show_names : bool
-            Whether to display all channel names.
+            List of bad channel names to be marked.
+        show_names : bool, optional
+            Whether to display channel names on the topomap (default is True).
+        filename : str, optional
+            The output file name for the topomap image (default is 'bad_channels_topomap.png').
 
         Returns
         -------
-        matplotlib.figure.Figure
-            Figure containing the sensor topography.
+        None
         """
         raw = self.raw.copy()
         raw.info['bads'] = bad_channels
@@ -425,6 +462,26 @@ class VisualInspection(object):
         fig.savefig(filename)
 
     def visual_bad_channels_distribution(mask, ch_names, mode, fontsize=10):
+        """
+        Visualize the distribution of bad channels using a bar plot.
+
+        Parameters
+        ----------
+        bad_mask : pandas.DataFrame
+            A DataFrame containing binary values indicating whether a channel is bad (1) or good (0).
+        ch_names : list
+            List of channel names corresponding to the `bad_mask`.
+        mode : str, optional
+            The visualization mode. Options are 'squid' for a horizontal bar plot or 'default' for a vertical bar plot (default is 'squid').
+        fontsize : int, optional
+            The font size for channel labels (default is 10).
+        filename : str, optional
+            The name of the output file where the figure will be saved (default is 'bad_channels_distribution.png').
+
+        Returns
+        -------
+        None
+        """
         sns.set(style="white")
 
         if mode == 'squid':
@@ -468,7 +525,6 @@ class VisualInspection(object):
         Power Spectral Density average on time.
         Returns
         -------
-
         """
         raise NotImplementedError
 
@@ -480,14 +536,12 @@ class VisualInspection(object):
         channel variance time series.
         Returns
         -------
-
         """
 
     def plot_average_freq(self):
         """
         Returns
         -------
-
         """
         raise NotImplementedError
 
@@ -496,7 +550,6 @@ class VisualInspection(object):
         constant value time series.
         Returns
         -------
-
         """
 
     def plot_bad_channel_topo(self):
