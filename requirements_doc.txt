@@ -13,3 +13,7 @@ sphinx-click>=6.0.0
 # dev
 pytest
 
+python-box==7.1.1
+mne>=1.5.0
+PyYAML==6.0.1
+mne_bids==0.14
