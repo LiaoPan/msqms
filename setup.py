@@ -28,7 +28,7 @@ if version is None:
 
 VERSION = version
 DISTNAME = "msqms"
-DESCRIPTION = "msqms is a fully automated quality control tool for OPM-MEG."
+DESCRIPTION = "msqms is a fully automated quality control tool for OPM-MEG and SQUID-MEG."
 MAINTAINER = "reallo"
 MAINTAINER_EMAIL = "liaopan_2015@163.com"
 URL = "https://github.com/liaopan/msqms"
