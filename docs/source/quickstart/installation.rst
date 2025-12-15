@@ -4,7 +4,7 @@ Installation
 Installation with pip
 ---------------------
 
-You can install `MSQMs` by PyPI:
+You can install MSQMs by PyPI:
 
 .. code-block:: bash
 
