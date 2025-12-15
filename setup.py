@@ -64,7 +64,7 @@ def parse_requirements_file(fname: str) -> list:
 install_requires = parse_requirements_file(REQUIREMENTS_PATH)
 tests_requires = parse_requirements_file(REQUIREMENTS_PATH) + parse_requirements_file(TEST_REQUIREMENTS_PATH)
 
-with open("README.md", "r") as fid:
+with open("README.md", "r", encoding="utf-8") as fid:
     long_description = fid.read()
 
 setup(
