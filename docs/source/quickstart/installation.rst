@@ -4,24 +4,24 @@ Installation
 Installation with pip
 ---------------------
 
-You can install `OPMQC` by PyPI:
+You can install `MSQMs` by PyPI:
 
 .. code-block:: bash
 
-   pip install opmqc
+   pip install msqms
 
-You can update the latest OPMQC:
+You can update the latest MSQMs:
 
 .. code-block:: bash
 
-    pip install -U opmqc
+    pip install -U msqms
 
 
 Installation from source code:
 
 .. code-block:: bash
 
-    pip install git+https://github.com/liaopan/opmqc
+    pip install git+https://github.com/liaopan/msqms
 
 
 Dependency

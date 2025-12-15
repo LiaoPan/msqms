@@ -3,12 +3,12 @@
 Used to add user-defined metrics.
 """
 import pandas as pd
-from opmqc.qc import MetricsFactory
-from opmqc.constants import MEG_TYPE
+from msqms.qc import MetricsFactory
+from msqms.constants import MEG_TYPE
 import numpy as np
-from opmqc.reports import gen_quality_report
+from msqms.reports import gen_quality_report
 
-short_demo = r"C:\Data\Code\opmqc\demo.fif"
+short_demo = r"C:\Data\Code\msqms\demo.fif"
 
 
 def custom_calc_metric(self, meg_type: MEG_TYPE):
@@ -28,5 +28,5 @@ def custom_calc_metric(self, meg_type: MEG_TYPE):
 # Note that you need to add a reference range for the metric in the `quality_reference` folder.
 MetricsFactory.register_custom_metric('frequency_domain', custom_calc_metric, custom_metrics_name=['Custom_Metric'])
 print("MetricsFactory:", MetricsFactory, id(MetricsFactory))
-gen_quality_report([short_demo], outdir=r"C:\Data\Code\opmqc\opmqc\reports", data_type='opm',
+gen_quality_report([short_demo], outdir=r"C:\Data\Code\msqms\msqms\reports", data_type='opm',
                    report_fname="new_demo_report", ftype='html')

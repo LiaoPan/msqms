@@ -14,10 +14,10 @@ import os
 import sys
 
 curdir = os.path.dirname(__file__)
-# sys.path.insert(0,os.path.abspath(os.path.join(curdir, "..", "..", "opmqc")))
+# sys.path.insert(0,os.path.abspath(os.path.join(curdir, "..", "..", "msqms")))
 sys.path.insert(0,os.path.abspath(os.path.join("..", "..")))
 
-import opmqc
+import msqms
 release = opmqc.__version__
 
 def run_apidoc(app):
@@ -34,7 +34,7 @@ def run_apidoc(app):
             '--separate',
             '-o',
             os.path.join('.', 'source', 'apis'),
-            os.path.join('..', 'opmqc'),
+            os.path.join('..', 'msqms'),
         ])
     except Exception as e:
         print(e)
@@ -42,7 +42,7 @@ def run_apidoc(app):
 
 # -- Project information -----------------------------------------------------
 
-project = 'opmqc'
+project = 'msqms'
 copyright = '2024, LiaoPan'
 author = 'LiaoPan'
 

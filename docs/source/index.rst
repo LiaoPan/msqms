@@ -1,11 +1,11 @@
-.. opmqc documentation master file, created by
+.. msqms documentation master file, created by
    sphinx-quickstart on Wed Aug 30 22:11:33 2023.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to opmqc's documentation!
+Welcome to msqms's documentation!
 =================================
-`OPMQC <https://github.com/LiaoPan/opmqc>`_ is a fully automated quality control tool for OPM-MEG and SQUID-MEG.
+`MSQMs <https://github.com/LiaoPan/msqms>`_ is a fully automated quality control tool for OPM-MEG and SQUID-MEG.
 
 .. image:: /_static/report.png
 
@@ -24,7 +24,7 @@ Features
 
          .. div:: sd-font-normal
 
-            OPMQC can achieve a more reliable and consistent data quality distribution based on large MEG datasets.
+            MSQMs can achieve a more reliable and consistent data quality distribution based on large MEG datasets.
             This results in quantitative signal quality metrics that are more stable and better suited for extensive MEG research.
 
    .. grid-item::
@@ -37,7 +37,7 @@ Features
 
          .. div:: sd-font-normal
 
-            OPMQC is implemented in modular fashion and provides command-line tools for generating quality reports, as well as functional interfaces for easy integration into third-party software.
+            MSQMs is implemented in modular fashion and provides command-line tools for generating quality reports, as well as functional interfaces for easy integration into third-party software.
 
    .. grid-item::
       :columns: 12 12 12 6
@@ -49,7 +49,7 @@ Features
 
          .. div:: sd-font-normal
 
-            OPMQC workflows should be as minimal as possible to estimate the MSQMs score on the original data or their minimally processed derivatives.
+            MSQMs workflows should be as minimal as possible to estimate the MSQMs score on the original data or their minimally processed derivatives.
 
    .. grid-item::
       :columns: 12 12 12 6
@@ -61,7 +61,7 @@ Features
 
          .. div:: sd-font-normal
 
-            OPMQC provides each quality metric along with its reference range,
+            MSQMs provides each quality metric along with its reference range,
             offering researchers better interpretability and relatively objective standards.
 
 
@@ -101,7 +101,7 @@ Features
 
       .. card:: :material-regular:`webhook;2em` API documentation
          :class-card: sd-text-black sd-bg-light
-         :link: apis/opmqc.html
+         :link: apis/msqms.html
 
 ..   .. grid-item::
       :columns: 6 6 6 4
@@ -126,7 +126,7 @@ Features
    :caption: Tutorials
 
    tutorial/concepts.rst
-   apis/opmqc.rst
+   apis/msqms.rst
 ..   tutorial/example_opm.rst
 ..   tutorial/example_squid.rst
 

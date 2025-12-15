@@ -18,7 +18,7 @@ from setuptools import setup, find_packages
 
 # get the version
 version = None
-with open(op.join('opmqc', '_version.py'), 'r') as fid:
+with open(op.join('msqms', '_version.py'), 'r') as fid:
     for line in (line.strip() for line in fid):
         if line.startswith('__version__'):
             version = line.split('=')[1].strip().strip('\'')
@@ -27,13 +27,13 @@ if version is None:
     raise RuntimeError('Could not determine version')
 
 VERSION = version
-DISTNAME = "opmqc"
-DESCRIPTION = "OPMQC is a fully automated quality control tool for OPM-MEG."
+DISTNAME = "msqms"
+DESCRIPTION = "msqms is a fully automated quality control tool for OPM-MEG."
 MAINTAINER = "reallo"
 MAINTAINER_EMAIL = "liaopan_2015@163.com"
-URL = "https://github.com/liaopan/opmqc"
+URL = "https://github.com/liaopan/msqms"
 LICENSE = "MIT-License"
-DOWNLOAD_URL = "http://github.com/liaopan/opmqc"
+DOWNLOAD_URL = "http://github.com/liaopan/msqms"
 REQUIREMENTS_PATH = "requirements.txt"
 TEST_REQUIREMENTS_PATH = "requirements_testing_tools.txt"
 
@@ -93,7 +93,7 @@ setup(
         "Programming Language :: Python :: 3",
     ],
     version=VERSION,
-    keywords="Neuroscience neuroimaging OPM-MEG brain.",
+    keywords="Neuroscience neuroimaging OPM-MEG and SQUID-MEG.",
     # project_urls={
     #     "Homepage": "",
     #     "Download": "",
@@ -102,17 +102,17 @@ setup(
     #     "Source Code": "",
     # },
     package_data={
-        'opmqc': ['conf/config.yaml', 'conf/opm/quality_config.yaml', 'conf/squid/quality_config.yaml',
+        'msqms': ['conf/config.yaml', 'conf/opm/quality_config.yaml', 'conf/squid/quality_config.yaml',
                   "quality_reference/opm_quality_reference.yaml",
                   "quality_reference/squid_quality_reference.yaml",
                   "reports/templates/*","reports/templates/css/*","reports/templates/js/*"]
     },
     entry_points={
         "console_scripts": [
-            "opmqc_report = opmqc.cli.workflow:generate_qc_report",
-            "opmqc_quality_ref_cal = opmqc.cli.workflow:compute_and_update_quality_reference",
-            "opmqc_quality_ref_update = opmqc.cli.workflow:update_quality_reference",
-            "opmqc_quality_ref_list = opmqc.cli.workflow:list_quality_references"
+            "msqms_report = msqms.cli.workflow:generate_qc_report",
+            "msqms_quality_ref_cal = msqms.cli.workflow:compute_and_update_quality_reference",
+            "msqms_quality_ref_update = msqms.cli.workflow:update_quality_reference",
+            "msqms_quality_ref_list = msqms.cli.workflow:list_quality_references"
         ]
     },
     # 表明当前模块依赖哪些包，若环境中没有，则会从pypi中自动下载安装！！！

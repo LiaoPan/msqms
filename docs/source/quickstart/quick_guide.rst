@@ -2,7 +2,7 @@ Guide for Beginner
 =============
 
 
-We can use the :doc:`gen_quality_report <../apis/opmqc.reports.report>` function to generate quality assessment reports：
+We can use the :doc:`gen_quality_report <../apis/msqms.reports.report>` function to generate quality assessment reports：
 
 By specifying the parameter ``ftype`` as ``html``, we can generate reports in HTML format.
 It can also be set to ``json`` to generate reports in JSON format, which is convenient for integration with other third-party applications.
@@ -10,7 +10,7 @@ Similarly, the ``megfiles`` parameter can accept either a string or a list, allo
 
 .. code-block:: python
 
-    from opmqc.reports import gen_quality_report
+    from msqms.reports import gen_quality_report
 
     # OPM-MEG Report in HTML.
     opm_fif_path = "<your_opm_file>"
@@ -52,12 +52,12 @@ we can add our own quality control metrics to the MSQMs quality control score ca
     Used to add user-defined metrics.
     """
     import pandas as pd
-    from opmqc.qc import MetricsFactory
-    from opmqc.constants import MEG_TYPE
+    from msqms.qc import MetricsFactory
+    from msqms.constants import MEG_TYPE
     import numpy as np
-    from opmqc.reports import gen_quality_report
+    from msqms.reports import gen_quality_report
 
-    short_demo = r"C:\Data\Code\opmqc\demo.fif"
+    short_demo = r"C:\Data\Code\msqms\demo.fif"
 
     def custom_calc_metric(self, meg_type: MEG_TYPE):
         data = self.raw.get_data(meg_type)
@@ -81,7 +81,7 @@ we can add our own quality control metrics to the MSQMs quality control score ca
     MetricsFactory.register_custom_metric('frequency_domain', custom_calc_metric, custom_metrics_name=['Custom_Metric'])
 
     # quality report
-    gen_quality_report(short_demo, outdir=r"C:\Data\Code\opmqc\opmqc\reports", data_type='opm',
+    gen_quality_report(short_demo, outdir=r"C:\Data\Code\msqms\msqms\reports", data_type='opm',
                        report_fname="demo_report", ftype='html')
 
 
