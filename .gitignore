@@ -3,11 +3,15 @@ compile_upload.sh
 build.sh
 *.sh
 update_requirements.sh
+compile_and_upload.sh
+requirements_winlocal.txt
 .idea/
+msqms.egg-info/
 venv/
 conda/outdir/
 opmqc.egg-info/
 dist/
+dist.bak/
 build/
 docs/build/
 README_private.md

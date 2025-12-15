@@ -18,7 +18,7 @@ curdir = os.path.dirname(__file__)
 sys.path.insert(0,os.path.abspath(os.path.join("..", "..")))
 
 import msqms
-release = opmqc.__version__
+release = msqms.__version__
 
 def run_apidoc(app):
     """Generage API documentation"""
