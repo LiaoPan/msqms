@@ -4,7 +4,7 @@ MEG Signal Quality Metrics (MSQMs) is a fully automated quality control tool for
 [![PyPI - Version](https://img.shields.io/pypi/v/msqms?color)](https://badge.fury.io/msqms)
 [![Documentation](https://readthedocs.org/projects/msqms/badge/?version=latest)](https://keras-complex.readthedocs.io/)
 [![PyPI Versions](https://img.shields.io/pypi/pyversions/msqms.svg?color)](https://pypi.python.org/pypi/msqms?color=deepgreen)
-[![PyPI License](https://img.shields.io/pypi/l/msqms.svg?color)](LICENSCE.md)
+[//]: # ([![PyPI License]&#40;https://img.shields.io/pypi/l/msqms.svg?color&#41;]&#40;LICENSCE.md&#41;)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/msqms)
 
 
