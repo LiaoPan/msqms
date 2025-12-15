@@ -5,9 +5,9 @@ name: Release Python Package
 
 on:
   push:
-    branches: [ "main" ]
-#    tags:
-#      - 'v*'
+#    branches: [ "main" ]
+    tags:
+      - 'v*'
 
 permissions:
   contents: write
