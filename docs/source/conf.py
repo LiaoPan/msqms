@@ -117,7 +117,7 @@ myst_enable_extensions = [
 html_theme = 'sphinx_book_theme'
 html_logo = '_static/logo.png'
 html_favicon = '_static/favicon.png'
-html_title = 'OPMQC Documentation'
+html_title = 'MSQMs Documentation'
 
 html_theme_options = {
     'show_toc_level': 2,

@@ -1,4 +1,6 @@
+# -*- coding: utf-8 -*-
 import yaml
+
 """
 freq_mapping = {
     "p1": "mean_amplitude",             # 平均振幅
@@ -37,19 +39,19 @@ p1_p13_mapping = {
     "I": "pulse_factor",
     "L": "margin_factor"
 }
+if __name__=="__main__":
+    format_yaml = "opm_quality_reference.yaml"
+    with open(format_yaml, "r") as file:
+        data = yaml.safe_load(file)
 
-format_yaml = "opm_quality_reference.yaml"
-with open(format_yaml, "r") as file:
-    data = yaml.safe_load(file)
+    updated_data = {}
+    for key, value in data.items():
+        new_key = p1_p13_mapping.get(key, key)  # 如果键在映射字典中，则替换，否则保持原样
+        if new_key != key:
+            print(f"old_key:{key}, new_key:{new_key}")
+        updated_data[new_key] = value
 
-updated_data = {}
-for key, value in data.items():
-    new_key = p1_p13_mapping.get(key, key)  # 如果键在映射字典中，则替换，否则保持原样
-    if new_key != key:
-        print(f"old_key:{key}, new_key:{new_key}")
-    updated_data[new_key] = value
-
-with open(format_yaml, "w") as file:
-    yaml.dump(updated_data, file, default_flow_style=False)
-print("YAML文件已更新替换！")
-# print("YAML 文件已更新并保存为 output.yaml")
+    with open(format_yaml, "w") as file:
+        yaml.dump(updated_data, file, default_flow_style=False)
+    print("YAML文件已更新替换！")
+    # print("YAML 文件已更新并保存为 output.yaml")
