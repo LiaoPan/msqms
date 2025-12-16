@@ -26,18 +26,23 @@ def run_apidoc(app):
     """Generage API documentation"""
     import better_apidoc
     better_apidoc.APP = app
+    curdir = os.path.dirname(__file__)
     project_root = os.path.abspath(os.path.join(curdir, '..', '..'))
     msqms_path = os.path.join(project_root, 'msqms')
+
+    template_dir = os.path.join(curdir, '_templates')
+    output_dir = os.path.join(curdir, 'apis')
+
     try:
         better_apidoc.main([
             'better-apidoc',
             '-t',
-            os.path.join('.', 'source', '_templates'),
+            template_dir,  # os.path.join('.', 'source', '_templates'),
             '--force',
             '--no-toc',
             '--separate',
             '-o',
-            os.path.join('.', 'source', 'apis'),
+            output_dir, # os.path.join('.', 'source', 'apis'),
             msqms_path,
         ])
     except Exception as e:
