@@ -37,12 +37,12 @@ def run_apidoc(app):
         better_apidoc.main([
             'better-apidoc',
             '-t',
-            template_dir,  # os.path.join('.', 'source', '_templates'),
+            template_dir,
             '--force',
             '--no-toc',
             '--separate',
             '-o',
-            output_dir, # os.path.join('.', 'source', 'apis'),
+            output_dir,
             msqms_path,
         ])
     except Exception as e:
@@ -52,7 +52,7 @@ def run_apidoc(app):
 # -- Project information -----------------------------------------------------
 
 project = 'msqms'
-copyright = '2024, LiaoPan'
+copyright = '2026, LiaoPan'
 author = 'LiaoPan'
 
 # The full version, including alpha/beta/rc tags
