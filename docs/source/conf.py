@@ -15,7 +15,9 @@ import sys
 
 curdir = os.path.dirname(__file__)
 # sys.path.insert(0,os.path.abspath(os.path.join(curdir, "..", "..", "msqms")))
-sys.path.insert(0,os.path.abspath(os.path.join("..", "..")))
+# sys.path.insert(0,os.path.abspath(os.path.join("..", "..")))
+sys.path.insert(0, os.path.abspath(os.path.join(curdir, "..", "..")))
+
 
 import msqms
 release = msqms.__version__
