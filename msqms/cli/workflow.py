@@ -42,7 +42,7 @@ def generate_qc_report(file, outdir, data_type):
 @click.option('--n-jobs', '-n', default=-1, type=int, help="Number of parallel jobs (default is -1, use all CPUs)")
 @click.option('--output-dir', '-o', default='quality_ref', help="Directory where the YAML file will be saved")
 @click.option('--update-reference', '-u', is_flag=True,
-              help="If set, will update the reference quality YAML file in the OPQMC library")
+              help="If set, will update the reference quality YAML file in the MSQMs library")
 @click.option('--device-name', '-d', default='opm',
               help="Device name for the YAML reference file (default is 'opm'). For example,<device_name>_quality_reference.yaml)")
 @click.option('--overwrite', '-w', is_flag=True, help="If set, will overwrite the existing quality reference file")
