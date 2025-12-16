@@ -26,6 +26,8 @@ def run_apidoc(app):
     """Generage API documentation"""
     import better_apidoc
     better_apidoc.APP = app
+    project_root = os.path.abspath(os.path.join(curdir, '..', '..'))
+    msqms_path = os.path.join(project_root, 'msqms')
     try:
         better_apidoc.main([
             'better-apidoc',
@@ -36,7 +38,7 @@ def run_apidoc(app):
             '--separate',
             '-o',
             os.path.join('.', 'source', 'apis'),
-            os.path.join('..', 'msqms'),
+            msqms_path,
         ])
     except Exception as e:
         print(e)
