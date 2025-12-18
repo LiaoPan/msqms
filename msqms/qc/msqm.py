@@ -8,7 +8,7 @@ import pandas as pd
 from pathlib import Path
 from typing import Dict
 
-from msqms.qc.time_domain_metrcis import TimeDomainMetric
+from msqms.qc.time_domain_metrics import TimeDomainMetric
 from msqms.qc.freq_domain_metrics import FreqDomainMetric
 from msqms.qc.statistic_metrics import StatsDomainMetric
 from msqms.qc.entropy_metrics import EntropyDomainMetric
@@ -265,13 +265,15 @@ class MSQM:
             quality_score = 1
             hint = "✔"
         elif upper_bound < metric_score < maximum_k:
-            quality_score = 1 - (metric_score - upper_bound) / (maximum_k - upper_bound)
+            denominator = maximum_k - upper_bound
+            quality_score = 1 - (metric_score - upper_bound) / denominator if denominator > 0 else 0.0
             hint = "↑"
         elif metric_score <= minimum_l or metric_score >= maximum_k:
             quality_score = 0
             hint = "✘"
         elif minimum_l < metric_score < lower_bound:
-            quality_score = 1 - (lower_bound - metric_score) / (lower_bound - minimum_l)
+            denominator = lower_bound - minimum_l
+            quality_score = 1 - (lower_bound - metric_score) / denominator if denominator > 0 else 0.0
             hint = "↓"
 
         # check

@@ -7,7 +7,7 @@ msqms.reports.report module
 .. currentmodule:: msqms.reports.report
 
 .. automodule:: msqms.reports.report
-    :members: HtmlReport, METRICS_COLUMNS, METRICS_MAPPING, METRICS_REPORT_MAPPING, QualityReport, gen_quality_report
+    :members: HtmlReport, METRICS_COLUMNS, METRICS_MAPPING, METRICS_REPORT_MAPPING, QualityReport, SummaryHtmlReport, SummaryQualityReport, gen_quality_report, gen_summary_quality_report
     :undoc-members:
     :show-inheritance:
     :member-order: bysource
@@ -23,6 +23,8 @@ msqms.reports.report module
 
         HtmlReport
         QualityReport
+        SummaryHtmlReport
+        SummaryQualityReport
 
     Functions:
     ************
@@ -31,6 +33,7 @@ msqms.reports.report module
         :nosignatures:
 
         gen_quality_report
+        gen_summary_quality_report
 
 
 

@@ -27,6 +27,7 @@ class VisualInspection(object):
         self.raw = raw
         self.output_fpath = Path(output_fpath)
         self._mkdir(self.output_fpath)
+        self.sfreq = raw.info['sfreq']
 
     @staticmethod
     def _mkdir(fpath: Path):
@@ -65,14 +66,23 @@ class VisualInspection(object):
         """
         n_row = mask.shape[0]
         n_col = mask.shape[1]
-        interval_size = np.ceil(n_col / downsample_dim).astype(int)
+        
+        # Calculate interval boundaries to ensure all data is covered
+        # Use linspace to create evenly spaced intervals that cover the entire range
+        col_indices = np.linspace(0, n_col, downsample_dim + 1, dtype=int)
         down_mask = np.zeros((n_row, downsample_dim), dtype=int)
 
         for i in range(downsample_dim):
-            down_mask[:, i] = np.sum(mask[:, i * interval_size:(i + 1) * interval_size], axis=1)
+            start_idx = col_indices[i]
+            end_idx = col_indices[i + 1]
+            # Ensure we don't go beyond the actual data range
+            end_idx = min(end_idx, n_col)
+            if start_idx < end_idx:
+                down_mask[:, i] = np.sum(mask[:, start_idx:end_idx], axis=1)
+        
         return down_mask
 
-    def visualize_heatmap(self, data, bad_mask, filename, width=700, height=500, sfreq=1000, label='', adaptive=True,
+    def visualize_heatmap(self, data, bad_mask, filename, width=700, height=500, label='', adaptive=True,
                           downsample_dim=1000):
         """
             Visualize the positions of NaN values in a multi-channel brain data matrix and display the percentage of `label` values.(NaN/bad segments etc.)
@@ -91,8 +101,6 @@ class VisualInspection(object):
                 Width of the image
             height : float
                 Height of the image
-            sfreq : float
-                Sample frequency in Hz.
             label : str
                 The label of the heatmap.
             adaptive : bool
@@ -114,7 +122,7 @@ class VisualInspection(object):
         # split the mask
         if adaptive:
             bad_mask = self._downsample_mask(bad_mask, downsample_dim)
-
+   
         # Create a figure and plot the mask
         godata = [
             go.Heatmap(
@@ -124,8 +132,11 @@ class VisualInspection(object):
         ]
 
         # customize xlabel
-        interval_time = data.shape[1] / (sfreq * downsample_dim)
-        xlabels = [f"{(interval_time * i):.1f}s" for i in np.arange(0, downsample_dim, int(downsample_dim / 10))]
+        # Calculate time per sample in original data
+        total_time = data.shape[1] / self.sfreq
+        # Create evenly spaced time labels
+        tick_indices = np.arange(0, downsample_dim, int(downsample_dim / 10))
+        xlabels = [f"{(total_time * i / downsample_dim):.1f}s" for i in tick_indices]
 
         # create layout
         layout = go.Layout(

@@ -5,9 +5,11 @@ import json
 import jinja2
 import os.path as op
 from box import Box
+import pandas as pd
+import numpy as np
 
 from tqdm.auto import tqdm
-from typing import Union
+from typing import Union, List, Dict
 from pathlib import Path
 from jinja2 import Environment, PackageLoader
 from mne.io import read_raw
@@ -126,6 +128,152 @@ def gen_quality_report(megfiles: [Union[str, Path]], outdir: Union[str, Path], r
             qreport.to_html(report_name)
 
         return quality_ref
+
+
+def gen_summary_quality_report(megfiles: List[Union[str, Path]], outdir: Union[str, Path], 
+                               report_fname: str = "summary_report", data_type: DATA_TYPE = "",
+                               ftype: str = 'html'):
+    """Generate a summary HTML report for multiple MEG files with quality scores distribution.
+    
+    Parameters
+    ----------
+    megfiles : List[Union[str, Path]]
+        List of paths to the MEG files for which the summary report will be generated.
+    outdir : Union[str, Path]
+        The directory where the generated report will be saved.
+    report_fname: str
+        The name of the generated summary report file. Default is "summary_report".
+    data_type: DATA_TYPE, optional
+        The type of data. Either 'opm' or 'squid'. Default is an empty string.
+    ftype : str
+        The format of the report file to be generated. Either 'html' or 'json'. Default is 'html'.
+    
+    Returns
+    -------
+    dict
+        A dictionary containing summary statistics for all files.
+    """
+    # validate meg files
+    if isinstance(megfiles, str):
+        megfiles = [megfiles]
+    
+    if len(megfiles) == 0:
+        clogger.error("No MEG files provided for summary report generation.")
+        return None
+    
+    # validate outdir
+    check_if_directory(outdir)
+    
+    clogger.info(f"Generating summary report for {len(megfiles)} MEG files")
+    
+    # Collect data from all files
+    all_reports_data = []
+    summary_stats = {
+        'msqm_scores': [],
+        'category_scores': {
+            'time_domain': [],
+            'frequency_domain': [],
+            'entropy': [],
+            'fractal': [],
+            'artifacts': []
+        },
+        'file_info': []
+    }
+    
+    # Generate individual reports and collect data
+    for idx, fmeg in enumerate(tqdm(megfiles, desc="Processing files")):
+        if not op.exists(fmeg):
+            clogger.warning(f"{fmeg} does not exist. Skipping...")
+            continue
+        
+        try:
+            # Generate individual report
+            fmeg_fname = Path(fmeg).stem
+            individual_report_fname = f"{fmeg_fname}.report"
+            quality_ref = gen_quality_report(
+                [fmeg], 
+                outdir=outdir, 
+                report_fname=individual_report_fname,
+                data_type=data_type, 
+                ftype=ftype
+            )
+            
+            if quality_ref:
+                # Store report data
+                # Use relative path for report_path so it works when viewing the summary report
+                # Since both summary and individual reports are in the same directory, use just the filename
+                report_data = {
+                    'filename': fmeg_fname,
+                    'filepath': str(fmeg),
+                    'report_path': f"{individual_report_fname}.html",
+                    'msqm_score': quality_ref['msqm_score'],
+                    'category_scores': quality_ref['category_scores'],
+                    'details': quality_ref['details']
+                }
+                all_reports_data.append(report_data)
+                
+                # Collect statistics
+                summary_stats['msqm_scores'].append(quality_ref['msqm_score'])
+                for category in summary_stats['category_scores'].keys():
+                    if category in quality_ref['category_scores']:
+                        summary_stats['category_scores'][category].append(
+                            quality_ref['category_scores'][category]
+                        )
+                
+                summary_stats['file_info'].append({
+                    'filename': fmeg_fname,
+                    'msqm_score': quality_ref['msqm_score'],
+                    'category_scores': quality_ref['category_scores']
+                })
+        except Exception as e:
+            clogger.error(f"Error processing {fmeg}: {str(e)}")
+            continue
+    
+    if len(all_reports_data) == 0:
+        clogger.error("No valid reports generated. Cannot create summary report.")
+        return None
+    
+    # Calculate summary statistics
+    summary_stats['msqm_scores'] = np.array(summary_stats['msqm_scores'])
+    summary_stats['statistics'] = {
+        'total_files': len(all_reports_data),
+        'msqm_mean': float(np.mean(summary_stats['msqm_scores'])),
+        'msqm_std': float(np.std(summary_stats['msqm_scores'])),
+        'msqm_min': float(np.min(summary_stats['msqm_scores'])),
+        'msqm_max': float(np.max(summary_stats['msqm_scores'])),
+        'msqm_median': float(np.median(summary_stats['msqm_scores'])),
+        'category_stats': {}
+    }
+    
+    # Calculate category statistics
+    for category in summary_stats['category_scores'].keys():
+        if len(summary_stats['category_scores'][category]) > 0:
+            cat_scores = np.array(summary_stats['category_scores'][category])
+            summary_stats['statistics']['category_stats'][category] = {
+                'mean': float(np.mean(cat_scores)),
+                'std': float(np.std(cat_scores)),
+                'min': float(np.min(cat_scores)),
+                'max': float(np.max(cat_scores)),
+                'median': float(np.median(cat_scores))
+            }
+    
+    # Generate summary report HTML
+    summary_report = SummaryQualityReport(
+        report_data=Box({
+            "reports": all_reports_data,
+            "summary_stats": summary_stats
+        }),
+        minify_html=False
+    )
+    
+    report_name = op.join(outdir, f"{report_fname}.{ftype}")
+    if ftype == "json":
+        summary_report.to_json(report_name)
+    else:
+        summary_report.to_html(report_name)
+    
+    clogger.info(f"Summary report generated: {report_name}")
+    return summary_stats
 
 
 class QualityReport(object):
@@ -578,3 +726,233 @@ class HtmlReport(object):
          """
         html_page = self.gen_html_report()
         return html_page
+
+
+class SummaryQualityReport(object):
+    """
+    Generate a summary quality report for multiple MEG files.
+    """
+
+    def __init__(self, report_data, minify_html):
+        """
+        Parameters
+        ----------
+        report_data : dict
+            The report data to be included in the summary report.
+        minify_html : bool
+            Whether to minify the HTML report.
+        """
+        self.report_data = report_data
+        self.minify_html = minify_html
+
+    def to_json(self, out_json_path: Union[str, Path]) -> None:
+        """
+        Write the summary report to a JSON file.
+
+        Parameters
+        ----------
+        out_json_path : str or Path
+            The path where the JSON report will be saved.
+        """
+        with tqdm(total=1, desc="Render JSON") as pbar:
+            report_data = json.dumps(self.report_data, indent=4, default=str)
+            pbar.update()
+        self._to_file(report_data=report_data, output_file=out_json_path)
+
+    def to_html(self, out_html_path: Union[str, Path]) -> None:
+        """
+        Write the summary report to an HTML file.
+
+        Parameters
+        ----------
+        out_html_path : str or Path
+            The path where the HTML report will be saved.
+        """
+        with tqdm(total=1, desc="Render Summary Html") as pbar:
+            html = SummaryHtmlReport(self.report_data).render_html()
+
+            if self.minify_html:
+                import minify_html
+                html = minify_html.minify(html,
+                                          minify_js=True,
+                                          minify_css=True,
+                                          )
+            pbar.update()
+
+        self._to_file(report_data=html, output_file=out_html_path)
+
+    def _to_file(self, report_data: str, output_file: Union[str, Path]) -> None:
+        """
+        Write the report data to a file.
+
+        Parameters
+        ----------
+        report_data : str
+            The report data to be written to the file.
+
+        output_file : str or Path
+            The path to the file where the report will be saved.
+        """
+        if not isinstance(output_file, Path):
+            output_file = Path(str(output_file))
+
+        if output_file.suffix not in [".html", ".json"]:
+            suffix = output_file.suffix
+            output_file = output_file.with_suffix(".html")
+            clogger.warning(
+                f"Extension {suffix} not supported. We use .html instead."
+                f"To remove this warning, please use .html or .json."
+            )
+
+        with tqdm(total=1, desc="Export summary report to file") as pbar:
+            output_file.write_text(report_data, encoding="utf-8")
+            pbar.update()
+        clogger.info(f"Export summary report path:{output_file}")
+
+
+class SummaryHtmlReport(object):
+    """
+    Generate an HTML summary report for multiple MEG quality metrics.
+    """
+
+    def __init__(self, report_data):
+        """
+        Initialize the HTML summary report generator.
+
+        Parameters
+        ----------
+        report_data : dict
+            The data to be included in the HTML summary report.
+        """
+        # Init Jinja
+        package_loader = PackageLoader(package_name="msqms", package_path="reports/templates")
+        self.jinja2_env = Environment(loader=package_loader)
+
+        self.report_data = report_data
+
+        self.nav_title = "<strong>MEG Quality Summary Report</strong>"
+        self.footer = 'MEG Quality Summary Report Generated by <a href="https://github.com/liaopan/msqms">msqms</a>.'
+        
+        # Prepare data for template
+        # Convert Box objects to regular dicts/lists to avoid method name conflicts
+        if hasattr(self.report_data, 'reports'):
+            reports_raw = self.report_data.reports
+            # Convert to list of dicts
+            if isinstance(reports_raw, list):
+                self.reports = [dict(r) if hasattr(r, 'keys') else r for r in reports_raw]
+            else:
+                self.reports = list(reports_raw) if hasattr(reports_raw, '__iter__') and not isinstance(reports_raw, (str, bytes)) else [reports_raw]
+        else:
+            self.reports = []
+            
+        if hasattr(self.report_data, 'summary_stats'):
+            # Convert Box to dict
+            summary_stats = self.report_data.summary_stats
+            if isinstance(summary_stats, dict):
+                self.summary_stats = summary_stats
+            elif hasattr(summary_stats, 'to_dict'):
+                self.summary_stats = summary_stats.to_dict()
+            else:
+                # Convert Box to dict manually
+                self.summary_stats = dict(summary_stats)
+        else:
+            self.summary_stats = {}
+        
+        # Format data for visualization
+        self._prepare_visualization_data()
+
+    def _prepare_visualization_data(self):
+        """Prepare data for JavaScript visualization."""
+        # Convert Box objects to dicts to avoid method name conflicts
+        summary_stats_dict = dict(self.summary_stats) if hasattr(self.summary_stats, 'keys') else self.summary_stats
+        reports_list = list(self.reports) if hasattr(self.reports, '__iter__') and not isinstance(self.reports, (str, bytes)) else self.reports
+        
+        # MSQM scores data
+        msqm_scores = summary_stats_dict.get('msqm_scores', [])
+        stats_dict = summary_stats_dict.get('statistics', {})
+        
+        self.msqm_scores_data = {
+            'values': [float(score) * 100 for score in msqm_scores],
+            'labels': [report.get('filename', '') if isinstance(report, dict) else getattr(report, 'filename', '') for report in reports_list],
+            'mean': float(stats_dict.get('msqm_mean', 0) * 100),
+            'std': float(stats_dict.get('msqm_std', 0) * 100),
+            'min': float(stats_dict.get('msqm_min', 0) * 100),
+            'max': float(stats_dict.get('msqm_max', 0) * 100),
+            'median': float(stats_dict.get('msqm_median', 0) * 100)
+        }
+        
+        # Category scores data
+        self.category_scores_data = {}
+        category_scores_dict = summary_stats_dict.get('category_scores', {})
+        category_stats_dict = stats_dict.get('category_stats', {})
+        
+        for category, display_name in METRICS_REPORT_MAPPING.items():
+            if category in category_scores_dict and len(category_scores_dict[category]) > 0:
+                cat_scores = category_scores_dict[category]
+                if category in category_stats_dict:
+                    stats = category_stats_dict[category]
+                    self.category_scores_data[category] = {
+                        'display_name': display_name,
+                        'values': [float(score) * 100 for score in cat_scores],
+                        'labels': [report.get('filename', '') if isinstance(report, dict) else getattr(report, 'filename', '') for report in reports_list],
+                        'mean': float(stats.get('mean', 0) * 100),
+                        'std': float(stats.get('std', 0) * 100),
+                        'min': float(stats.get('min', 0) * 100),
+                        'max': float(stats.get('max', 0) * 100),
+                        'median': float(stats.get('median', 0) * 100)
+                    }
+
+    def get_template(self, template_name: str) -> jinja2.Template:
+        """
+        Load and return the Jinja2 template by name.
+
+        Parameters
+        ----------
+        template_name : str
+            The name of the template to load.
+
+        Returns
+        -------
+        jinja2.Template
+            The loaded template.
+        """
+        return self.jinja2_env.get_template(template_name)
+
+    def render_html(self):
+        """
+        Render the complete HTML summary page.
+
+        Returns
+        -------
+        str
+            The final rendered HTML content.
+        """
+        # Convert reports to list of dicts to avoid Box issues
+        reports_list = []
+        for report in self.reports:
+            if isinstance(report, dict):
+                reports_list.append(report)
+            elif hasattr(report, 'to_dict'):
+                reports_list.append(report.to_dict())
+            else:
+                # Convert Box or object to dict
+                reports_list.append({k: getattr(report, k) for k in dir(report) 
+                                   if not k.startswith('_') and not callable(getattr(report, k, None))})
+        
+        # Ensure all data structures are plain Python types
+        render_params = {
+            "title": self.nav_title,
+            "nav": True,
+            "nav_items": [("Summary", "summary"), ("Individual Reports", "individual")],
+            "footer": self.footer,
+            "reports": reports_list,
+            "summary_stats": dict(self.summary_stats) if hasattr(self.summary_stats, 'keys') else self.summary_stats,
+            "msqm_scores_data": dict(self.msqm_scores_data),
+            "category_scores_data": {k: dict(v) for k, v in self.category_scores_data.items()},
+            "total_files": len(reports_list),
+            "metrics_mapping": METRICS_REPORT_MAPPING
+        }
+
+        template = self.get_template('summary_report.html')
+        html = template.render(**render_params)
+        return html

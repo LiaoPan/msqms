@@ -11,4 +11,6 @@
 """
 __author__ = 'LiaoPan'
 
-from msqms.reports.report import gen_quality_report
+from msqms.reports.report import gen_quality_report, gen_summary_quality_report
+
+__all__ = ['gen_quality_report', 'gen_summary_quality_report']

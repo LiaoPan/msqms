@@ -51,6 +51,15 @@ class FractalDomainMetric(Metrics):
             DataFrame containing the averaged fractal metrics for the MEG data.
         """
         raw_list, _ = segment_raw_data(self.raw, seg_length)
+        if len(raw_list) == 0:
+            # Return empty DataFrame with correct structure if no segments
+            self.meg_type = meg_type
+            self.meg_names = self._get_meg_names(self.meg_type)
+            empty_df = pd.DataFrame(index=self.meg_names)
+            empty_df.loc[f"avg_{meg_type}"] = 0.0
+            empty_df.loc[f"std_{meg_type}"] = 0.0
+            return empty_df
+        
         meg_metrics_list = [self._compute_fractal_metrics(raw_i, meg_type) for raw_i in raw_list]
 
         # Combine and average metrics

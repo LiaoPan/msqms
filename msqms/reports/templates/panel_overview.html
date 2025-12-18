@@ -43,12 +43,25 @@
                             <tbody>
                             {% for row in overview_quality_list[1:] %}
                             <tr>
-
                                     {% for v in row %}
-                                        <td style="white-space:pre white-space:nowrap">{{ v }}</td>
+                                        {% if loop.index == 4 %}
+                                            {# Status column #}
+                                            <td style="white-space:pre white-space:nowrap">
+                                                {% if v == "High" %}
+                                                    <span class="status-badge status-high">{{ v }}</span>
+                                                {% elif v == "Medium" %}
+                                                    <span class="status-badge status-medium">{{ v }}</span>
+                                                {% elif v == "Low" %}
+                                                    <span class="status-badge status-low">{{ v }}</span>
+                                                {% else %}
+                                                    {{ v }}
+                                                {% endif %}
+                                            </td>
+                                        {% else %}
+                                            <td style="white-space:pre white-space:nowrap">{{ v }}</td>
+                                        {% endif %}
                                     {% endfor %}
                             </tr>
-
                             {% endfor %}
                             </tbody>
                         </table>
@@ -69,12 +82,40 @@
                             <tbody>
                             {% for row in time_quality_list[1:] %}
                             <tr>
-
                                     {% for v in row %}
-                                        <td style="white-space:pre white-space:nowrap">{{ v }}</td>
+                                        {% if loop.index == 2 %}
+                                            {# Quality Score column - format is "0.xxx" #}
+                                            <td style="white-space:pre white-space:nowrap">
+                                                {% if v|float >= 0.9 %}
+                                                    <span class="quality-score-cell quality-score-excellent">{{ v }}</span>
+                                                {% elif v|float >= 0.8 %}
+                                                    <span class="quality-score-cell quality-score-good">{{ v }}</span>
+                                                {% elif v|float >= 0.6 %}
+                                                    <span class="quality-score-cell quality-score-fair">{{ v }}</span>
+                                                {% elif v|float >= 0.4 %}
+                                                    <span class="quality-score-cell quality-score-poor">{{ v }}</span>
+                                                {% else %}
+                                                    <span class="quality-score-cell quality-score-bad">{{ v }}</span>
+                                                {% endif %}
+                                            </td>
+                                        {% elif loop.index == 5 %}
+                                            {# Status/Hint column #}
+                                            <td style="white-space:pre white-space:nowrap">
+                                                {% if "✔" in v or "✓" in v %}
+                                                    <span class="hint-symbol hint-check">{{ v }}</span>
+                                                {% elif "↓" in v or "⬇" in v %}
+                                                    <span class="hint-symbol hint-down">{{ v }}</span>
+                                                {% elif "✘" in v or "✗" in v or "×" in v %}
+                                                    <span class="hint-symbol hint-cross">{{ v }}</span>
+                                                {% else %}
+                                                    {{ v }}
+                                                {% endif %}
+                                            </td>
+                                        {% else %}
+                                            <td style="white-space:pre white-space:nowrap">{{ v }}</td>
+                                        {% endif %}
                                     {% endfor %}
                             </tr>
-
                             {% endfor %}
                             </tbody>
                         </table>
@@ -94,12 +135,40 @@
                             <tbody>
                             {% for row in freq_quality_list[1:] %}
                             <tr>
-
                                     {% for v in row %}
-                                        <td style="white-space:pre white-space:nowrap">{{ v }}</td>
+                                        {% if loop.index == 2 %}
+                                            {# Quality Score column - format is "0.xxx" #}
+                                            <td style="white-space:pre white-space:nowrap">
+                                                {% if v|float >= 0.9 %}
+                                                    <span class="quality-score-cell quality-score-excellent">{{ v }}</span>
+                                                {% elif v|float >= 0.8 %}
+                                                    <span class="quality-score-cell quality-score-good">{{ v }}</span>
+                                                {% elif v|float >= 0.6 %}
+                                                    <span class="quality-score-cell quality-score-fair">{{ v }}</span>
+                                                {% elif v|float >= 0.4 %}
+                                                    <span class="quality-score-cell quality-score-poor">{{ v }}</span>
+                                                {% else %}
+                                                    <span class="quality-score-cell quality-score-bad">{{ v }}</span>
+                                                {% endif %}
+                                            </td>
+                                        {% elif loop.index == 5 %}
+                                            {# Status/Hint column #}
+                                            <td style="white-space:pre white-space:nowrap">
+                                                {% if "✔" in v or "✓" in v %}
+                                                    <span class="hint-symbol hint-check">{{ v }}</span>
+                                                {% elif "↓" in v or "⬇" in v %}
+                                                    <span class="hint-symbol hint-down">{{ v }}</span>
+                                                {% elif "✘" in v or "✗" in v or "×" in v %}
+                                                    <span class="hint-symbol hint-cross">{{ v }}</span>
+                                                {% else %}
+                                                    {{ v }}
+                                                {% endif %}
+                                            </td>
+                                        {% else %}
+                                            <td style="white-space:pre white-space:nowrap">{{ v }}</td>
+                                        {% endif %}
                                     {% endfor %}
                             </tr>
-
                             {% endfor %}
                             </tbody>
                         </table>
@@ -119,12 +188,40 @@
                             <tbody>
                             {% for row in entropy_quality_list[1:] %}
                             <tr>
-
                                     {% for v in row %}
-                                        <td style="white-space:pre white-space:nowrap">{{ v }}</td>
+                                        {% if loop.index == 2 %}
+                                            {# Quality Score column - format is "0.xxx" #}
+                                            <td style="white-space:pre white-space:nowrap">
+                                                {% if v|float >= 0.9 %}
+                                                    <span class="quality-score-cell quality-score-excellent">{{ v }}</span>
+                                                {% elif v|float >= 0.8 %}
+                                                    <span class="quality-score-cell quality-score-good">{{ v }}</span>
+                                                {% elif v|float >= 0.6 %}
+                                                    <span class="quality-score-cell quality-score-fair">{{ v }}</span>
+                                                {% elif v|float >= 0.4 %}
+                                                    <span class="quality-score-cell quality-score-poor">{{ v }}</span>
+                                                {% else %}
+                                                    <span class="quality-score-cell quality-score-bad">{{ v }}</span>
+                                                {% endif %}
+                                            </td>
+                                        {% elif loop.index == 5 %}
+                                            {# Status/Hint column #}
+                                            <td style="white-space:pre white-space:nowrap">
+                                                {% if "✔" in v or "✓" in v %}
+                                                    <span class="hint-symbol hint-check">{{ v }}</span>
+                                                {% elif "↓" in v or "⬇" in v %}
+                                                    <span class="hint-symbol hint-down">{{ v }}</span>
+                                                {% elif "✘" in v or "✗" in v or "×" in v %}
+                                                    <span class="hint-symbol hint-cross">{{ v }}</span>
+                                                {% else %}
+                                                    {{ v }}
+                                                {% endif %}
+                                            </td>
+                                        {% else %}
+                                            <td style="white-space:pre white-space:nowrap">{{ v }}</td>
+                                        {% endif %}
                                     {% endfor %}
                             </tr>
-
                             {% endfor %}
                             </tbody>
                         </table>
@@ -144,12 +241,40 @@
                             <tbody>
                             {% for row in fractal_quality_list[1:] %}
                             <tr>
-
                                     {% for v in row %}
-                                        <td style="white-space:pre white-space:nowrap">{{ v }}</td>
+                                        {% if loop.index == 2 %}
+                                            {# Quality Score column - format is "0.xxx" #}
+                                            <td style="white-space:pre white-space:nowrap">
+                                                {% if v|float >= 0.9 %}
+                                                    <span class="quality-score-cell quality-score-excellent">{{ v }}</span>
+                                                {% elif v|float >= 0.8 %}
+                                                    <span class="quality-score-cell quality-score-good">{{ v }}</span>
+                                                {% elif v|float >= 0.6 %}
+                                                    <span class="quality-score-cell quality-score-fair">{{ v }}</span>
+                                                {% elif v|float >= 0.4 %}
+                                                    <span class="quality-score-cell quality-score-poor">{{ v }}</span>
+                                                {% else %}
+                                                    <span class="quality-score-cell quality-score-bad">{{ v }}</span>
+                                                {% endif %}
+                                            </td>
+                                        {% elif loop.index == 5 %}
+                                            {# Status/Hint column #}
+                                            <td style="white-space:pre white-space:nowrap">
+                                                {% if "✔" in v or "✓" in v %}
+                                                    <span class="hint-symbol hint-check">{{ v }}</span>
+                                                {% elif "↓" in v or "⬇" in v %}
+                                                    <span class="hint-symbol hint-down">{{ v }}</span>
+                                                {% elif "✘" in v or "✗" in v or "×" in v %}
+                                                    <span class="hint-symbol hint-cross">{{ v }}</span>
+                                                {% else %}
+                                                    {{ v }}
+                                                {% endif %}
+                                            </td>
+                                        {% else %}
+                                            <td style="white-space:pre white-space:nowrap">{{ v }}</td>
+                                        {% endif %}
                                     {% endfor %}
                             </tr>
-
                             {% endfor %}
                             </tbody>
                         </table>
@@ -169,12 +294,40 @@
                             <tbody>
                             {% for row in artifacts_quality_list[1:] %}
                             <tr>
-
                                     {% for v in row %}
-                                        <td style="white-space:pre white-space:nowrap">{{ v }}</td>
+                                        {% if loop.index == 2 %}
+                                            {# Quality Score column - format is "0.xxx" #}
+                                            <td style="white-space:pre white-space:nowrap">
+                                                {% if v|float >= 0.9 %}
+                                                    <span class="quality-score-cell quality-score-excellent">{{ v }}</span>
+                                                {% elif v|float >= 0.8 %}
+                                                    <span class="quality-score-cell quality-score-good">{{ v }}</span>
+                                                {% elif v|float >= 0.6 %}
+                                                    <span class="quality-score-cell quality-score-fair">{{ v }}</span>
+                                                {% elif v|float >= 0.4 %}
+                                                    <span class="quality-score-cell quality-score-poor">{{ v }}</span>
+                                                {% else %}
+                                                    <span class="quality-score-cell quality-score-bad">{{ v }}</span>
+                                                {% endif %}
+                                            </td>
+                                        {% elif loop.index == 5 %}
+                                            {# Status/Hint column #}
+                                            <td style="white-space:pre white-space:nowrap">
+                                                {% if "✔" in v or "✓" in v %}
+                                                    <span class="hint-symbol hint-check">{{ v }}</span>
+                                                {% elif "↓" in v or "⬇" in v %}
+                                                    <span class="hint-symbol hint-down">{{ v }}</span>
+                                                {% elif "✘" in v or "✗" in v or "×" in v %}
+                                                    <span class="hint-symbol hint-cross">{{ v }}</span>
+                                                {% else %}
+                                                    {{ v }}
+                                                {% endif %}
+                                            </td>
+                                        {% else %}
+                                            <td style="white-space:pre white-space:nowrap">{{ v }}</td>
+                                        {% endif %}
                                     {% endfor %}
                             </tr>
-
                             {% endfor %}
                             </tbody>
                         </table>

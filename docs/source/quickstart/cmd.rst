@@ -197,5 +197,87 @@ To list all existing quality reference files:
 
     msqms_quality_ref_list
 
+5. **msqms_summary**
+----------------------------------------------------------------
+Using CLI Tool to Generate Summary Quality Control Reports
 
+**Description**
+
+The new ``msqms_summary`` command is used to generate summary quality control reports for multiple MEG files. This command automatically traverses all matching files in the specified directory.
+
+**Usage**
+
+.. code-block:: bash
+
+    msqms_summary -i ./data -o ./reports -t opm
+
+**Parameter Explanation**
+
+- ``-i, --input``: Input directory path (required, contains the directory with MEG files)
+- ``-s, --suffix``: File suffix (optional, default is '.fif', e.g., '.fif', '.ds')
+- ``-o, --outdir``: Output directory (required, default is the current directory)
+- ``-t, --data_type``: Data type (required, choices are 'opm' or 'squid')
+- ``-n, --report_name``: Summary report filename (optional, default is 'summary_report')
+- ``-r, --recursive``: Recursively search subdirectories (optional flag)
+
+**Examples**
+
+Example 1: Process All .fif Files in the Directory (default)
+
+.. code-block:: bash
+
+    msqms_summary -i ./data -o ./quality_reports -t opm
+
+Example 2: Process Files with Specified Suffix
+
+.. code-block:: bash
+
+    # Process .ds files
+    msqms_summary -i ./data -s .ds -o ./output -t squid
+
+    # Process .fif files (explicitly specified)
+    msqms_summary -i ./data -s .fif -o ./output -t opm
+
+Example 3: Recursively Search Subdirectories
+
+.. code-block:: bash
+
+    # Recursively search for all .fif files in subdirectories
+    msqms_summary -i ./data -r -o ./reports -t opm
+
+Example 4: Custom Report Name
+
+.. code-block:: bash
+
+    msqms_summary -i ./data -o ./output -t opm -n my_summary_report
+
+Example 5: Complete Example
+
+.. code-block:: bash
+
+    # Recursively search for all .fif files and generate a custom-named summary report
+    msqms_summary -i /path/to/meg/data -r -s .fif -o /path/to/output -t opm -n batch_quality_report
+
+**Output Files**
+
+
+After executing the command, the following will be generated:
+
+1. **Summary Report**: ``{report_name}.html`` - Contains statistical information and visual charts for all files
+2. **Individual Reports**: Each file will generate a corresponding ``{filename}.report.html``
+3. **Visual Images**: Each file will create a corresponding ``{filename}.imgs/`` directory
+
+**Summary Report Features**
+
+The generated summary report includes:
+
+- **Summary Tab**:
+  - Summary statistics (total number of files, average scores, standard deviations, etc.)
+  - MSQM score distribution charts
+  - Distribution charts for various metrics (Time Metrics, Frequency Metrics, Entropy Metrics, Fractal Metrics, Artifacts)
+
+- **Individual Reports Tab**:
+  - A list of all files displaying filenames and scores
+  - Clicking on any file allows viewing the detailed report below
+  - Quality level badges (Excellent/Good/Fair/Poor/Bad)
 

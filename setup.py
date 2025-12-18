@@ -110,6 +110,7 @@ setup(
     entry_points={
         "console_scripts": [
             "msqms_report = msqms.cli.workflow:generate_qc_report",
+            "msqms_summary = msqms.cli.workflow:generate_summary_qc_report",
             "msqms_quality_ref_cal = msqms.cli.workflow:compute_and_update_quality_reference",
             "msqms_quality_ref_update = msqms.cli.workflow:update_quality_reference",
             "msqms_quality_ref_list = msqms.cli.workflow:list_quality_references"

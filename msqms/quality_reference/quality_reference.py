@@ -13,7 +13,7 @@ from typing import Union
 from msqms.utils import clogger
 from msqms.io import read_raw_dataset, read_raw_bids_dataset
 from msqms.constants import METRICS_DOMAIN, DATA_TYPE
-from msqms.qc.time_domain_metrcis import TimeDomainMetric
+from msqms.qc.time_domain_metrics import TimeDomainMetric
 from msqms.qc.freq_domain_metrics import FreqDomainMetric
 from msqms.qc.statistic_metrics import StatsDomainMetric
 from msqms.qc.entropy_metrics import EntropyDomainMetric

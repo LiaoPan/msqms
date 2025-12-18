@@ -18,5 +18,18 @@ msqms.reports package
 
 
 
+    Summary
+    -------
+
+    ``__all__`` Functions:
+
+
+    .. list-table::
+    
+       * - :func:`gen_quality_report <msqms.reports.report.gen_quality_report>`
+         - Generate HTML/JSON Report for a set of MEG Raw data.
+       * - :func:`gen_summary_quality_report <msqms.reports.report.gen_summary_quality_report>`
+         - Generate a summary HTML report for multiple MEG files with quality scores distribution.
+    
 
 

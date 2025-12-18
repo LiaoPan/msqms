@@ -22,7 +22,7 @@ msqms.qc package
        msqms.qc.metrics_factory
        msqms.qc.msqm
        msqms.qc.statistic_metrics
-       msqms.qc.time_domain_metrcis
+       msqms.qc.time_domain_metrics
        msqms.qc.visual_inspection
 
 

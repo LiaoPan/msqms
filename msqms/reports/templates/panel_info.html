@@ -24,19 +24,25 @@
                 <div class="report_text">
 
                 {% if tab == "Overview" %}
+                    <div class="info-list">
                     {% for key,value in info_basic.items() %}
-                    <b><strong>{{key}}:</strong></b>
-                        {{value}}
-                    <br>
+                    <div class="info-item">
+                        <span class="info-label"><strong>{{key}}:</strong></span>
+                        <span class="info-value">{{value}}</span>
+                    </div>
                     {% endfor %}
+                    </div>
                 {% endif %}
 
                 {% if tab == "Participant Info" %}
+                    <div class="info-list">
                     {% for key,value in info_participant_dict.items() %}
-                    <b><strong>{{key}}:</strong></b>
-                    {{value}}
-                    <br>
+                    <div class="info-item">
+                        <span class="info-label"><strong>{{key}}:</strong></span>
+                        <span class="info-value">{{value}}</span>
+                    </div>
                     {% endfor %}
+                    </div>
                 {% endif %}
 
                 {% if tab == "MEG Info" %}

@@ -32,7 +32,7 @@ METRICS_REPORT_MAPPING = {"time_domain": "Time Metrics",
                           "artifacts": "Artifacts"
                           }
 
-METRICS_DOMAIN = ["time_domain", "freq_domain", "stats_domain", "entropy_domain", "fractal_domain"]
+METRICS_DOMAIN = ["time_domain", "freq_domain", "stats_domain", "entropy_domain","fractal_domain"] #,
 
 ## For single metric mappings
 METRICS_MAPPING = {

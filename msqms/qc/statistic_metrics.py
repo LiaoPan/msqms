@@ -141,7 +141,7 @@ class StatsDomainMetric(Metrics):
         print("bad_chan_index:", bad_chan_index, "bad_chan_mask:", bad_chan_mask.shape)
 
         # Final ratio and list
-        ratio = len(bad_channels) / len(self.all_meg_names)
+        ratio = len(bad_channels) / len(self.all_meg_names) if len(self.all_meg_names) > 0 else 0.0
         return ratio, bad_chan_names, bad_chan_index, bad_chan_mask
 
     def _get_channel_index(self, channel_name_list):
@@ -149,7 +149,12 @@ class StatsDomainMetric(Metrics):
         """
         ch_index = []
         for i in channel_name_list:
-            ch_index.append(self.raw.ch_names.index(i))
+            try:
+                ch_index.append(self.raw.ch_names.index(i))
+            except ValueError:
+                # Channel name not found, skip it
+                clogger.warning(f"Channel {i} not found in raw.ch_names, skipping.")
+                continue
         return ch_index
 
     def compute_skewness(self, data: np.ndarray):
@@ -164,9 +169,9 @@ class StatsDomainMetric(Metrics):
         """
         skewness = skew(data, axis=1, bias=True)
         left_tail = len(skewness[skewness > 0])
-        left_skew_ratio = left_tail / data.shape[0]
+        left_skew_ratio = left_tail / data.shape[0] if data.shape[0] > 0 else 0.0
         mean_skewness = np.nanmean(skewness)
-        std_skewness = np.nanmean(skewness)
+        std_skewness = np.nanstd(skewness)
         return left_skew_ratio, mean_skewness, std_skewness
 
     def compute_kurtosis(self, data: np.ndarray):
@@ -255,7 +260,7 @@ class StatsDomainMetric(Metrics):
 
         # clogger.info(f"bad segments by osl:{bad_segs_osl['onsets']}")
         # mne
-        if self.origin_raw.info['lowpass'] >= 140 and self.origin_raw.info['highpass'] <= 110:
+        if self.origin_raw is not None and self.origin_raw.info['lowpass'] >= 140 and self.origin_raw.info['highpass'] <= 110:
             annot_muscle, _ = annotate_muscle_zscore(self.origin_raw, ch_type=self.meg_type, threshold=5,
                                                      filter_freq=[110, 140])
             # clogger.info(f"bad segments by mne:{annot_muscle.onset}")
@@ -276,18 +281,24 @@ class StatsDomainMetric(Metrics):
         else:
             bad_segs = bad_segs_osl
 
-        if np.any(bad_segs):
+        if bad_segs and 'onsets' in bad_segs and len(bad_segs['onsets']) > 0:
             bad_segs_num = len(bad_segs['onsets'])
+        else:
+            bad_segs_num = 0
 
         clogger.info(f"bad segments num:{bad_segs_num}")
         bad_seg_mask = np.full(self.meg_data.shape, False, dtype=bool)
 
         # bad segments mask
-        for idx, onset in enumerate(bad_segs['onsets']):
-            duration = bad_segs['durations'][idx]
-            seg_start = self.raw.time_as_index(onset)[0]
-            seg_end = seg_start + int(duration * self.raw.info['sfreq'])
-            bad_seg_mask[:, seg_start:seg_end] = True
+        if bad_segs and 'onsets' in bad_segs and 'durations' in bad_segs and len(bad_segs['onsets']) > 0:
+            for idx, onset in enumerate(bad_segs['onsets']):
+                duration = bad_segs['durations'][idx]
+                seg_start = self.raw.time_as_index(onset)[0]
+                seg_end = seg_start + int(duration * self.raw.info['sfreq'])
+                # Ensure seg_end doesn't exceed data length
+                seg_end = min(seg_end, self.meg_data.shape[1])
+                if seg_start < seg_end:
+                    bad_seg_mask[:, seg_start:seg_end] = True
 
         return bad_segs_num, bad_seg_mask
 
@@ -342,7 +353,7 @@ class StatsDomainMetric(Metrics):
         std_values = np.nanstd(self.all_meg_data, axis=1)
         flat_chan_inds = np.argwhere(std_values <= flat_thres)
         flat_chan_names = [self.raw.info['ch_names'][fc[0]] for fc in flat_chan_inds]
-        flat_chan_ratio = (len(flat_chan_names) / len(self.meg_names))  # * 100  # percentage
+        flat_chan_ratio = (len(flat_chan_names) / len(self.all_meg_names)) if len(self.all_meg_names) > 0 else 0.0  # * 100  # percentage
         flat_chan_mask = np.full(self.all_meg_data.shape, False, dtype=bool)
         for fc in flat_chan_inds:
             flat_chan_mask[fc] = True

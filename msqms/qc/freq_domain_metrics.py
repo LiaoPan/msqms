@@ -70,24 +70,73 @@ class FreqDomainMetric(Metrics):
         f = np.fft.fftfreq(L, 1 / Fs)[: int(L / 2)]
         fre_line_num = len(y)
 
+        # Pre-compute common values to avoid repeated calculations and handle edge cases
+        y_mean = y.mean()
+        y_var = np.var(y)
+        y_std = np.sqrt(y_var) if y_var > 0 else 0.0
+        y_sum = np.sum(y)
+        
+        # Handle zero sum case (flat signal or all zeros after DC removal)
+        if y_sum == 0 or y_sum < np.finfo(float).eps:
+            # Return default values for flat/zero signals
+            return {
+                "mean_amplitude": 0.0,
+                "std_amplitude": 0.0,
+                "skewness_amplitude": 0.0,
+                "kurtosis_amplitude": 0.0,
+                "mean_frequency": 0.0,
+                "std_frequency": 0.0,
+                "rms_frequency": 0.0,
+                "fourth_moment_frequency": 0.0,
+                "normalized_second_moment": 0.0,
+                "frequency_dispersion": 0.0,
+                "frequency_skewness": 0.0,
+                "frequency_kurtosis": 0.0,
+                "mean_absolute_deviation": 0.0,
+            }
+        
+        # Compute mean frequency
+        mean_freq = np.sum(f * y) / y_sum
+        
+        # Compute frequency variance and standard deviation
+        freq_var = np.sum((f - mean_freq) ** 2 * y) / fre_line_num
+        freq_std = np.sqrt(freq_var) if freq_var > 0 else 0.0
+        
+        # Compute sum of f^2 * y and f^4 * y for later use
+        f2y_sum = np.sum(f ** 2 * y)
+        f4y_sum = np.sum(f ** 4 * y)
+        
+        # Handle division by zero for f2y_sum
+        if f2y_sum == 0 or f2y_sum < np.finfo(float).eps:
+            fourth_moment_freq = 0.0
+        else:
+            fourth_moment_freq = np.sqrt(f4y_sum / f2y_sum)
+        
+        # Handle division by zero for normalized_second_moment
+        if f4y_sum == 0 or f4y_sum < np.finfo(float).eps:
+            normalized_second_moment = 0.0
+        else:
+            normalized_second_moment = f2y_sum / np.sqrt(y_sum * f4y_sum)
+
         features = {
-            "mean_amplitude": y.mean(),
-            "std_amplitude": np.sqrt(np.sum((y - y.mean()) ** 2) / fre_line_num),
-            "skewness_amplitude": np.sum((y - y.mean()) ** 3) / (fre_line_num * np.sqrt(np.var(y)) ** 3),
-            "kurtosis_amplitude": np.sum((y - y.mean()) ** 4) / (fre_line_num * np.sqrt(np.var(y)) ** 4),
-            "mean_frequency": np.sum(f * y) / np.sum(y),
-            "std_frequency": np.sqrt(np.sum((f - np.sum(f * y) / np.sum(y)) ** 2 * y) / fre_line_num),
-            "rms_frequency": np.sqrt(np.sum(f ** 2 * y) / np.sum(y)),
-            "fourth_moment_frequency": np.sqrt(np.sum(f ** 4 * y) / np.sum(f ** 2 * y)),
-            "normalized_second_moment": np.sum(f ** 2 * y) / np.sqrt(np.sum(y) * np.sum(f ** 4 * y)),
-            "frequency_dispersion": (np.sqrt(np.sum((f - np.sum(f * y) / np.sum(y)) ** 2 * y) / fre_line_num)) / (
-                np.sum(f * y) / np.sum(y)),
-            "frequency_skewness": np.sum((f - np.sum(f * y) / np.sum(y)) ** 3 * y)
-            / (np.sqrt(np.sum((f - np.sum(f * y) / np.sum(y)) ** 2 * y)) ** 3 * fre_line_num),
-            "frequency_kurtosis": np.sum((f - np.sum(f * y) / np.sum(y)) ** 4 * y)
-            / (np.sqrt(np.sum((f - np.sum(f * y) / np.sum(y)) ** 2 * y)) ** 4 * fre_line_num),
-            "mean_absolute_deviation": np.sum(abs(f - np.sum(f * y) / np.sum(y)) * y)
-            / (np.sqrt(np.sqrt(np.sum((f - np.sum(f * y) / np.sum(y)) ** 2 * y))) * fre_line_num),
+            "mean_amplitude": y_mean,
+            "std_amplitude": np.sqrt(np.sum((y - y_mean) ** 2) / fre_line_num) if fre_line_num > 0 else 0.0,
+            "skewness_amplitude": (np.sum((y - y_mean) ** 3) / (fre_line_num * y_std ** 3)) 
+                                   if y_std > 0 and fre_line_num > 0 else 0.0,
+            "kurtosis_amplitude": (np.sum((y - y_mean) ** 4) / (fre_line_num * y_std ** 4)) 
+                                   if y_std > 0 and fre_line_num > 0 else 0.0,
+            "mean_frequency": mean_freq,
+            "std_frequency": freq_std,
+            "rms_frequency": np.sqrt(f2y_sum / y_sum) if y_sum > 0 else 0.0,
+            "fourth_moment_frequency": fourth_moment_freq,
+            "normalized_second_moment": normalized_second_moment,
+            "frequency_dispersion": (freq_std / mean_freq) if mean_freq != 0 else 0.0,
+            "frequency_skewness": (np.sum((f - mean_freq) ** 3 * y) / (freq_std ** 3 * fre_line_num)) 
+                                  if freq_std > 0 and fre_line_num > 0 else 0.0,
+            "frequency_kurtosis": (np.sum((f - mean_freq) ** 4 * y) / (freq_std ** 4 * fre_line_num)) 
+                                 if freq_std > 0 and fre_line_num > 0 else 0.0,
+            "mean_absolute_deviation": (np.sum(abs(f - mean_freq) * y) / (freq_std * fre_line_num)) 
+                                       if freq_std > 0 and fre_line_num > 0 else 0.0,
         }
 
         return features
@@ -115,15 +164,17 @@ class FreqDomainMetric(Metrics):
             # Sequential computation
             freq_list = []
             for i in range(self.meg_data.shape[0]):
-                features = self._get_fre_domain_features(self.meg_data[i, :])
+                features = self._get_fre_domain_features(self.meg_data[i, :], Fs=self.samp_freq)
                 freq_list.append(pd.DataFrame([features], index=[self.meg_names[i]]))
 
             freq_feat_df = pd.concat(freq_list)
         else:
             # Parallel computation
             clogger.info(f"Using {self.n_jobs} parallel cores.")
+            # Store samp_freq in a local variable to ensure it's properly captured in the closure
+            samp_freq = self.samp_freq
             freq_list = Parallel(self.n_jobs, verbose=10)(
-                delayed(self._get_fre_domain_features)(single_ch_data, self.samp_freq)
+                delayed(self._get_fre_domain_features)(single_ch_data, Fs=samp_freq)
                 for single_ch_data in self.meg_data
             )
             freq_feat_df = pd.DataFrame(freq_list, index=self.meg_names)

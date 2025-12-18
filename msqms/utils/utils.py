@@ -134,7 +134,7 @@ def check_if_directory(path: Path):
     if not isinstance(path, Path):
         path = Path(path)
     if not path.is_dir():
-        raise NotADirectoryError(f"The path '{path}' is not a directory.")
+        path.mkdir(exist_ok=True, parents=True)
     else:
         print(f"The path '{path}' is a valid directory.")
 

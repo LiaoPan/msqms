@@ -52,6 +52,15 @@ class EntropyDomainMetric(Metrics):
             DataFrame containing the averaged entropy metrics for the MEG data.
         """
         raw_list, _ = segment_raw_data(self.raw, seg_length)
+        if len(raw_list) == 0:
+            # Return empty DataFrame with correct structure if no segments
+            self.meg_type = meg_type
+            self.meg_names = self._get_meg_names(self.meg_type)
+            empty_df = pd.DataFrame(index=self.meg_names)
+            empty_df.loc[f"avg_{meg_type}"] = 0.0
+            empty_df.loc[f"std_{meg_type}"] = 0.0
+            return empty_df
+        
         meg_metrics_list = [self._compute_entropy_metrics(raw_i, meg_type) for raw_i in raw_list]
 
         # Combine and average metrics
@@ -163,11 +172,16 @@ class EntropyDomainMetric(Metrics):
         coeffs = pywt.wavedec(data, wavelet='db4', level=5)
         for coef in coeffs:
             energy = np.square(coef)
-            energy_ratio = energy / np.sum(energy)
-            _entropy = -np.sum(energy_ratio * np.log(energy_ratio))
-            Etot += np.sum(energy)
-            Stot += _entropy
-        ratio = Etot / Stot
+            energy_sum = np.sum(energy)
+            if energy_sum > 0:
+                energy_ratio = energy / energy_sum
+                # Avoid log(0) by using np.log with where parameter or filtering zeros
+                energy_ratio_nonzero = energy_ratio[energy_ratio > 0]
+                if len(energy_ratio_nonzero) > 0:
+                    _entropy = -np.sum(energy_ratio_nonzero * np.log(energy_ratio_nonzero))
+                    Etot += energy_sum
+                    Stot += _entropy
+        ratio = Etot / Stot if Stot > 0 else 0.0
 
         return [Etot, Stot, ratio]
 
