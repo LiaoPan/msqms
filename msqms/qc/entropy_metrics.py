@@ -63,11 +63,15 @@ class EntropyDomainMetric(Metrics):
         
         meg_metrics_list = [self._compute_entropy_metrics(raw_i, meg_type) for raw_i in raw_list]
 
-        # Combine and average metrics
+        # Combine and average metrics (only channel rows, no stats rows)
         combined_metrics = meg_metrics_list[0]
         for metrics in meg_metrics_list[1:]:
             combined_metrics += metrics
         meg_metrics_df = combined_metrics / len(meg_metrics_list)
+
+        # Add statistics rows after averaging
+        meg_metrics_df.loc[f"avg_{meg_type}"] = meg_metrics_df.mean(axis=0)
+        meg_metrics_df.loc[f"std_{meg_type}"] = meg_metrics_df.std(axis=0)
 
         return meg_metrics_df
 
@@ -85,7 +89,7 @@ class EntropyDomainMetric(Metrics):
         Returns
         -------
         meg_metrics_df : pd.DataFrame
-            DataFrame containing the entropy metrics for the MEG segment.
+            DataFrame containing the entropy metrics for the MEG segment (channel rows only).
         """
         self.meg_type = meg_type
         self.meg_names = self._get_meg_names(self.meg_type)
@@ -95,10 +99,8 @@ class EntropyDomainMetric(Metrics):
         entropy_metrics = self.compute_entropies(self.meg_data)
         energy_entropy_metric = self.compute_energy_entropy(self.meg_data)
 
-        # Combine and summarize metrics
+        # Combine metrics (no stats rows here, added after averaging in compute_metrics)
         meg_metrics_df = pd.concat([entropy_metrics, energy_entropy_metric], axis=1)
-        meg_metrics_df.loc[f"avg_{meg_type}"] = meg_metrics_df.mean(axis=0)
-        meg_metrics_df.loc[f"std_{meg_type}"] = meg_metrics_df.std(axis=0)
 
         return meg_metrics_df
 

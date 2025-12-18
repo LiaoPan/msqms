@@ -606,11 +606,7 @@
           mask:radial-gradient(farthest-side,#0000 calc(99% - var(--b)),#000 calc(100% - var(--b)));
 }
 .pie:after {
-  inset:calc(50% - var(--b)/2);
-  background:var(--c);
-  width: var(--b);
-  height: var(--b);
-  transform:rotate(calc(var(--p)*3.6deg)) translateY(calc((var(--b) - var(--w)) / 2 + 1px));
+  content: none; /* 隐藏小圆点，避免嵌套时位置错乱 */
 }
 .animate {
   animation:p 1s .5s both;

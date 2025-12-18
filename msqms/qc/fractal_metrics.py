@@ -62,11 +62,15 @@ class FractalDomainMetric(Metrics):
         
         meg_metrics_list = [self._compute_fractal_metrics(raw_i, meg_type) for raw_i in raw_list]
 
-        # Combine and average metrics
+        # Combine and average metrics (only channel rows, no stats rows)
         combined_metrics = meg_metrics_list[0]
         for metrics in meg_metrics_list[1:]:
             combined_metrics += metrics
         meg_metrics_df = combined_metrics / len(meg_metrics_list)
+
+        # Add statistics rows after averaging
+        meg_metrics_df.loc[f"avg_{meg_type}"] = meg_metrics_df.mean(axis=0)
+        meg_metrics_df.loc[f"std_{meg_type}"] = meg_metrics_df.std(axis=0)
 
         return meg_metrics_df
 
@@ -84,19 +88,14 @@ class FractalDomainMetric(Metrics):
         Returns
         -------
         meg_metrics_df : pd.DataFrame
-            DataFrame containing the fractal metrics for the MEG segment.
+            DataFrame containing the fractal metrics for the MEG segment (channel rows only).
         """
         self.meg_type = meg_type
         self.meg_names = self._get_meg_names(self.meg_type)
         self.meg_data = raw.get_data(meg_type)
 
-        # Compute fractal metrics
-        fractal_metrics = self.compute_fractal_dimension(self.meg_data)
-
-        # Combine and summarize metrics
-        meg_metrics_df = fractal_metrics.copy()
-        meg_metrics_df.loc[f"avg_{meg_type}"] = meg_metrics_df.mean(axis=0)
-        meg_metrics_df.loc[f"std_{meg_type}"] = meg_metrics_df.std(axis=0)
+        # Compute fractal metrics (no stats rows here, added after averaging in compute_metrics)
+        meg_metrics_df = self.compute_fractal_dimension(self.meg_data)
 
         return meg_metrics_df
 

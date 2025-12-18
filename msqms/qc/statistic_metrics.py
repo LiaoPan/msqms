@@ -187,7 +187,7 @@ class StatsDomainMetric(Metrics):
         compute mean kurtosis by channel.
         compute the playkurtic ratio by channel.
         """
-        kurtosis_value = kurtosis(data, bias=True)
+        kurtosis_value = kurtosis(data, bias=True, fisher=False)
         playkurtic_ratio = len(kurtosis_value[kurtosis_value < 3]) / data.shape[0]
         mean_kurtosis = np.mean(kurtosis_value)
         return mean_kurtosis, playkurtic_ratio
