@@ -156,7 +156,8 @@ Please use the [GitHub issue tracker](https://github.com/LiaoPan/msqms/issues) t
 ## Interested in Contributing?
 Please read our contributing guide.
 
-## Citation
-When using MSQMs, please include the following citation:
+[//]: # (## Citation)
+
+[//]: # (When using MSQMs, please include the following citation:)
 
 
